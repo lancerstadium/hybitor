@@ -87,12 +87,11 @@ project/
 │   ├── lib2.so        # 库2的共享库文件
 │   └── ...
 │
-├── build/             # 存放编译生成的文件（可选）
-│   ├── debug/         # 调试构建目录
+├── build/             # 存放编译生成的文件
+│   ├── hybitor        # 可执行程序
 │   └── release/       # 发行构建目录
 │
 ├── CMakeLists.txt     # CMake构建系统配置文件（如果使用CMake）
-├── Makefile           # Makefile构建系统文件（如果使用Make）
 ├── README.md          # 项目文档
 └── .gitignore         # Git忽略文件列表
 

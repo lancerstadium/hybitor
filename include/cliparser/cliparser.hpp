@@ -1,20 +1,16 @@
 /// \file cliparser.h
 /// \brief 命令行子命令的业务路由与参数存储
 
+
 // 本地库
 #include "CLI11.hpp"
-#include "STP.hpp"
-#include "SOP.hpp"
+#include "translate.hpp"
+#include "opt.hpp"
 
 
 
 // 预定义
 #define CLI_PARSE_SUCCESS 1     // 成功解析输入参数
-
-// 引用
-using std::cout;
-using std::string;
-using std::endl;
 
 
 // hybitor 软件描述：CLI第一行
@@ -42,9 +38,9 @@ public:
 
         // --- CLI子命令设置 ---
         // hybitor translate : 输入可执行ELF文件进行翻译，输出Host端可执行ELF文件。
-        auto subcommand_hello = this->app.add_subcommand("hello", "Say `Hello` to user\n和用户打招呼\n");
-        auto subcommand_translate = this->app.add_subcommand("translate", "Translate ELF file to host architecture\n翻译可执行ELF文件到Host端\n");
-        auto subcommand_opt = this->app.add_subcommand("opt", "Optimizate .ll or .bc (LLVM IR)file\n优化LLVM中间表示文件\n");
+        auto subcommand_hello = this->app.add_subcommand("hello", "和用户打招呼\n(Say `Hello` to user.)");
+        auto subcommand_translate = this->app.add_subcommand("translate", "翻译可执行ELF文件到Host端\n(Translate ELF file to host architecture.)");
+        auto subcommand_opt = this->app.add_subcommand("opt", "优化LLVM中间表示文件\n(Optimizate .ll or .bc (LLVM IR)file.)");
         // 当出现的参数子命令解析不了时,尝试返回上一级主命令解析
         subcommand_hello->fallthrough();
         subcommand_translate->fallthrough(); 
@@ -61,11 +57,11 @@ public:
             // 初始化子命令参数
             this->stp = STP();    // *修改这里*：子命令`translate`的参数存储对象  
             // 检查输入文件是否存在，必选参数
-            subcommand_translate->add_option("file", this->stp.in_file_path, "Input file path 输入文件路径")->check(CLI::ExistingFile)->required();
+            subcommand_translate->add_option("file", this->stp.in_file_path, "输入文件路径 Input file path")->check(CLI::ExistingFile)->required();
             // 检查线程参数必须大于0
-            subcommand_translate->add_option("-n,-N", this->stp.threads, "Set thread number 设置线程数")->check(CLI::PositiveNumber);
+            subcommand_translate->add_option("-n,-N", this->stp.threads, "设置线程数 Set thread number")->check(CLI::PositiveNumber);
             // 检查输出文件目录是否存在
-            subcommand_translate->add_option("-o", this->stp.out_file_path, "Output file path 输出文件路径")->check(CLI::ExistingDirectory);
+            subcommand_translate->add_option("-o", this->stp.out_file_path, "输出文件路径 Output file path")->check(CLI::ExistingDirectory)->default_str("./");
         }
         // 2.如果执行`opt`子命令，则检查参数
         if(subcommand_opt)
@@ -73,9 +69,9 @@ public:
             // 初始化子命令参数
             this->sop = SOP();    // *修改这里*：子命令`opt`的参数存储对象  
             // 检查输入文件是否存在，必选参数
-            subcommand_opt->add_option("file", this->sop.in_file_path, "Input file path 输入文件路径")->check(CLI::ExistingFile)->required();
+            subcommand_opt->add_option("file", this->sop.in_file_path, "输入文件路径 Input file path")->check(CLI::ExistingFile)->required();
             // 检查输出文件目录是否存在
-            subcommand_opt->add_option("-o", this->sop.out_file_path, "Output file path 输出文件路径")->check(CLI::ExistingDirectory);
+            subcommand_opt->add_option("-o", this->sop.out_file_path, "输出文件路径 Output file path")->check(CLI::ExistingDirectory);
         }
     }
 
@@ -105,17 +101,16 @@ public:
         auto subcommand_translate = this->app.get_subcommand("translate");
         if(subcommand_translate->parsed())
         {
-            cout<<"Input file: "<<this->stp.in_file_path<<endl;
-            cout<<"Output file: "<<this->stp.out_file_path<<endl;
-            cout<<"Threads: "<<this->stp.threads<<endl;
-            // TODO: load_binary_file(STP stp)
+            // this->stp.command_exec();
+            stp.print_parsed_parameters();
+            stp.command_exec();
         }
         // 2.触发`opt`
         auto subcommand_opt = this->app.get_subcommand("opt");
         if(subcommand_opt->parsed())
         {
-            cout<<"Input file: "<<this->sop.in_file_path<<endl;
-            cout<<"Output file: "<<this->sop.out_file_path<<endl;
+            sop.print_parsed_parameters();
+            // sop.command_exec();
         }
     }
 
