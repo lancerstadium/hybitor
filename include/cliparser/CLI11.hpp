@@ -1,3 +1,9 @@
+/// \file CLI11.hpp
+/// \brief CLI 参数解析头文件库
+
+#ifndef CLI11_HPP
+#define CLI11_HPP
+
 // CLI11: Version 2.3.2
 // Originally designed by Henry Schreiner
 // https://github.com/CLIUtils/CLI11
@@ -9684,3 +9690,5 @@ CLI11_INLINE std::string Formatter::make_option_usage(const Option *opt) const {
 
 
 } // namespace CLI
+
+#endif // CLI11_HPP

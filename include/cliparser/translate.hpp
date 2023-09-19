@@ -1,9 +1,9 @@
 /// \file translate.hpp
 /// \brief 子命令 translate 的数据存储和业务实现
 
+#ifndef TRANSLATE_HPP
+#define TRANSLATE_HPP
 
-// 本地库
-#include "binaryfile/loader.hpp"
 
 
 // @brief 子命令`translate`的参数存储类 subcommand_translate_paramters
@@ -30,8 +30,9 @@ public:
     /// @return 错误信息
     void command_exec()
     {
-        loader ld = loader(this->in_file_path);
-        ld.load_elf_file();
+        // TODO: Guest指令翻译到Host指令
     }
 
 };
+
+#endif // TRANSLATE_HPP

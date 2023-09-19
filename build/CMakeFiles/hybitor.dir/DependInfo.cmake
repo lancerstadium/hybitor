@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/root/hybitor/src/main.cpp" "CMakeFiles/hybitor.dir/src/main.cpp.o" "gcc" "CMakeFiles/hybitor.dir/src/main.cpp.o.d"
+  "/Users/lutianshuo/Documents/iterms/hybitor/src/main.cpp" "CMakeFiles/hybitor.dir/src/main.cpp.o" "gcc" "CMakeFiles/hybitor.dir/src/main.cpp.o.d"
   )
 
 # Targets to which this target links.

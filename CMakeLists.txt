@@ -36,7 +36,7 @@ find_library(capstone
 
 # 添加链接的库文件
 target_link_libraries(hybitor PRIVATE
-    ${CMAKE_SOURCE_DIR}/lib/libcapstone.a
+    ${CMAKE_SOURCE_DIR}/lib/libcapstone-aarch64.a
 )
 
 # 设置编译选项

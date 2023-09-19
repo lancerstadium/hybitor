@@ -1,9 +1,14 @@
+/// \file loader.hpp
+/// \brief 文件加载器以及相关操作
 
+#ifndef LOADER_HPP
+#define LOADER_HPP
+
+// 本地库
 #include <iostream>
 #include <vector>
 #include <string>
 #include <fstream>
-
 
 // 依赖库
 #include <capstone/capstone.h>
@@ -88,8 +93,11 @@ public:
         } else {
             std::cerr << "Failed to disassemble ELF file" << std::endl;
         }
+        
+        // 7. 关闭文件流
+        elf_file.close();
 
-        // 7. 关闭Capstone引擎
+        // 8. 关闭Capstone引擎
         close_capstone_engine();
         return 0;
     }
@@ -126,3 +134,5 @@ public:
 
     
 };
+
+#endif // LOADER_HPP

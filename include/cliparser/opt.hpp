@@ -1,6 +1,9 @@
 /// \file opt.hpp
 /// \brief 子命令 opt 的数据存储和业务实现
 
+#ifndef OPT_HPP
+#define OPT_HPP
+
 #include <iostream>
 #include <string>
 
@@ -30,3 +33,5 @@ public:
         
     }
 };
+
+#endif // OPT_HPP

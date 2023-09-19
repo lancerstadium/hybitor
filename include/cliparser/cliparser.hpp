@@ -1,9 +1,12 @@
 /// \file cliparser.h
-/// \brief 命令行子命令的业务路由与参数存储
+/// \brief CLI命令解析参数存储和业务路由
 
+#ifndef CLIPARSER_HPP
+#define CLIPARSER_HPP
 
 // 本地库
 #include "CLI11.hpp"
+#include "disassemble.hpp"
 #include "translate.hpp"
 #include "opt.hpp"
 
@@ -21,7 +24,8 @@ static string app_describe = "[hybitor] - a hybird binary translator based on Qe
 class cliparser {
 public:
     CLI::App app{app_describe};     // CLI 软件对象
-    STP stp;   // 子命令的参数存储对象 subcommand_paramters
+    SDP sdp;    // 子命令的参数存储对象 subcommand_paramters
+    STP stp;   
     SOP sop;
 
     cliparser() {}   // 构造函数
@@ -37,12 +41,14 @@ public:
         this->app.require_subcommand(0, 1);           // 表示程序子命令个数为0～1
 
         // --- CLI子命令设置 ---
-        // hybitor translate : 输入可执行ELF文件进行翻译，输出Host端可执行ELF文件。
-        auto subcommand_hello = this->app.add_subcommand("hello", "和用户打招呼\n(Say `Hello` to user.)");
-        auto subcommand_translate = this->app.add_subcommand("translate", "翻译可执行ELF文件到Host端\n(Translate ELF file to host architecture.)");
-        auto subcommand_opt = this->app.add_subcommand("opt", "优化LLVM中间表示文件\n(Optimizate .ll or .bc (LLVM IR)file.)");
+        // hybitor [subcommand] : 子命令定义
+        auto subcommand_hello = this->app.add_subcommand("hello", "和用户打招呼\nSay `Hello` to user.");
+        auto subcommand_disassemble = this->app.add_subcommand("disassemble", "反汇编可执行ELF文件\nDisassemble execuable ELF file.");
+        auto subcommand_translate = this->app.add_subcommand("translate", "翻译可执行ELF文件到Host端\nTranslate ELF file to host architecture.");
+        auto subcommand_opt = this->app.add_subcommand("opt", "优化LLVM中间表示文件\nOptimizate .ll or .bc LLVM IR file.");
         // 当出现的参数子命令解析不了时,尝试返回上一级主命令解析
         subcommand_hello->fallthrough();
+        subcommand_disassemble->fallthrough();
         subcommand_translate->fallthrough(); 
         subcommand_opt->fallthrough();   
 
@@ -51,7 +57,17 @@ public:
         {
 
         }
-        // 1.如果执行`translate`子命令，则检查参数
+        // 1.如果执行`disassemble`子命令，则检查参数
+        if(subcommand_disassemble)
+        {
+            // 初始化子命令参数
+            this->sdp = SDP();    // *修改这里*：子命令`disassemble`的参数存储对象  
+            // 检查输入文件是否存在，必选参数
+            subcommand_disassemble->add_option("file", this->sdp.in_file_path, "输入文件路径 Input file path")->check(CLI::ExistingFile)->required();
+            // 检查输出文件目录是否存在
+            subcommand_disassemble->add_option("-o", this->sdp.out_file_path, "输出文件路径 Output file path")->check(CLI::ExistingDirectory)->default_str("./");
+        }
+        // 2.如果执行`translate`子命令，则检查参数
         if(subcommand_translate)
         {
             // 初始化子命令参数
@@ -63,7 +79,7 @@ public:
             // 检查输出文件目录是否存在
             subcommand_translate->add_option("-o", this->stp.out_file_path, "输出文件路径 Output file path")->check(CLI::ExistingDirectory)->default_str("./");
         }
-        // 2.如果执行`opt`子命令，则检查参数
+        // 3.如果执行`opt`子命令，则检查参数
         if(subcommand_opt)
         {
             // 初始化子命令参数
@@ -97,7 +113,15 @@ public:
         {
             cout<<"Hello, welcome to hypitor!"<<endl;
         }
-        // 1.触发`translate`
+        // 1.触发`disassemble`
+        auto subcommand_disassemble = this->app.get_subcommand("disassemble");
+        if(subcommand_disassemble->parsed())
+        {
+            // this->stp.command_exec();
+            sdp.print_parsed_parameters();
+            sdp.command_exec();
+        }
+        // 2.触发`translate`
         auto subcommand_translate = this->app.get_subcommand("translate");
         if(subcommand_translate->parsed())
         {
@@ -105,7 +129,7 @@ public:
             stp.print_parsed_parameters();
             stp.command_exec();
         }
-        // 2.触发`opt`
+        // 3.触发`opt`
         auto subcommand_opt = this->app.get_subcommand("opt");
         if(subcommand_opt->parsed())
         {
@@ -117,12 +141,4 @@ public:
 }; // class cliparser
 
 
-
-
-
-
-
-
-
-
-
+#endif // CLIPARSER_HPP
