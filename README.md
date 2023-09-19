@@ -2,11 +2,11 @@
 
 ## 待办事项（TODO）
 
-| number | module | tools | address | yes or no |
+| number | module | tools | version | yes or no |
 |---|---|---|---|---|
-| 1 | clienv | CLI11 | CLIv2.3.2 | ✅ |
-| 2 | binaryfile |  |  |  |
-| 3 | disassembler |  |  |  |
+| 1 | clienv | CLI11 | CLI_v2.3.2 | ✅ |
+| 2 | binaryfile | libbfd |  |  |
+| 3 | disassembler | capstone | capstone_v5.0.0 |  |
 
 
 
@@ -108,4 +108,6 @@ project/
 
 
 
+
+export DYLD_LIBRARY_PATH=/opt/homebrew/Cellar/capstone/5.0.1/lib:$DYLD_LIBRARY_PATH
 
