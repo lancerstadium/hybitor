@@ -92,7 +92,9 @@ hybitor_EXTERNAL_OBJECTS =
 
 hybitor: CMakeFiles/hybitor.dir/src/main.cpp.o
 hybitor: CMakeFiles/hybitor.dir/build.make
-hybitor: /Users/lutianshuo/Documents/iterms/hybitor/lib/libcapstone-aarch64.a
+hybitor: /Users/lutianshuo/Documents/iterms/hybitor/lib/libcapstone-darwin-arm64.a
+hybitor: /Users/lutianshuo/Documents/iterms/hybitor/lib/libLIEF-darwin-arm64.a
+hybitor: /opt/homebrew/opt/llvm/lib/libLLVM.dylib
 hybitor: CMakeFiles/hybitor.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable hybitor"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/hybitor.dir/link.txt --verbose=$(VERBOSE)

@@ -5,6 +5,8 @@
 #define TRANSLATE_HPP
 
 
+#include "binaryfile/loader.hpp"
+#include "binaryfile/assembler.hpp"
 
 // @brief 子命令`translate`的参数存储类 subcommand_translate_paramters
 class STP 
@@ -31,6 +33,9 @@ public:
     void command_exec()
     {
         // TODO: Guest指令翻译到Host指令
+        loader ld = loader(this->in_file_path);
+        assembler as = assembler(ld, this->out_file_path);
+        as.file_to_block();
     }
 
 };

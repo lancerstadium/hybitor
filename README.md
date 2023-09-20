@@ -5,10 +5,10 @@
 | 编号(number) | 模块(module) | 头文件目录(headers) | 库(libs) | 完成 (finish) |
 |---|---|---|---|---|
 | 1 | 命令行 CLI | cliparser | CLI11_v2.3.2 | ✅ |
-| 2 | 文件读写 File | binaryfile | capstone_v5.0.0 | ✅ |
+| 2 | 文件读写 File | binaryfile | LIEF | ✅ |
 | 3 | 反汇编 Disassemble | capstone | capstone_v5.0.0 | ✅ |
-| 4 | 基本块 Basic Block | basicblock |  |  |
-| 5 | 中间码 LLVM IR | capstone2llvmir |  |  |
+| 4 | 中间码 LLVM IR | binaryfile | llvm_v16.0.6 | ✅ |
+| 5 | 基本块 Basic Block | basicblock |  |  |
 | 6 | 静态分析 Static Analysis |  |  |  |
 
 
@@ -20,7 +20,7 @@
 
 - `Hybitor` 是一个混合二进制翻译器（*Hybird Binary Translator*）：
   - 功能：输入 `Guest` 端 ELF 可执行文件，将其静态翻译为 `LLVM IR`，输出 `Host` 端 ELF 可执行文件；
-  - 依赖：`capstone-5.0.0`，`qemu-user-6.0`, `llvm-project-15.0`
+  - 依赖：`capstone-5.0.0`，`qemu-user-6.0.0`, `llvm-project-16.0.6`
   - 目标：模块化、效率、支持多种编译优化选项、支持Profile、多线程；
   - 应用场景：让`Guest`应用程序运行在不同体系架构的`Host`端主机上。
 
@@ -31,6 +31,7 @@
 
 ```shell
 apt install capstone5
+apt install llvm-16
 ```
 
 
@@ -90,4 +91,17 @@ project/
 
 
 
+## 1.2 GIT
 
+```shell
+
+
+```
+
+
+If you need to have llvm first in your PATH, run:
+  echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
+
+For compilers to find llvm you may need to set:
+  export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+  export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"

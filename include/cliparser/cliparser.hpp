@@ -7,6 +7,7 @@
 // 本地库
 #include "CLI11.hpp"
 #include "disassemble.hpp"
+#include "lift.hpp"
 #include "translate.hpp"
 #include "opt.hpp"
 
@@ -25,6 +26,7 @@ class cliparser {
 public:
     CLI::App app{app_describe};     // CLI 软件对象
     SDP sdp;    // 子命令的参数存储对象 subcommand_paramters
+    SLP slp;
     STP stp;   
     SOP sop;
 
@@ -44,11 +46,13 @@ public:
         // hybitor [subcommand] : 子命令定义
         auto subcommand_hello = this->app.add_subcommand("hello", "和用户打招呼\nSay `Hello` to user.");
         auto subcommand_disassemble = this->app.add_subcommand("disassemble", "反汇编可执行ELF文件\nDisassemble execuable ELF file.");
+        auto subcommand_lift = this->app.add_subcommand("lift", "提升可执行程序到 LLVM IR.\nLift file to LLVM IR.");
         auto subcommand_translate = this->app.add_subcommand("translate", "翻译可执行ELF文件到Host端\nTranslate ELF file to host architecture.");
         auto subcommand_opt = this->app.add_subcommand("opt", "优化LLVM中间表示文件\nOptimizate .ll or .bc LLVM IR file.");
         // 当出现的参数子命令解析不了时,尝试返回上一级主命令解析
         subcommand_hello->fallthrough();
         subcommand_disassemble->fallthrough();
+        subcommand_lift->fallthrough();
         subcommand_translate->fallthrough(); 
         subcommand_opt->fallthrough();   
 
@@ -67,7 +71,17 @@ public:
             // 检查输出文件目录是否存在
             subcommand_disassemble->add_option("-o", this->sdp.out_file_path, "输出文件路径 Output file path")->check(CLI::ExistingDirectory)->default_str("./");
         }
-        // 2.如果执行`translate`子命令，则检查参数
+        // 2.如果执行`lift`子命令，则检查参数
+        if(subcommand_lift)
+        {
+            // 初始化子命令参数
+            this->slp = SLP();    // *修改这里*：子命令`lift`的参数存储对象  
+            // 检查输入文件是否存在，必选参数
+            subcommand_lift->add_option("file", this->slp.in_file_path, "输入文件路径 Input file path")->check(CLI::ExistingFile)->required();
+            // 检查输出文件目录是否存在
+            subcommand_lift->add_option("-o", this->slp.out_file_path, "输出文件路径 Output file path")->check(CLI::ExistingDirectory)->default_str("./");
+        }
+        // 3.如果执行`translate`子命令，则检查参数
         if(subcommand_translate)
         {
             // 初始化子命令参数
@@ -79,7 +93,7 @@ public:
             // 检查输出文件目录是否存在
             subcommand_translate->add_option("-o", this->stp.out_file_path, "输出文件路径 Output file path")->check(CLI::ExistingDirectory)->default_str("./");
         }
-        // 3.如果执行`opt`子命令，则检查参数
+        // 4.如果执行`opt`子命令，则检查参数
         if(subcommand_opt)
         {
             // 初始化子命令参数
@@ -117,24 +131,26 @@ public:
         auto subcommand_disassemble = this->app.get_subcommand("disassemble");
         if(subcommand_disassemble->parsed())
         {
-            // this->stp.command_exec();
-            sdp.print_parsed_parameters();
             sdp.command_exec();
         }
-        // 2.触发`translate`
+        // 2.触发`lift`
+        auto subcommand_lift = this->app.get_subcommand("lift");
+        if(subcommand_lift->parsed())
+        {
+            slp.print_parsed_parameters();
+            slp.command_exec();
+        }
+        // 3.触发`translate`
         auto subcommand_translate = this->app.get_subcommand("translate");
         if(subcommand_translate->parsed())
         {
-            // this->stp.command_exec();
-            stp.print_parsed_parameters();
             stp.command_exec();
         }
-        // 3.触发`opt`
+        // 4.触发`opt`
         auto subcommand_opt = this->app.get_subcommand("opt");
         if(subcommand_opt->parsed())
         {
             sop.print_parsed_parameters();
-            // sop.command_exec();
         }
     }
 

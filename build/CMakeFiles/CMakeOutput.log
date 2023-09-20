@@ -284,3 +284,41 @@ Parsed CXX implicit link information from above output:
   implicit fwks: [/Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/System/Library/Frameworks]
 
 
+Performing C SOURCE FILE Test HAVE_FFI_CALL succeeded with the following output:
+Change Dir: /Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/CMakeScratch/TryCompile-8EaQ67
+
+Run Build Command(s):/opt/homebrew/bin/gmake -f Makefile cmTC_a1dd2/fast && /opt/homebrew/bin/gmake  -f CMakeFiles/cmTC_a1dd2.dir/build.make CMakeFiles/cmTC_a1dd2.dir/build
+gmake[1]: Entering directory '/Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/CMakeScratch/TryCompile-8EaQ67'
+Building C object CMakeFiles/cmTC_a1dd2.dir/src.c.o
+/Library/Developer/CommandLineTools/usr/bin/cc -DHAVE_FFI_CALL  -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk -MD -MT CMakeFiles/cmTC_a1dd2.dir/src.c.o -MF CMakeFiles/cmTC_a1dd2.dir/src.c.o.d -o CMakeFiles/cmTC_a1dd2.dir/src.c.o -c /Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/CMakeScratch/TryCompile-8EaQ67/src.c
+Linking C executable cmTC_a1dd2
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a1dd2.dir/link.txt --verbose=1
+/Library/Developer/CommandLineTools/usr/bin/cc  -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_a1dd2.dir/src.c.o -o cmTC_a1dd2  /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/lib/libffi.tbd 
+gmake[1]: Leaving directory '/Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/CMakeScratch/TryCompile-8EaQ67'
+
+
+Source file was:
+
+    struct ffi_cif;
+    typedef struct ffi_cif ffi_cif;
+    void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue);
+    int main(void) { ffi_call(0, 0, 0, 0); }
+
+Performing C SOURCE FILE Test Terminfo_LINKABLE succeeded with the following output:
+Change Dir: /Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/CMakeScratch/TryCompile-oHQWyD
+
+Run Build Command(s):/opt/homebrew/bin/gmake -f Makefile cmTC_e5ba7/fast && /opt/homebrew/bin/gmake  -f CMakeFiles/cmTC_e5ba7.dir/build.make CMakeFiles/cmTC_e5ba7.dir/build
+gmake[1]: Entering directory '/Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/CMakeScratch/TryCompile-oHQWyD'
+Building C object CMakeFiles/cmTC_e5ba7.dir/src.c.o
+/Library/Developer/CommandLineTools/usr/bin/cc -DTerminfo_LINKABLE  -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk -MD -MT CMakeFiles/cmTC_e5ba7.dir/src.c.o -MF CMakeFiles/cmTC_e5ba7.dir/src.c.o.d -o CMakeFiles/cmTC_e5ba7.dir/src.c.o -c /Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/CMakeScratch/TryCompile-oHQWyD/src.c
+Linking C executable cmTC_e5ba7
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e5ba7.dir/link.txt --verbose=1
+/Library/Developer/CommandLineTools/usr/bin/cc  -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_e5ba7.dir/src.c.o -o cmTC_e5ba7  /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/lib/libcurses.tbd 
+gmake[1]: Leaving directory '/Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/CMakeScratch/TryCompile-oHQWyD'
+
+
+Source file was:
+
+    int setupterm(char *term, int filedes, int *errret);
+    int main(void) { return setupterm(0, 0, 0); }
+

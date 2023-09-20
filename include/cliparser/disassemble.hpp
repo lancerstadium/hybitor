@@ -31,7 +31,7 @@ public:
     void command_exec()
     {
         loader ld = loader(this->in_file_path);
-        ld.load_elf_file();
+        ld.load_disassemble_file();
     }
 
 };

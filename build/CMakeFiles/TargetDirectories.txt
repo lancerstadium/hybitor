@@ -1,3 +1,7 @@
+/Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/intrinsics_gen.dir
+/Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/omp_gen.dir
+/Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/acc_gen.dir
+/Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/RISCVTargetParserTableGen.dir
 /Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/hybitor.dir
 /Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/edit_cache.dir
 /Users/lutianshuo/Documents/iterms/hybitor/build/CMakeFiles/rebuild_cache.dir
