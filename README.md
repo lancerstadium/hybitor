@@ -2,7 +2,7 @@
 
 ## 待办事项（TODO）
 
-| 编号(number) | 模块(module) | 命令(command) | 头文件目录(headers) | 库(libs) | 完成 (finish) |
+| 编号(number) | 模块(module) | 头文件目录(headers) | 命令(command) | 库(libs) | 完成 (finish) |
 |---|---|---|---|---|---|
 | 1 | 命令行 CLI | cliparser | `./hybitor -h` | CLI11_v2.3.2 | ✅ |
 | 2 | 文件读写 File | binaryfile | `./hybitor [subcommand] [binary_file] -o [llvm_ir_file.ll]` | LIEF | ✅ |
