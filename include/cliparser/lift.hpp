@@ -5,8 +5,9 @@
 #define LIFT_HPP
 
 
-#include "binaryfile/loader.hpp"
-#include "binaryfile/assembler.hpp"
+#include "binaryfile/lifter.hpp"
+
+
 
 // @brief 子命令`lift的参数存储类 subcommand_lift_paramters
 class SLP 
@@ -14,8 +15,11 @@ class SLP
 public:
     string in_file_path;    // 输入文件路径
     string out_file_path;   // 输出文件路径
+    string Default_OLFP = "./output.ll";  // 默认输出路径 default_output_lift_file_path
 
-    SLP() {}  // 构造函数
+    /// @brief 构造函数
+    SLP() {}
+
     ~SLP() {} // 析构函数
 
 
@@ -30,9 +34,8 @@ public:
     /// @return 错误信息
     void command_exec()
     {
-        loader ld = loader(this->in_file_path);
-        assembler as = assembler(ld, this->out_file_path);
-        as.file_to_block();
+        lifter lt = lifter(this->in_file_path, this->out_file_path);
+        lt.lift_to_ll_file();
     }
 
 };

@@ -435,7 +435,7 @@ CMakeFiles/hybitor.dir/src/main.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/map \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/sstream \
   /Users/lutianshuo/Documents/iterms/hybitor/include/cliparser/disassemble.hpp \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/binaryfile/loader.hpp \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/binaryfile/disassembler.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/capstone/capstone.h \
   /Users/lutianshuo/Documents/iterms/hybitor/include/capstone/platform.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/stdbool.h \
@@ -462,8 +462,136 @@ CMakeFiles/hybitor.dir/src/main.cpp.o: \
   /Users/lutianshuo/Documents/iterms/hybitor/include/capstone/bpf.h \
   /Users/lutianshuo/Documents/iterms/hybitor/include/capstone/sh.h \
   /Users/lutianshuo/Documents/iterms/hybitor/include/capstone/tricore.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/cliparser/lift.hpp \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/binaryfile/assembler.hpp \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/LLVMContext.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm-c/Types.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm-c/DataTypes.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm-c/ExternC.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/DiagnosticHandler.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/StringRef.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/DenseMapInfo.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/STLFunctionalExtras.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/STLForwardCompat.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/iterator_range.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/Compiler.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Config/llvm-config.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/CBindingWrapping.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/Casting.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/type_traits.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/FixedMetadataKinds.def \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Module.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/STLExtras.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/Hashing.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/DataTypes.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/ErrorHandling.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/SwapByteOrder.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/bit.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/identity.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/iterator.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Config/abi-breaking.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/StringMap.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/StringMapEntry.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/AllocatorBase.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/MemAlloc.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/PointerLikeTypeTraits.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Attributes.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ArrayRef.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/SmallVector.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/array \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/BitmaskEnum.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/MathExtras.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/SmallString.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/Alignment.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/CodeGen.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Attributes.inc \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Comdat.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/SmallPtrSet.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/EpochTracker.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/ReverseIteration.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/DataLayout.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/APInt.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/DerivedTypes.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Type.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/TypeSize.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/raw_ostream.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/TrailingObjects.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/AlignOf.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Function.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/DenseSet.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/DenseMap.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/Twine.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ilist_node.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ilist_node_base.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/PointerIntPair.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ilist_node_options.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Argument.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Value.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Use.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Value.def \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/BasicBlock.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ilist.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/simple_ilist.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ilist_base.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ilist_iterator.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Instruction.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/Bitfields.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/DebugLoc.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/TrackingMDRef.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Metadata.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/PointerUnion.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Constant.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/User.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Metadata.def \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/SymbolTableListTraits.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/AtomicOrdering.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Instruction.def \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/CallingConv.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/GlobalObject.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/GlobalValue.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/MD5.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/Endian.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/OperandTraits.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/GlobalAlias.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/GlobalIFunc.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/GlobalVariable.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/ProfileSummary.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/IRBuilder.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/ConstantFolder.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Constants.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/APFloat.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/FloatingPointMode.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/StringSwitch.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/ConstantFold.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/InstrTypes.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/Sequence.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/IRBuilderFolder.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Operator.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/MapVector.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/FMF.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/FPEnv.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Instructions.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/CFG.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/GraphTraits.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Intrinsics.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/IntrinsicEnums.inc \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/ValueHandle.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Verifier.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/PassManager.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/TinyPtrVector.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/PassInstrumentation.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/Any.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/FunctionExtras.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/PassManagerInternal.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/TimeProfiler.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/Error.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm-c/Error.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/StringExtras.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/APSInt.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/Debug.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/ErrorOr.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/Format.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/TypeName.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/list \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/binaryfile/loader.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/LIEF.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/config.h \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/Abstract.hpp \
@@ -479,7 +607,6 @@ CMakeFiles/hybitor.dir/src/main.cpp.o: \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/span.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/third-party/span.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/third-party/internal/span.hpp \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/array \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/Abstract/Header.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/Abstract/enums.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/Abstract/Function.hpp \
@@ -617,7 +744,6 @@ CMakeFiles/hybitor.dir/src/main.cpp.o: \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/PE/ResourceData.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/PE/ResourceNode.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/PE/ResourceDirectory.hpp \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/list \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/PE/resources/LangCodeItem.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/PE/resources/ResourceFixedFileInfo.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/PE/resources/ResourceStringFileInfo.hpp \
@@ -737,117 +863,9 @@ CMakeFiles/hybitor.dir/src/main.cpp.o: \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/logging.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/platforms.hpp \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/TargetConditionals.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/STLExtras.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/Hashing.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/DataTypes.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm-c/DataTypes.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/ErrorHandling.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/Compiler.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Config/llvm-config.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/SwapByteOrder.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/bit.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/type_traits.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/STLForwardCompat.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/STLFunctionalExtras.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/identity.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/iterator.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/iterator_range.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Config/abi-breaking.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/BasicBlock.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm-c/Types.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm-c/ExternC.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/Twine.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/SmallVector.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/StringRef.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/DenseMapInfo.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ilist.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/simple_ilist.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ilist_base.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ilist_node_base.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/PointerIntPair.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/PointerLikeTypeTraits.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ilist_iterator.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ilist_node.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ilist_node_options.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Instruction.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/ArrayRef.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/Bitfields.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/DebugLoc.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/TrackingMDRef.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Metadata.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/DenseMap.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/EpochTracker.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/AlignOf.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/MathExtras.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/MemAlloc.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/ReverseIteration.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/PointerUnion.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/Casting.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Constant.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/User.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Use.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/CBindingWrapping.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Value.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/Alignment.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Value.def \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/LLVMContext.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/DiagnosticHandler.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/FixedMetadataKinds.def \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Metadata.def \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/SymbolTableListTraits.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/AtomicOrdering.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Instruction.def \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Function.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/DenseSet.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Argument.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Attributes.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/BitmaskEnum.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/SmallString.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/CodeGen.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Attributes.inc \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/CallingConv.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/DerivedTypes.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Type.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/TypeSize.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/raw_ostream.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/GlobalObject.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/GlobalValue.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/MD5.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/Endian.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/OperandTraits.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/IRBuilder.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/ConstantFolder.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Constants.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/APFloat.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/APInt.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/FloatingPointMode.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/StringSwitch.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/ConstantFold.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/InstrTypes.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/Sequence.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/StringMap.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/StringMapEntry.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/AllocatorBase.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/IRBuilderFolder.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Operator.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/MapVector.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/FMF.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/DataLayout.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/TrailingObjects.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/FPEnv.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/GlobalVariable.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Instructions.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/CFG.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/GraphTraits.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Intrinsics.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/IntrinsicEnums.inc \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Module.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/Comdat.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/ADT/SmallPtrSet.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/GlobalAlias.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/GlobalIFunc.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/ProfileSummary.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/IR/ValueHandle.h \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/binaryfile/writer.hpp \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/cliparser/lift.hpp \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/binaryfile/lifter.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/TargetSelect.h \
   /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Config/Targets.def \
   /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Config/AsmPrinters.def \

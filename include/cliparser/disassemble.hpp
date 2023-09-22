@@ -5,7 +5,8 @@
 #define DISASSEMBLE_HPP
 
 // 本地库
-#include "binaryfile/loader.hpp"
+#include "binaryfile/disassembler.hpp"
+
 
 
 // @brief 子命令`disassemble`的参数存储类 subcommand_disassemble_paramters
@@ -14,8 +15,12 @@ class SDP
 public:
     string in_file_path;    // 输入文件路径
     string out_file_path;   // 输出文件路径
+    string Default_ODFP = "./output.S";   // 默认输出路径：default_output_disassemble_file_path
+    
 
-    SDP() {}  // 构造函数
+    /// @brief 构造函数
+    SDP() {}
+
     ~SDP() {} // 析构函数
 
 
@@ -30,8 +35,8 @@ public:
     /// @return 错误信息
     void command_exec()
     {
-        loader ld = loader(this->in_file_path);
-        ld.load_disassemble_file();
+        disassembler das = disassembler(this->in_file_path, this->out_file_path);
+        das.load_and_disassemble_file();
     }
 
 };

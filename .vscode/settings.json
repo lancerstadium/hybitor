@@ -79,7 +79,14 @@
         "optional": "cpp",
         "stack": "cpp",
         "variant": "cpp",
-        "list": "cpp"
+        "list": "cpp",
+        "charconv": "cpp",
+        "condition_variable": "cpp",
+        "forward_list": "cpp",
+        "future": "cpp",
+        "queue": "cpp",
+        "unordered_set": "cpp",
+        "__verbose_abort": "cpp"
     },
     "cmake.configureOnOpen": false
 }
