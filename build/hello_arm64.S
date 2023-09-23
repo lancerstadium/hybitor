@@ -1,4 +1,4 @@
-Section: __text
+Section :__text
 0x100003f68: sub sp, sp, #0x20
 0x100003f6c: stp x29, x30, [sp, #0x10]
 0x100003f70: add x29, sp, #0x10
@@ -12,13 +12,13 @@ Section: __text
 0x100003f90: ldp x29, x30, [sp, #0x10]
 0x100003f94: add sp, sp, #0x20
 0x100003f98: ret 
-Section: __stubs
+Section :__stubs
 0x100003f9c: adrp x16, #0x100004000
 0x100003fa0: ldr x16, [x16]
 0x100003fa4: br x16
-Section: __cstring
+Section :__cstring
 0x100003fa8: ldnp d8, d25, [x11, #-0x140]
-Section: __unwind_info
+Section :__unwind_info
 0x100003fb8: udf #1
 0x100003fbc: udf #0x1c
 0x100003fc0: udf #0
@@ -33,5 +33,5 @@ Section: __unwind_info
 0x100003fe4: udf #0
 0x100003fe8: udf #0x34
 0x100003fec: udf #3
-Section: __got
+Section :__got
 0x100004000: udf #0
