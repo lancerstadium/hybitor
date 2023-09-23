@@ -5,7 +5,7 @@
 #define LIFT_HPP
 
 
-#include "binaryfile/lifter.hpp"
+#include "core/lifter.hpp"
 
 
 

@@ -5,7 +5,7 @@
 #define DISASSEMBLE_HPP
 
 // 本地库
-#include "binaryfile/disassembler.hpp"
+#include "core/disassembler.hpp"
 
 
 
@@ -36,7 +36,7 @@ public:
     void command_exec()
     {
         disassembler das = disassembler(this->in_file_path, this->out_file_path);
-        das.load_and_disassemble_file();
+        das.write_to_asm_file();
     }
 
 };

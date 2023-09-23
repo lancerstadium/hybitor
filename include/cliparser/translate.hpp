@@ -5,7 +5,7 @@
 #define TRANSLATE_HPP
 
 
-#include "binaryfile/disassembler.hpp"
+#include "core/disassembler.hpp"
 
 // @brief 子命令`translate`的参数存储类 subcommand_translate_paramters
 class STP 

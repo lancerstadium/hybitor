@@ -151,6 +151,7 @@ hybitor/
 git add .
 git commmit -m 'your_commit_context'
 git push
+git tag 
 ```
 
 ---

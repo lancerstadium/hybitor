@@ -435,7 +435,7 @@ CMakeFiles/hybitor.dir/src/main.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/map \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/sstream \
   /Users/lutianshuo/Documents/iterms/hybitor/include/cliparser/disassemble.hpp \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/binaryfile/disassembler.hpp \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/core/disassembler.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/capstone/capstone.h \
   /Users/lutianshuo/Documents/iterms/hybitor/include/capstone/platform.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/stdbool.h \
@@ -591,7 +591,7 @@ CMakeFiles/hybitor.dir/src/main.cpp.o: \
   /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/Format.h \
   /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/TypeName.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/list \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/binaryfile/loader.hpp \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/core/loader.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/LIEF.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/config.h \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/Abstract.hpp \
@@ -863,9 +863,9 @@ CMakeFiles/hybitor.dir/src/main.cpp.o: \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/logging.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/LIEF/platforms.hpp \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/TargetConditionals.h \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/binaryfile/writer.hpp \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/core/writer.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/cliparser/lift.hpp \
-  /Users/lutianshuo/Documents/iterms/hybitor/include/binaryfile/lifter.hpp \
+  /Users/lutianshuo/Documents/iterms/hybitor/include/core/lifter.hpp \
   /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Support/TargetSelect.h \
   /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Config/Targets.def \
   /Users/lutianshuo/Documents/iterms/hybitor/include/llvm/Config/AsmPrinters.def \
