@@ -86,7 +86,10 @@
         "future": "cpp",
         "queue": "cpp",
         "unordered_set": "cpp",
-        "__verbose_abort": "cpp"
+        "__verbose_abort": "cpp",
+        "shared_mutex": "cpp",
+        "thread": "cpp",
+        "cassert": "cpp"
     },
     "cmake.configureOnOpen": false
 }

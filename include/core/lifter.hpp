@@ -76,8 +76,7 @@ public:
         this->das.ld.parse_binary_file();
 
         // 3. 打开 Capstone 引擎
-        //this->das.open_capstone_engine(CS_ARCH_X86, CS_MODE_64);
-        this->das.open_capstone_engine(CS_ARCH_ARM64, CS_MODE_ARM);
+        this->das.open_capstone_engine();
 
         // 4. 使用 Capstone 反汇编并将指令添加到基本块
         cs_insn *insn;

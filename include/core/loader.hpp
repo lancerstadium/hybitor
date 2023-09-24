@@ -29,7 +29,8 @@ private:
 public:
 
     string input_file_name;   // 待解析二进制文件名
-    std::__1::unique_ptr<LIEF::Binary> binary;  // 二进制文件
+    std::unique_ptr<LIEF::Binary> binary;  // 二进制文件
+    LIEF::OBJECT_TYPES type;    // 二进制文件类型
     
 
     // --------- loader build 构造&析构区 ---------
@@ -54,6 +55,7 @@ public:
         try {
             // 解析二进制文件
             this->binary = LIEF::Parser::parse(this->input_file_name);
+            this->type = this->binary->header().object_type();
 
         } catch (const std::exception& e) {
             std::cerr << "Error parsing binary: " << e.what() << std::endl;

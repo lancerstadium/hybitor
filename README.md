@@ -151,7 +151,8 @@ hybitor/
 git add .
 git commmit -m 'your_commit_context'
 git push
-git tag 
+git tag -a [tag_version] -m 'your_tag_comtext'
+git push origin [tag_version]
 ```
 
 ---

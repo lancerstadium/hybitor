@@ -62,7 +62,7 @@ private:
             {
                 continue;
             }
-            this->wt.asm_file << "Section: " << section.name() << std::endl;
+            this->wt.asm_file << "Section :" << section.name() << std::endl;
 
             count = cs_disasm(this->handle, section.content().data(), section.content().size(), section.virtual_address(), 0, &insn);
             if (count > 0)
@@ -72,7 +72,7 @@ private:
                     // 输出到文件  
                     this->wt.asm_file << "0x" << std::hex << insn[i].address << ": " << insn[i].mnemonic << " " << insn[i].op_str << std::endl;
                 }
-                cout << "Section: [" << section.name()  << "] writting to file: " << this->wt.final_output_file << endl;
+                cout << "Section [" << section.name()  << "] writting to file: " << this->wt.final_output_file << endl;
                 // 释放 Capstone 资源
                 cs_free(insn, count);
             }
@@ -81,9 +81,11 @@ private:
     }
 
 public:
-    csh handle; // Capstone 引擎句柄
-    loader ld;  // 文件加载器
-    writer wt;  // 文件输出器
+    csh handle;     // Capstone 引擎句柄
+    cs_arch arch;   // 文件体系结构
+    cs_mode mode;   // 文件模式
+    loader ld;      // 文件加载器
+    writer wt;      // 文件输出器
 
     // --------- disassembler Build 构造操作 ---------
 
@@ -111,6 +113,19 @@ public:
         return true;
     }
 
+    /// @brief 自动初始化Capstone引擎，与 `close_capstone_engine` 结合使用
+    /// @return 是否成功打开引擎
+    bool open_capstone_engine()
+    {
+        parse_bianry_file_header();
+        if (cs_open(this->arch, this->mode, &this->handle) != CS_ERR_OK)
+        {
+            std::cerr << "Failed to initialize Capstone" << std::endl;
+            return false;
+        }
+        return true;
+    }
+
     /// @brief 设置 capstone 引擎选项
     /// @param type 引擎运行时设置类型
     /// @param value 相关值
@@ -127,6 +142,58 @@ public:
 
     // --------- disassembler 反汇编接口区 ---------
 
+    /// @brief 映射表：解析二进制文件头部，并匹配 arch 和 mode 信息
+    void parse_bianry_file_header()
+    {
+        LIEF::Header header = this->ld.binary->header();
+        switch (header.architecture())
+        {
+        case LIEF::ARCHITECTURES::ARCH_X86:
+            this->arch = CS_ARCH_X86;
+            if (header.is_32()) {
+                this->mode = CS_MODE_32;
+            } else if (header.is_64()) {
+                this->mode = CS_MODE_64;
+            } else {
+                this->mode = CS_MODE_LITTLE_ENDIAN;
+            }
+            break;
+        case LIEF::ARCHITECTURES::ARCH_MIPS:
+            this->arch = CS_ARCH_MIPS;
+            if (header.is_32()) {
+                this->mode = CS_MODE_MIPS32;
+            } else if (header.is_64()) {
+                this->mode = CS_MODE_MIPS64;
+            } else {
+                this->mode = CS_MODE_LITTLE_ENDIAN;
+            }
+            break;
+        case LIEF::ARCHITECTURES::ARCH_RISCV:
+            this->arch = CS_ARCH_RISCV;
+            if (header.is_32()) {
+                this->mode = CS_MODE_RISCV32;
+            } else if (header.is_64()) {
+                this->mode = CS_MODE_RISCV64;
+            } else {
+                this->mode = CS_MODE_LITTLE_ENDIAN;
+            }
+            break;
+        case LIEF::ARCHITECTURES::ARCH_ARM64:
+            this->arch = CS_ARCH_ARM64;
+            this->mode = CS_MODE_LITTLE_ENDIAN;
+            break;
+        case LIEF::ARCHITECTURES::ARCH_ARM:
+            this->arch = CS_ARCH_ARM;
+            this->mode = CS_MODE_ARM;
+            break;
+        default:
+            this->arch = CS_ARCH_ALL;
+            this->mode = CS_MODE_LITTLE_ENDIAN;
+            break;
+        }
+    }
+
+
     /// @brief 加载 ELF 文件并反汇编
     /// @return 错误信息
     bool load_and_disassemble_file()
@@ -137,10 +204,9 @@ public:
             return false;
         }
         // 2. 初始化 Capstone 引擎
-        // this->open_capstone_engine(CS_ARCH_X86, CS_MODE_64);
-        this->open_capstone_engine(CS_ARCH_ARM64, CS_MODE_ARM);
+        this->open_capstone_engine();
         // 3. 设置反汇编选项
-        this->set_cs_option(CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
+        this->set_cs_option(CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
         // 4. 打印反汇编ELF文件内容
         this->print_disassemble_file();
         // 5. 关闭 Capstone 引擎
@@ -161,14 +227,11 @@ public:
             return false;
         }
         // 3. 初始化 Capstone 引擎
-        // this->open_capstone_engine(CS_ARCH_X86, CS_MODE_64);
-        this->open_capstone_engine(CS_ARCH_ARM64, CS_MODE_ARM);
+        this->open_capstone_engine();
         // 4. 设置反汇编选项
-        this->set_cs_option(CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
-
+        this->set_cs_option(CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
         // 5. 反汇编写入汇编文件
         this->write_in_assemble_file();
-
         // 6. 关闭asm输出文件流
         this->wt.close_output_asm_file();
         // 7. 关闭 Capstone 引擎
