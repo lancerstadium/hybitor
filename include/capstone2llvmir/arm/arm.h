@@ -1,7 +1,6 @@
 /**
  * @file include/capstone2llvmir/arm/arm.h
  * @brief ARM specialization of translator's abstract public interface.
- * @copyright (c) 2017 Avast Software, licensed under the MIT license
  */
 
 #ifndef CAPSTONE2LLVMIR_ARM_ARM_H

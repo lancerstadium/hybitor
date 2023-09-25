@@ -118,7 +118,7 @@ class Capstone2LlvmIrTranslatorArm_impl :
 		virtual uint8_t getOperandAccess(cs_arm_op& op) override;
 //
 //==============================================================================
-// ARM实施数据。
+// ARM指令数据
 //==============================================================================
 //
 	protected:
@@ -130,7 +130,7 @@ class Capstone2LlvmIrTranslatorArm_impl :
 					llvm::IRBuilder<>&)> _i2fm;
 //
 //==============================================================================
-// ARM instruction translation methods.
+// ARM指令翻译方法
 //==============================================================================
 //
 	protected:

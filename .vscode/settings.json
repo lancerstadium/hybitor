@@ -89,7 +89,8 @@
         "__verbose_abort": "cpp",
         "shared_mutex": "cpp",
         "thread": "cpp",
-        "cassert": "cpp"
+        "cassert": "cpp",
+        "regex": "cpp"
     },
     "cmake.configureOnOpen": false
 }

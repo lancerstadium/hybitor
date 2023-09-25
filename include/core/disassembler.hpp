@@ -19,75 +19,17 @@
 /// @brief 反汇编器
 class disassembler
 {
-private:
-    // --------- disassembler 反汇编操作区 ---------
 
-    /// @brief 打印反汇编后的二进制文件信息
-    /// @return 错误信息
-    int print_disassemble_file()
-    {
-        cs_insn *insn; // 存储反汇编指令
-        size_t count;  // 反汇编指令个数
-        for (const auto &section : this->ld.binary->sections())
-        {
-            if (section.content().empty())
-            {
-                continue;
-            }
-            count = cs_disasm(this->handle, section.content().data(), section.content().size(), section.virtual_address(), 0, &insn);
-            if (count > 0)
-            {
-                for (size_t i = 0; i < count; ++i)
-                {
-                    // 打印反汇编指令
-                    printf("0x%" PRIx64 ": %s %s\n", insn[i].address, insn[i].mnemonic, insn[i].op_str);
-                }
-                // 释放 Capstone 资源
-                cs_free(insn, count);
-            }
-        }
-        return 0;
-    }
-
-    /// @brief 写入汇编文件
-    /// @return 错误信息
-    int write_in_assemble_file()
-    {
-        cout << "Writting ..." << endl;
-        cs_insn *insn; // 存储反汇编指令
-        size_t count;  // 反汇编指令个数
-        for (const auto &section : this->ld.binary->sections())
-        {
-            if (section.content().empty())
-            {
-                continue;
-            }
-            this->wt.asm_file << "Section :" << section.name() << std::endl;
-
-            count = cs_disasm(this->handle, section.content().data(), section.content().size(), section.virtual_address(), 0, &insn);
-            if (count > 0)
-            {
-                for (size_t i = 0; i < count; ++i)
-                {
-                    // 输出到文件  
-                    this->wt.asm_file << "0x" << std::hex << insn[i].address << ": " << insn[i].mnemonic << " " << insn[i].op_str << std::endl;
-                }
-                cout << "Section [" << section.name()  << "] writting to file: " << this->wt.final_output_file << endl;
-                // 释放 Capstone 资源
-                cs_free(insn, count);
-            }
-        }
-        return 0;
-    }
 
 public:
     csh handle;     // Capstone 引擎句柄
     cs_arch arch;   // 文件体系结构
     cs_mode mode;   // 文件模式
+    cs_mode extra_mode; // 额外模式
     loader ld;      // 文件加载器
     writer wt;      // 文件输出器
 
-    // --------- disassembler Build 构造操作 ---------
+// ------------- disassembler Build 构造操作 ------------- //
 
     /// @brief 构造函数
     /// @param input_file 输入文件
@@ -140,7 +82,14 @@ public:
         cs_close(&this->handle);
     }
 
-    // --------- disassembler 反汇编接口区 ---------
+    /// @brief 设置新的基本模式
+    /// @param new_basic_mode 设置新的基本模式
+    void set_cs_basic_mode(cs_mode new_basic_mode)
+    {
+        this->mode = new_basic_mode;
+    }
+
+// ------------- disassembler 反汇编接口区 ------------- //
 
     /// @brief 映射表：解析二进制文件头部，并匹配 arch 和 mode 信息
     void parse_bianry_file_header()
@@ -238,6 +187,68 @@ public:
         this->close_capstone_engine();
         return true;
     }
+private:
+
+// ------------- disassembler 反汇编操作区 ------------- //
+
+    /// @brief 打印反汇编后的二进制文件信息
+    /// @return 错误信息
+    int print_disassemble_file()
+    {
+        cs_insn *insn; // 存储反汇编指令
+        size_t count;  // 反汇编指令个数
+        for (const auto &section : this->ld.binary->sections())
+        {
+            if (section.content().empty())
+            {
+                continue;
+            }
+            count = cs_disasm(this->handle, section.content().data(), section.content().size(), section.virtual_address(), 0, &insn);
+            if (count > 0)
+            {
+                for (size_t i = 0; i < count; ++i)
+                {
+                    // 打印反汇编指令
+                    printf("0x%" PRIx64 ": %s %s\n", insn[i].address, insn[i].mnemonic, insn[i].op_str);
+                }
+                // 释放 Capstone 资源
+                cs_free(insn, count);
+            }
+        }
+        return 0;
+    }
+
+    /// @brief 写入汇编文件
+    /// @return 错误信息
+    int write_in_assemble_file()
+    {
+        cout << "Writting ..." << endl;
+        cs_insn *insn; // 存储反汇编指令
+        size_t count;  // 反汇编指令个数
+        for (const auto &section : this->ld.binary->sections())
+        {
+            if (section.content().empty())
+            {
+                continue;
+            }
+            this->wt.asm_file << "Section :" << section.name() << std::endl;
+
+            count = cs_disasm(this->handle, section.content().data(), section.content().size(), section.virtual_address(), 0, &insn);
+            if (count > 0)
+            {
+                for (size_t i = 0; i < count; ++i)
+                {
+                    // 输出到文件  
+                    this->wt.asm_file << "0x" << std::hex << insn[i].address << ": " << insn[i].mnemonic << " " << insn[i].op_str << std::endl;
+                }
+                cout << "Section [" << section.name()  << "] writting to file: " << this->wt.final_output_file << endl;
+                // 释放 Capstone 资源
+                cs_free(insn, count);
+            }
+        }
+        return 0;
+    }
+
 };
 
 #endif // DISASSEMBLER_HPP

@@ -7,20 +7,29 @@
 | 1 | 命令行 CLI | cliparser | `./hybitor -h` | CLI11_v2.3.2 | ✅ |
 | 2 | 文件读写 File | binaryfile | `./hybitor [subcommand] [binary_file] -o [llvm_ir_file.ll]` | LIEF | ✅ |
 | 3 | 反汇编 Disassemble | capstone | `./hybitor disassemble [binary_file]` | capstone_v5.0.0 | ✅ |
-| 4 | 中间码生成 LLVM IR Generate | binaryfile | `/hybitor lift [binary_file] -o [llvm_ir_file.ll]` | retdec / HQEMU | ✅ |
+| 4 | 中间码生成 LLVM IR Generate | lift | `/hybitor lift [binary_file] -o [llvm_ir_file.ll]` | retdec / HQEMU | ℹ️ |
 | 5 | 基本块 Basic Block | basicblock | `` | llvm_v16.0.6 |  |
-| 6 | 静态分析 Static Analysis |  | `` | LLVM BOLT |  |
-| 7 | 中间码优化 Optimization |  | `` | LLVM Pass |  |
-| 8 | 动态执行 JIT |  | `` | LLVM JIT / Instrew / QEMU |  |
-| 9 | 静态编译 Compile |  | `` | LLVM Back-End |  |
-| 10 | Profile support |  | `` | LLVM BOLT & Perf |  |
-| 11 | Client/Server 架构 |  | `` | Instrew |  |
-| 12 | 多线程 Muti Thread |  | `` | HQEMU |  |
-| 13 | 自动化并行 Parallel |  | `` | LLVM Polly |  |
-| 14 | 机器学习指导优化 Machine Learning |  | `` | MLGO / CompilerGym |  |
+| 6 | 控制流重构 CFG | cfgform | `` | llvm_v16.0.6 |  |
+| 7 | 静态分析 Static Analysis |  | `` | LLVM BOLT |  |
+| 8 | 中间码优化 Optimization |  | `` | LLVM Pass |  |
+| 9 | 动态执行 JIT |  | `` | LLVM JIT / Instrew / QEMU |  |
+| 10 | 静态编译 Compile |  | `` | LLVM Back-End |  |
+| 11 | Profile support |  | `` | LLVM BOLT & Perf |  |
+| 12 | Client/Server 架构 |  | `` | Instrew |  |
+| 13 | 多线程 Muti Thread |  | `` | HQEMU |  |
+| 14 | 自动化并行 Parallel |  | `` | LLVM Polly |  |
+| 15 | 机器学习指导优化 Machine Learning |  | `` | MLGO / CompilerGym |  |
 
-
-
+- 帮助：
+![Alt text](imgs/image.png)
+- 反汇编：
+![Alt text](imgs/image-1.png)
+- 汇编文件：
+![Alt text](imgs/image-2.png)
+- 代码提升：
+![Alt text](imgs/image-3.png)
+- `.ll`文件：基本块划分、控制流重构
+![Alt text](imgs/image-4.png)
 
 ## 0 项目说明
 

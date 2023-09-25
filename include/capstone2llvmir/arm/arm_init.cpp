@@ -1,7 +1,6 @@
 /**
- * @file src/capstone2llvmir/arm/arm_init.cpp
- * @brief Initializations for ARM implementation of @c Capstone2LlvmIrTranslator.
- * @copyright (c) 2017 Avast Software, licensed under the MIT license
+ * @file include/capstone2llvmir/arm/arm_init.cpp
+ * @brief ARM的`Capstone2LlvmIrTranslator`实现初始化。
  */
 
 #include "capstone2llvmir/arm/arm_impl.h"

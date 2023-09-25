@@ -189,9 +189,7 @@ class Capstone2LlvmIrTranslatorArm64_impl :
 		/// Mapping from register to its parent register
 		std::map<uint32_t, uint32_t> _reg2parentMap;
 
-		static std::map<
-			std::size_t,
-			_translator_fnc> _i2fm;
+		static std::map<std::size_t,_translator_fnc> _i2fm;
 //
 //==============================================================================
 // ARM64 instruction translation methods.

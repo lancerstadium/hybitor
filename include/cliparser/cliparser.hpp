@@ -5,11 +5,11 @@
 #define CLIPARSER_HPP
 
 // 本地库
-#include "CLI11.hpp"
-#include "disassemble.hpp"
-#include "lift.hpp"
-#include "translate.hpp"
-#include "opt.hpp"
+#include "cliparser/CLI11.hpp"
+#include "cliparser/disassemble.hpp"
+#include "cliparser/lift.hpp"
+#include "cliparser/translate.hpp"
+#include "cliparser/opt.hpp"
 
 
 
@@ -48,9 +48,9 @@ public:
         // --- CLI子命令设置 ---
         // hybitor [subcommand] : 子命令定义
         auto subcommand_hello = this->app.add_subcommand("hello", "和用户打招呼\nSay `Hello` to user.");
-        auto subcommand_disassemble = this->app.add_subcommand("disassemble", "反汇编可执行ELF文件\nDisassemble execuable ELF file.");
-        auto subcommand_lift = this->app.add_subcommand("lift", "提升可执行程序到 LLVM IR.\nLift file to LLVM IR.");
-        auto subcommand_translate = this->app.add_subcommand("translate", "翻译可执行ELF文件到Host端\nTranslate ELF file to host architecture.");
+        auto subcommand_disassemble = this->app.add_subcommand("disassemble", "反汇编二进制文件\nDisassemble binary file.");
+        auto subcommand_lift = this->app.add_subcommand("lift", "提升二进制文件到 LLVM IR.\nLift binary file to LLVM IR.");
+        auto subcommand_translate = this->app.add_subcommand("translate", "翻译二进制文件到Host端\nTranslate binary file to host architecture.");
         auto subcommand_opt = this->app.add_subcommand("opt", "优化LLVM中间表示文件\nOptimizate .ll or .bc LLVM IR file.");
         // 当出现的参数子命令解析不了时,尝试返回上一级主命令解析
         subcommand_hello->fallthrough();

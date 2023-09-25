@@ -1,7 +1,6 @@
 /**
  * @file include/capstone2llvmir/arm/arm_defs.hpp
  * @brief Additional (on top of Capstone) definitions for ARM translator.
- * @copyright (c) 2017 Avast Software, licensed under the MIT license
  */
 
 #ifndef CAPSTONE2LLVMIR_ARM_ARM_DEFS_H
