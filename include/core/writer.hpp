@@ -89,51 +89,6 @@ public:
     }
     
 
-    // --------- writer llvm ir 中间码文件操作---------
-
-    /// @brief 输出 LLVM IR 到文件
-    /// @param module llvm Module 模块
-    int output_to_ll_file(llvm::Module &module)
-    {
-        set_output_file_name();
-        std::error_code EC;
-        llvm::raw_fd_ostream ll_file(this->output_file_name, EC);
-        if (!EC)
-        {
-            cout << "Success to output file in: " << this->final_output_file << endl;
-            module.print(ll_file, nullptr);
-            return 0;
-        }
-        else
-        {
-            llvm::errs() << "Failed to open output file for writing\n";
-            return -4;
-        }
-    }
-
-
-    /// @brief 输出 LLVM IR 到文件
-    /// @param module llvm 模块
-    /// @param new_file 新文件名
-    /// @return 错误信息
-    int output_to_ll_file(llvm::Module module, string new_file)
-    {
-        set_output_file_name(new_file);
-        std::error_code EC;
-        llvm::raw_fd_ostream ll_file(this->final_output_file, EC);
-        if (!EC)
-        {
-            cout << "Successfully written to file: " << new_file << endl;
-            module.print(ll_file, nullptr);
-            return 0;
-        }
-        else
-        { 
-            llvm::errs() << "Failed to open output file for writing\n";
-            return -4;
-        }
-    }
-
 };
 
 #endif // WRITER_HPP

@@ -4,8 +4,14 @@
 #ifndef LIFT_HPP
 #define LIFT_HPP
 
+#include <iostream>
+#include <string>
 
 #include "core/lifter.hpp"
+
+using std::string;
+using std::cout;
+using std::endl;
 
 
 
@@ -34,8 +40,7 @@ public:
     /// @return 错误信息
     void command_exec()
     {
-        lifter lt = lifter(this->in_file_path, this->out_file_path);
-        lt.lift_to_ll_file();
+        // TODO
     }
 
 };
