@@ -19,6 +19,7 @@
 #include "llvm/ADT/iterator.h"
 #include "llvm/Support/DataTypes.h"
 #include <iterator>
+#include <system_error>
 
 namespace llvm {
 namespace sys {

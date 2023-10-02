@@ -43,8 +43,7 @@ struct ConstantPoolEntry {
 class ConstantPool {
   using EntryVecTy = SmallVector<ConstantPoolEntry, 4>;
   EntryVecTy Entries;
-  std::map<int64_t, const MCSymbolRefExpr *> CachedConstantEntries;
-  DenseMap<const MCSymbol *, const MCSymbolRefExpr *> CachedSymbolEntries;
+  std::map<int64_t, const MCSymbolRefExpr *> CachedEntries;
 
 public:
   // Initialize a new empty constant pool

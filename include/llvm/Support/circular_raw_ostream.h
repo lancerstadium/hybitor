@@ -38,7 +38,7 @@ namespace llvm {
     /// TheStream - The real stream we output to. We set it to be
     /// unbuffered, since we're already doing our own buffering.
     ///
-    raw_ostream *TheStream = nullptr;
+    raw_ostream *TheStream;
 
     /// OwnsStream - Are we responsible for managing the underlying
     /// stream?
@@ -51,7 +51,7 @@ namespace llvm {
 
     /// BufferArray - The actual buffer storage.
     ///
-    char *BufferArray = nullptr;
+    char *BufferArray;
 
     /// Cur - Pointer to the current output point in BufferArray.
     ///
@@ -60,7 +60,7 @@ namespace llvm {
     /// Filled - Indicate whether the buffer has been completely
     /// filled.  This helps avoid garbage output.
     ///
-    bool Filled = false;
+    bool Filled;
 
     /// Banner - A pointer to a banner to print before dumping the
     /// log.
@@ -106,8 +106,9 @@ namespace llvm {
     ///
     circular_raw_ostream(raw_ostream &Stream, const char *Header,
                          size_t BuffSize = 0, bool Owns = REFERENCE_ONLY)
-        : raw_ostream(/*unbuffered*/ true), OwnsStream(Owns),
-          BufferSize(BuffSize), Banner(Header) {
+        : raw_ostream(/*unbuffered*/ true), TheStream(nullptr),
+          OwnsStream(Owns), BufferSize(BuffSize), BufferArray(nullptr),
+          Filled(false), Banner(Header) {
       if (BufferSize != 0)
         BufferArray = new char[BufferSize];
       Cur = BufferArray;

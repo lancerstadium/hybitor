@@ -9,7 +9,6 @@
 #ifndef LLVM_DEBUGINFO_PDB_IPDBENUMCHILDREN_H
 #define LLVM_DEBUGINFO_PDB_IPDBENUMCHILDREN_H
 
-#include "llvm/DebugInfo/CodeView/LazyRandomTypeCollection.h"
 #include <cassert>
 #include <cstdint>
 #include <memory>
@@ -32,12 +31,15 @@ public:
 
 template <typename ChildType>
 class NullEnumerator : public IPDBEnumChildren<ChildType> {
-  uint32_t getChildCount() const override { return 0; }
-  std::unique_ptr<ChildType> getChildAtIndex(uint32_t Index) const override {
+  virtual uint32_t getChildCount() const override { return 0; }
+  virtual std::unique_ptr<ChildType>
+  getChildAtIndex(uint32_t Index) const override {
     return nullptr;
   }
-  std::unique_ptr<ChildType> getNext() override { return nullptr; }
-  void reset() override {}
+  virtual std::unique_ptr<ChildType> getNext() override {
+    return nullptr;
+  }
+  virtual void reset() override {}
 };
 
 } // end namespace pdb

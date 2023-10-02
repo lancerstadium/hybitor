@@ -26,19 +26,30 @@
 namespace llvm {
 namespace orc {
 
+struct MachOJITDylibInitializers {
+  using SectionList = std::vector<ExecutorAddrRange>;
+
+  MachOJITDylibInitializers(std::string Name, ExecutorAddr MachOHeaderAddress)
+      : Name(std::move(Name)),
+        MachOHeaderAddress(std::move(MachOHeaderAddress)) {}
+
+  std::string Name;
+  ExecutorAddr MachOHeaderAddress;
+  ExecutorAddr ObjCImageInfoAddress;
+
+  StringMap<SectionList> InitSections;
+};
+
+class MachOJITDylibDeinitializers {};
+
+using MachOJITDylibInitializerSequence = std::vector<MachOJITDylibInitializers>;
+
+using MachOJITDylibDeinitializerSequence =
+    std::vector<MachOJITDylibDeinitializers>;
+
 /// Mediates between MachO initialization and ExecutionSession state.
 class MachOPlatform : public Platform {
 public:
-  // Used internally by MachOPlatform, but made public to enable serialization.
-  struct MachOJITDylibDepInfo {
-    bool Sealed = false;
-    std::vector<ExecutorAddr> DepHeaders;
-  };
-
-  // Used internally by MachOPlatform, but made public to enable serialization.
-  using MachOJITDylibDepInfoMap =
-      std::vector<std::pair<ExecutorAddr, MachOJITDylibDepInfo>>;
-
   /// Try to create a MachOPlatform instance, adding the ORC runtime to the
   /// given JITDylib.
   ///
@@ -80,7 +91,7 @@ public:
   static Expected<std::unique_ptr<MachOPlatform>>
   Create(ExecutionSession &ES, ObjectLinkingLayer &ObjLinkingLayer,
          JITDylib &PlatformJD, const char *OrcRuntimePath,
-         std::optional<SymbolAliasMap> RuntimeAliases = std::nullopt);
+         Optional<SymbolAliasMap> RuntimeAliases = None);
 
   ExecutionSession &getExecutionSession() const { return ES; }
   ObjectLinkingLayer &getObjectLinkingLayer() const { return ObjLinkingLayer; }
@@ -107,15 +118,6 @@ public:
   static bool isInitializerSection(StringRef SegName, StringRef SectName);
 
 private:
-  // Data needed for bootstrap only.
-  struct BootstrapInfo {
-    std::mutex Mutex;
-    std::condition_variable CV;
-    size_t ActiveGraphs = 0;
-    shared::AllocActions DeferredAAs;
-    ExecutorAddr MachOHeaderAddr;
-  };
-
   // The MachOPlatformPlugin scans/modifies LinkGraphs to support MachO
   // platform features including initializers, exceptions, TLV, and language
   // runtime registration.
@@ -136,28 +138,19 @@ private:
       return Error::success();
     }
 
-    Error notifyRemovingResources(JITDylib &JD, ResourceKey K) override {
+    Error notifyRemovingResources(ResourceKey K) override {
       return Error::success();
     }
 
-    void notifyTransferringResources(JITDylib &JD, ResourceKey DstKey,
+    void notifyTransferringResources(ResourceKey DstKey,
                                      ResourceKey SrcKey) override {}
 
   private:
     using InitSymbolDepMap =
         DenseMap<MaterializationResponsibility *, JITLinkSymbolSet>;
 
-    struct UnwindSections {
-      SmallVector<ExecutorAddrRange> CodeRanges;
-      ExecutorAddrRange DwarfSection;
-      ExecutorAddrRange CompactUnwindSection;
-    };
-
-    Error bootstrapPipelineStart(jitlink::LinkGraph &G);
-    Error bootstrapPipelineRecordRuntimeFunctions(jitlink::LinkGraph &G);
-    Error bootstrapPipelineEnd(jitlink::LinkGraph &G);
-
-    Error recordRuntimeRegistrationFunctions(jitlink::LinkGraph &G);
+    void addEHAndTLVSupportPasses(MaterializationResponsibility &MR,
+                                  jitlink::PassConfiguration &Config);
 
     Error associateJITDylibHeaderSymbol(jitlink::LinkGraph &G,
                                         MaterializationResponsibility &MR);
@@ -168,29 +161,26 @@ private:
     Error processObjCImageInfo(jitlink::LinkGraph &G,
                                MaterializationResponsibility &MR);
 
+    Error registerInitSections(jitlink::LinkGraph &G, JITDylib &JD);
+
     Error fixTLVSectionsAndEdges(jitlink::LinkGraph &G, JITDylib &JD);
 
-    std::optional<UnwindSections> findUnwindSectionInfo(jitlink::LinkGraph &G);
+    Error registerEHAndTLVSections(jitlink::LinkGraph &G);
 
-    Error registerObjectPlatformSections(jitlink::LinkGraph &G, JITDylib &JD,
-                                         bool InBootstrapPhase);
+    Error registerEHSectionsPhase1(jitlink::LinkGraph &G);
 
     std::mutex PluginMutex;
     MachOPlatform &MP;
-
-    // FIXME: ObjCImageInfos and HeaderAddrs need to be cleared when
-    // JITDylibs are removed.
     DenseMap<JITDylib *, std::pair<uint32_t, uint32_t>> ObjCImageInfos;
-    DenseMap<JITDylib *, ExecutorAddr> HeaderAddrs;
     InitSymbolDepMap InitSymbolDeps;
   };
 
-  using GetJITDylibHeaderSendResultFn =
-      unique_function<void(Expected<ExecutorAddr>)>;
-  using GetJITDylibNameSendResultFn =
-      unique_function<void(Expected<StringRef>)>;
-  using PushInitializersSendResultFn =
-      unique_function<void(Expected<MachOJITDylibDepInfoMap>)>;
+  using SendInitializerSequenceFn =
+      unique_function<void(Expected<MachOJITDylibInitializerSequence>)>;
+
+  using SendDeinitializerSequenceFn =
+      unique_function<void(Expected<MachOJITDylibDeinitializerSequence>)>;
+
   using SendSymbolAddressFn = unique_function<void(Expected<ExecutorAddr>)>;
 
   static bool supportedTarget(const Triple &TT);
@@ -201,70 +191,119 @@ private:
                 Error &Err);
 
   // Associate MachOPlatform JIT-side runtime support functions with handlers.
-  Error associateRuntimeSupportFunctions();
+  Error associateRuntimeSupportFunctions(JITDylib &PlatformJD);
 
-  // Implements rt_pushInitializers by making repeat async lookups for
-  // initializer symbols (each lookup may spawn more initializer symbols if
-  // it pulls in new materializers, e.g. from objects in a static library).
-  void pushInitializersLoop(PushInitializersSendResultFn SendResult,
-                            JITDylibSP JD);
+  void getInitializersBuildSequencePhase(SendInitializerSequenceFn SendResult,
+                                         JITDylib &JD,
+                                         std::vector<JITDylibSP> DFSLinkOrder);
 
-  // Handle requests from the ORC runtime to push MachO initializer info.
-  void rt_pushInitializers(PushInitializersSendResultFn SendResult,
-                           ExecutorAddr JDHeaderAddr);
+  void getInitializersLookupPhase(SendInitializerSequenceFn SendResult,
+                                  JITDylib &JD);
 
-  // Handle requests for symbol addresses from the ORC runtime.
+  void rt_getInitializers(SendInitializerSequenceFn SendResult,
+                          StringRef JDName);
+
+  void rt_getDeinitializers(SendDeinitializerSequenceFn SendResult,
+                            ExecutorAddr Handle);
+
   void rt_lookupSymbol(SendSymbolAddressFn SendResult, ExecutorAddr Handle,
                        StringRef SymbolName);
 
-  // Call the ORC runtime to create a pthread key.
+  // Records the addresses of runtime symbols used by the platform.
+  Error bootstrapMachORuntime(JITDylib &PlatformJD);
+
+  Error registerInitInfo(JITDylib &JD, ExecutorAddr ObjCImageInfoAddr,
+                         ArrayRef<jitlink::Section *> InitSections);
+
   Expected<uint64_t> createPThreadKey();
 
+  enum PlatformState { BootstrapPhase1, BootstrapPhase2, Initialized };
+
   ExecutionSession &ES;
-  JITDylib &PlatformJD;
   ObjectLinkingLayer &ObjLinkingLayer;
 
-  SymbolStringPtr MachOHeaderStartSymbol = ES.intern("___dso_handle");
+  SymbolStringPtr MachOHeaderStartSymbol;
+  std::atomic<PlatformState> State{BootstrapPhase1};
 
-  struct RuntimeFunction {
-    RuntimeFunction(SymbolStringPtr Name) : Name(std::move(Name)) {}
-    SymbolStringPtr Name;
-    ExecutorAddr Addr;
-  };
-
-  RuntimeFunction PlatformBootstrap{
-      ES.intern("___orc_rt_macho_platform_bootstrap")};
-  RuntimeFunction PlatformShutdown{
-      ES.intern("___orc_rt_macho_platform_shutdown")};
-  RuntimeFunction RegisterEHFrameSection{
-      ES.intern("___orc_rt_macho_register_ehframe_section")};
-  RuntimeFunction DeregisterEHFrameSection{
-      ES.intern("___orc_rt_macho_deregister_ehframe_section")};
-  RuntimeFunction RegisterJITDylib{
-      ES.intern("___orc_rt_macho_register_jitdylib")};
-  RuntimeFunction DeregisterJITDylib{
-      ES.intern("___orc_rt_macho_deregister_jitdylib")};
-  RuntimeFunction RegisterObjectPlatformSections{
-      ES.intern("___orc_rt_macho_register_object_platform_sections")};
-  RuntimeFunction DeregisterObjectPlatformSections{
-      ES.intern("___orc_rt_macho_deregister_object_platform_sections")};
-  RuntimeFunction CreatePThreadKey{
-      ES.intern("___orc_rt_macho_create_pthread_key")};
+  ExecutorAddr orc_rt_macho_platform_bootstrap;
+  ExecutorAddr orc_rt_macho_platform_shutdown;
+  ExecutorAddr orc_rt_macho_register_ehframe_section;
+  ExecutorAddr orc_rt_macho_deregister_ehframe_section;
+  ExecutorAddr orc_rt_macho_register_thread_data_section;
+  ExecutorAddr orc_rt_macho_deregister_thread_data_section;
+  ExecutorAddr orc_rt_macho_create_pthread_key;
 
   DenseMap<JITDylib *, SymbolLookupSet> RegisteredInitSymbols;
 
+  // InitSeqs gets its own mutex to avoid locking the whole session when
+  // aggregating data from the jitlink.
   std::mutex PlatformMutex;
-  DenseMap<JITDylib *, ExecutorAddr> JITDylibToHeaderAddr;
+  DenseMap<JITDylib *, MachOJITDylibInitializers> InitSeqs;
+
   DenseMap<ExecutorAddr, JITDylib *> HeaderAddrToJITDylib;
   DenseMap<JITDylib *, uint64_t> JITDylibToPThreadKey;
-
-  std::atomic<BootstrapInfo *> Bootstrap;
 };
 
 namespace shared {
 
-using SPSNamedExecutorAddrRangeSequence =
-    SPSSequence<SPSTuple<SPSString, SPSExecutorAddrRange>>;
+using SPSNamedExecutorAddrRangeSequenceMap =
+    SPSSequence<SPSTuple<SPSString, SPSExecutorAddrRangeSequence>>;
+
+using SPSMachOJITDylibInitializers =
+    SPSTuple<SPSString, SPSExecutorAddr, SPSExecutorAddr,
+             SPSNamedExecutorAddrRangeSequenceMap>;
+
+using SPSMachOJITDylibInitializerSequence =
+    SPSSequence<SPSMachOJITDylibInitializers>;
+
+/// Serialization traits for MachOJITDylibInitializers.
+template <>
+class SPSSerializationTraits<SPSMachOJITDylibInitializers,
+                             MachOJITDylibInitializers> {
+public:
+  static size_t size(const MachOJITDylibInitializers &MOJDIs) {
+    return SPSMachOJITDylibInitializers::AsArgList::size(
+        MOJDIs.Name, MOJDIs.MachOHeaderAddress, MOJDIs.ObjCImageInfoAddress,
+        MOJDIs.InitSections);
+  }
+
+  static bool serialize(SPSOutputBuffer &OB,
+                        const MachOJITDylibInitializers &MOJDIs) {
+    return SPSMachOJITDylibInitializers::AsArgList::serialize(
+        OB, MOJDIs.Name, MOJDIs.MachOHeaderAddress, MOJDIs.ObjCImageInfoAddress,
+        MOJDIs.InitSections);
+  }
+
+  static bool deserialize(SPSInputBuffer &IB,
+                          MachOJITDylibInitializers &MOJDIs) {
+    return SPSMachOJITDylibInitializers::AsArgList::deserialize(
+        IB, MOJDIs.Name, MOJDIs.MachOHeaderAddress, MOJDIs.ObjCImageInfoAddress,
+        MOJDIs.InitSections);
+  }
+};
+
+using SPSMachOJITDylibDeinitializers = SPSEmpty;
+
+using SPSMachOJITDylibDeinitializerSequence =
+    SPSSequence<SPSMachOJITDylibDeinitializers>;
+
+template <>
+class SPSSerializationTraits<SPSMachOJITDylibDeinitializers,
+                             MachOJITDylibDeinitializers> {
+public:
+  static size_t size(const MachOJITDylibDeinitializers &MOJDDs) { return 0; }
+
+  static bool serialize(SPSOutputBuffer &OB,
+                        const MachOJITDylibDeinitializers &MOJDDs) {
+    return true;
+  }
+
+  static bool deserialize(SPSInputBuffer &IB,
+                          MachOJITDylibDeinitializers &MOJDDs) {
+    MOJDDs = MachOJITDylibDeinitializers();
+    return true;
+  }
+};
 
 } // end namespace shared
 } // end namespace orc

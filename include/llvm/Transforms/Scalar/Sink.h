@@ -14,11 +14,10 @@
 #ifndef LLVM_TRANSFORMS_SCALAR_SINK_H
 #define LLVM_TRANSFORMS_SCALAR_SINK_H
 
+#include "llvm/IR/Function.h"
 #include "llvm/IR/PassManager.h"
 
 namespace llvm {
-
-class Function;
 
 /// Move instructions into successor blocks when possible.
 class SinkingPass : public PassInfoMixin<SinkingPass> {

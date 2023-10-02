@@ -10,16 +10,16 @@
 #define LLVM_DEBUGINFO_DWARF_DWARFFORMVALUE_H
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/None.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/DebugInfo/DIContext.h"
-#include "llvm/Support/DataExtractor.h"
+#include "llvm/DebugInfo/DWARF/DWARFDataExtractor.h"
 #include <cstdint>
 
 namespace llvm {
 
 class DWARFContext;
-class DWARFObject;
-class DWARFDataExtractor;
 class DWARFUnit;
 class raw_ostream;
 
@@ -104,21 +104,21 @@ public:
 
   /// getAsFoo functions below return the extracted value as Foo if only
   /// DWARFFormValue has form class is suitable for representing Foo.
-  std::optional<uint64_t> getAsReference() const;
+  Optional<uint64_t> getAsReference() const;
   struct UnitOffset {
     DWARFUnit *Unit;
     uint64_t Offset;
   };
-  std::optional<UnitOffset> getAsRelativeReference() const;
-  std::optional<uint64_t> getAsUnsignedConstant() const;
-  std::optional<int64_t> getAsSignedConstant() const;
+  Optional<UnitOffset> getAsRelativeReference() const;
+  Optional<uint64_t> getAsUnsignedConstant() const;
+  Optional<int64_t> getAsSignedConstant() const;
   Expected<const char *> getAsCString() const;
-  std::optional<uint64_t> getAsAddress() const;
-  std::optional<object::SectionedAddress> getAsSectionedAddress() const;
-  std::optional<uint64_t> getAsSectionOffset() const;
-  std::optional<ArrayRef<uint8_t>> getAsBlock() const;
-  std::optional<uint64_t> getAsCStringOffset() const;
-  std::optional<uint64_t> getAsReferenceUVal() const;
+  Optional<uint64_t> getAsAddress() const;
+  Optional<object::SectionedAddress> getAsSectionedAddress() const;
+  Optional<uint64_t> getAsSectionOffset() const;
+  Optional<ArrayRef<uint8_t>> getAsBlock() const;
+  Optional<uint64_t> getAsCStringOffset() const;
+  Optional<uint64_t> getAsReferenceUVal() const;
   /// Correctly extract any file paths from a form value.
   ///
   /// These attributes can be in the from DW_AT_decl_file or DW_AT_call_file
@@ -128,9 +128,9 @@ public:
   ///
   /// \param Kind The kind of path to extract.
   ///
-  /// \returns A valid string value on success, or std::nullopt if the form
-  /// class is not FC_Constant, or if the file index is not valid.
-  std::optional<std::string>
+  /// \returns A valid string value on success, or llvm::None if the form class
+  /// is not FC_Constant, or if the file index is not valid.
+  Optional<std::string>
   getAsFile(DILineInfoSpecifier::FileLineInfoKind Kind) const;
 
   /// Skip a form's value in \p DebugInfoData at the offset specified by
@@ -172,14 +172,13 @@ namespace dwarf {
 /// \param V and optional DWARFFormValue to attempt to extract the value from.
 /// \returns an optional value that contains a value if the form value
 /// was valid and was a string.
-inline std::optional<const char *>
-toString(const std::optional<DWARFFormValue> &V) {
+inline Optional<const char *> toString(const Optional<DWARFFormValue> &V) {
   if (!V)
-    return std::nullopt;
+    return None;
   Expected<const char*> E = V->getAsCString();
   if (!E) {
     consumeError(E.takeError());
-    return std::nullopt;
+    return None;
   }
   return *E;
 }
@@ -189,7 +188,7 @@ toString(const std::optional<DWARFFormValue> &V) {
 /// \param V and optional DWARFFormValue to attempt to extract the value from.
 /// \returns an optional value that contains a value if the form value
 /// was valid and was a string.
-inline StringRef toStringRef(const std::optional<DWARFFormValue> &V,
+inline StringRef toStringRef(const Optional<DWARFFormValue> &V,
                              StringRef Default = {}) {
   if (!V)
     return Default;
@@ -209,7 +208,7 @@ inline StringRef toStringRef(const std::optional<DWARFFormValue> &V,
 /// \param Default the default value to return in case of failure.
 /// \returns the string value or Default if the V doesn't have a value or the
 /// form value's encoding wasn't a string.
-inline const char *toString(const std::optional<DWARFFormValue> &V,
+inline const char *toString(const Optional<DWARFFormValue> &V,
                             const char *Default) {
   if (auto E = toString(V))
     return *E;
@@ -221,11 +220,10 @@ inline const char *toString(const std::optional<DWARFFormValue> &V,
 /// \param V and optional DWARFFormValue to attempt to extract the value from.
 /// \returns an optional value that contains a value if the form value
 /// was valid and has a unsigned constant form.
-inline std::optional<uint64_t>
-toUnsigned(const std::optional<DWARFFormValue> &V) {
+inline Optional<uint64_t> toUnsigned(const Optional<DWARFFormValue> &V) {
   if (V)
     return V->getAsUnsignedConstant();
-  return std::nullopt;
+  return None;
 }
 
 /// Take an optional DWARFFormValue and extract a unsigned constant.
@@ -234,9 +232,9 @@ toUnsigned(const std::optional<DWARFFormValue> &V) {
 /// \param Default the default value to return in case of failure.
 /// \returns the extracted unsigned value or Default if the V doesn't have a
 /// value or the form value's encoding wasn't an unsigned constant form.
-inline uint64_t toUnsigned(const std::optional<DWARFFormValue> &V,
+inline uint64_t toUnsigned(const Optional<DWARFFormValue> &V,
                            uint64_t Default) {
-  return toUnsigned(V).value_or(Default);
+  return toUnsigned(V).getValueOr(Default);
 }
 
 /// Take an optional DWARFFormValue and try to extract an reference.
@@ -244,11 +242,10 @@ inline uint64_t toUnsigned(const std::optional<DWARFFormValue> &V,
 /// \param V and optional DWARFFormValue to attempt to extract the value from.
 /// \returns an optional value that contains a value if the form value
 /// was valid and has a reference form.
-inline std::optional<uint64_t>
-toReference(const std::optional<DWARFFormValue> &V) {
+inline Optional<uint64_t> toReference(const Optional<DWARFFormValue> &V) {
   if (V)
     return V->getAsReference();
-  return std::nullopt;
+  return None;
 }
 
 /// Take an optional DWARFFormValue and extract a reference.
@@ -257,9 +254,9 @@ toReference(const std::optional<DWARFFormValue> &V) {
 /// \param Default the default value to return in case of failure.
 /// \returns the extracted reference value or Default if the V doesn't have a
 /// value or the form value's encoding wasn't a reference form.
-inline uint64_t toReference(const std::optional<DWARFFormValue> &V,
+inline uint64_t toReference(const Optional<DWARFFormValue> &V,
                             uint64_t Default) {
-  return toReference(V).value_or(Default);
+  return toReference(V).getValueOr(Default);
 }
 
 /// Take an optional DWARFFormValue and try to extract an signed constant.
@@ -267,10 +264,10 @@ inline uint64_t toReference(const std::optional<DWARFFormValue> &V,
 /// \param V and optional DWARFFormValue to attempt to extract the value from.
 /// \returns an optional value that contains a value if the form value
 /// was valid and has a signed constant form.
-inline std::optional<int64_t> toSigned(const std::optional<DWARFFormValue> &V) {
+inline Optional<int64_t> toSigned(const Optional<DWARFFormValue> &V) {
   if (V)
     return V->getAsSignedConstant();
-  return std::nullopt;
+  return None;
 }
 
 /// Take an optional DWARFFormValue and extract a signed integer.
@@ -279,9 +276,8 @@ inline std::optional<int64_t> toSigned(const std::optional<DWARFFormValue> &V) {
 /// \param Default the default value to return in case of failure.
 /// \returns the extracted signed integer value or Default if the V doesn't
 /// have a value or the form value's encoding wasn't a signed integer form.
-inline int64_t toSigned(const std::optional<DWARFFormValue> &V,
-                        int64_t Default) {
-  return toSigned(V).value_or(Default);
+inline int64_t toSigned(const Optional<DWARFFormValue> &V, int64_t Default) {
+  return toSigned(V).getValueOr(Default);
 }
 
 /// Take an optional DWARFFormValue and try to extract an address.
@@ -289,18 +285,17 @@ inline int64_t toSigned(const std::optional<DWARFFormValue> &V,
 /// \param V and optional DWARFFormValue to attempt to extract the value from.
 /// \returns an optional value that contains a value if the form value
 /// was valid and has a address form.
-inline std::optional<uint64_t>
-toAddress(const std::optional<DWARFFormValue> &V) {
+inline Optional<uint64_t> toAddress(const Optional<DWARFFormValue> &V) {
   if (V)
     return V->getAsAddress();
-  return std::nullopt;
+  return None;
 }
 
-inline std::optional<object::SectionedAddress>
-toSectionedAddress(const std::optional<DWARFFormValue> &V) {
+inline Optional<object::SectionedAddress>
+toSectionedAddress(const Optional<DWARFFormValue> &V) {
   if (V)
     return V->getAsSectionedAddress();
-  return std::nullopt;
+  return None;
 }
 
 /// Take an optional DWARFFormValue and extract a address.
@@ -309,9 +304,8 @@ toSectionedAddress(const std::optional<DWARFFormValue> &V) {
 /// \param Default the default value to return in case of failure.
 /// \returns the extracted address value or Default if the V doesn't have a
 /// value or the form value's encoding wasn't an address form.
-inline uint64_t toAddress(const std::optional<DWARFFormValue> &V,
-                          uint64_t Default) {
-  return toAddress(V).value_or(Default);
+inline uint64_t toAddress(const Optional<DWARFFormValue> &V, uint64_t Default) {
+  return toAddress(V).getValueOr(Default);
 }
 
 /// Take an optional DWARFFormValue and try to extract an section offset.
@@ -319,11 +313,10 @@ inline uint64_t toAddress(const std::optional<DWARFFormValue> &V,
 /// \param V and optional DWARFFormValue to attempt to extract the value from.
 /// \returns an optional value that contains a value if the form value
 /// was valid and has a section offset form.
-inline std::optional<uint64_t>
-toSectionOffset(const std::optional<DWARFFormValue> &V) {
+inline Optional<uint64_t> toSectionOffset(const Optional<DWARFFormValue> &V) {
   if (V)
     return V->getAsSectionOffset();
-  return std::nullopt;
+  return None;
 }
 
 /// Take an optional DWARFFormValue and extract a section offset.
@@ -332,9 +325,9 @@ toSectionOffset(const std::optional<DWARFFormValue> &V) {
 /// \param Default the default value to return in case of failure.
 /// \returns the extracted section offset value or Default if the V doesn't
 /// have a value or the form value's encoding wasn't a section offset form.
-inline uint64_t toSectionOffset(const std::optional<DWARFFormValue> &V,
+inline uint64_t toSectionOffset(const Optional<DWARFFormValue> &V,
                                 uint64_t Default) {
-  return toSectionOffset(V).value_or(Default);
+  return toSectionOffset(V).getValueOr(Default);
 }
 
 /// Take an optional DWARFFormValue and try to extract block data.
@@ -342,11 +335,10 @@ inline uint64_t toSectionOffset(const std::optional<DWARFFormValue> &V,
 /// \param V and optional DWARFFormValue to attempt to extract the value from.
 /// \returns an optional value that contains a value if the form value
 /// was valid and has a block form.
-inline std::optional<ArrayRef<uint8_t>>
-toBlock(const std::optional<DWARFFormValue> &V) {
+inline Optional<ArrayRef<uint8_t>> toBlock(const Optional<DWARFFormValue> &V) {
   if (V)
     return V->getAsBlock();
-  return std::nullopt;
+  return None;
 }
 
 } // end namespace dwarf

@@ -19,6 +19,7 @@
 #define LLVM_MC_TARGETREGISTRY_H
 
 #include "llvm-c/DisassemblerTypes.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/ADT/iterator_range.h"
@@ -26,11 +27,11 @@
 #include "llvm/Support/CodeGen.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FormattedStream.h"
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <iterator>
 #include <memory>
-#include <optional>
 #include <string>
 
 namespace llvm {
@@ -55,13 +56,13 @@ class MCTargetAsmParser;
 class MCTargetOptions;
 class MCTargetStreamer;
 class raw_ostream;
+class raw_pwrite_stream;
 class TargetMachine;
 class TargetOptions;
 namespace mca {
 class CustomBehaviour;
 class InstrPostProcess;
-class InstrumentManager;
-struct SourceMgr;
+class SourceMgr;
 } // namespace mca
 
 MCStreamer *createNullStreamer(MCContext &Ctx);
@@ -110,16 +111,6 @@ MCStreamer *createXCOFFStreamer(MCContext &Ctx,
                                 std::unique_ptr<MCObjectWriter> &&OW,
                                 std::unique_ptr<MCCodeEmitter> &&CE,
                                 bool RelaxAll);
-MCStreamer *createSPIRVStreamer(MCContext &Ctx,
-                                std::unique_ptr<MCAsmBackend> &&TAB,
-                                std::unique_ptr<MCObjectWriter> &&OW,
-                                std::unique_ptr<MCCodeEmitter> &&CE,
-                                bool RelaxAll);
-MCStreamer *createDXContainerStreamer(MCContext &Ctx,
-                                      std::unique_ptr<MCAsmBackend> &&TAB,
-                                      std::unique_ptr<MCObjectWriter> &&OW,
-                                      std::unique_ptr<MCCodeEmitter> &&CE,
-                                      bool RelaxAll);
 
 MCRelocationInfo *createMCRelocationInfo(const Triple &TT, MCContext &Ctx);
 
@@ -134,9 +125,6 @@ mca::CustomBehaviour *createCustomBehaviour(const MCSubtargetInfo &STI,
 
 mca::InstrPostProcess *createInstrPostProcess(const MCSubtargetInfo &STI,
                                               const MCInstrInfo &MCII);
-
-mca::InstrumentManager *createInstrumentManager(const MCSubtargetInfo &STI,
-                                                const MCInstrInfo &MCII);
 
 /// Target - Wrapper for Target specific information.
 ///
@@ -166,8 +154,8 @@ public:
                                                        StringRef Features);
   using TargetMachineCtorTy = TargetMachine
       *(*)(const Target &T, const Triple &TT, StringRef CPU, StringRef Features,
-           const TargetOptions &Options, std::optional<Reloc::Model> RM,
-           std::optional<CodeModel::Model> CM, CodeGenOpt::Level OL, bool JIT);
+           const TargetOptions &Options, Optional<Reloc::Model> RM,
+           Optional<CodeModel::Model> CM, CodeGenOpt::Level OL, bool JIT);
   // If it weren't for layering issues (this header is in llvm/Support, but
   // depends on MC?) this should take the Streamer by value rather than rvalue
   // reference.
@@ -189,6 +177,7 @@ public:
                                                  const MCInstrInfo &MII,
                                                  const MCRegisterInfo &MRI);
   using MCCodeEmitterCtorTy = MCCodeEmitter *(*)(const MCInstrInfo &II,
+                                                 const MCRegisterInfo &MRI,
                                                  MCContext &Ctx);
   using ELFStreamerCtorTy =
       MCStreamer *(*)(const Triple &T, MCContext &Ctx,
@@ -215,17 +204,6 @@ public:
                       std::unique_ptr<MCAsmBackend> &&TAB,
                       std::unique_ptr<MCObjectWriter> &&OW,
                       std::unique_ptr<MCCodeEmitter> &&Emitter, bool RelaxAll);
-  using SPIRVStreamerCtorTy =
-      MCStreamer *(*)(const Triple &T, MCContext &Ctx,
-                      std::unique_ptr<MCAsmBackend> &&TAB,
-                      std::unique_ptr<MCObjectWriter> &&OW,
-                      std::unique_ptr<MCCodeEmitter> &&Emitter, bool RelaxAll);
-  
-  using DXContainerStreamerCtorTy =
-      MCStreamer *(*)(const Triple &T, MCContext &Ctx,
-                      std::unique_ptr<MCAsmBackend> &&TAB,
-                      std::unique_ptr<MCObjectWriter> &&OW,
-                      std::unique_ptr<MCCodeEmitter> &&Emitter, bool RelaxAll);
 
   using NullTargetStreamerCtorTy = MCTargetStreamer *(*)(MCStreamer &S);
   using AsmTargetStreamerCtorTy = MCTargetStreamer *(*)(
@@ -248,10 +226,6 @@ public:
   using InstrPostProcessCtorTy =
       mca::InstrPostProcess *(*)(const MCSubtargetInfo &STI,
                                  const MCInstrInfo &MCII);
-
-  using InstrumentManagerCtorTy =
-      mca::InstrumentManager *(*)(const MCSubtargetInfo &STI,
-                                  const MCInstrInfo &MCII);
 
 private:
   /// Next - The next registered target in the linked list, maintained by the
@@ -331,8 +305,6 @@ private:
   ELFStreamerCtorTy ELFStreamerCtorFn = nullptr;
   WasmStreamerCtorTy WasmStreamerCtorFn = nullptr;
   XCOFFStreamerCtorTy XCOFFStreamerCtorFn = nullptr;
-  SPIRVStreamerCtorTy SPIRVStreamerCtorFn = nullptr;
-  DXContainerStreamerCtorTy DXContainerStreamerCtorFn = nullptr;
 
   /// Construction function for this target's null TargetStreamer, if
   /// registered (default = nullptr).
@@ -361,10 +333,6 @@ private:
   /// InstrPostProcessCtorFn - Construction function for this target's
   /// InstrPostProcess, if registered (default = nullptr).
   InstrPostProcessCtorTy InstrPostProcessCtorFn = nullptr;
-
-  /// InstrumentManagerCtorFn - Construction function for this target's
-  /// InstrumentManager, if registered (default = nullptr).
-  InstrumentManagerCtorTy InstrumentManagerCtorFn = nullptr;
 
 public:
   Target() = default;
@@ -478,11 +446,13 @@ public:
   /// feature set; it should always be provided. Generally this should be
   /// either the target triple from the module, or the target triple of the
   /// host if that does not exist.
-  TargetMachine *createTargetMachine(
-      StringRef TT, StringRef CPU, StringRef Features,
-      const TargetOptions &Options, std::optional<Reloc::Model> RM,
-      std::optional<CodeModel::Model> CM = std::nullopt,
-      CodeGenOpt::Level OL = CodeGenOpt::Default, bool JIT = false) const {
+  TargetMachine *createTargetMachine(StringRef TT, StringRef CPU,
+                                     StringRef Features,
+                                     const TargetOptions &Options,
+                                     Optional<Reloc::Model> RM,
+                                     Optional<CodeModel::Model> CM = None,
+                                     CodeGenOpt::Level OL = CodeGenOpt::Default,
+                                     bool JIT = false) const {
     if (!TargetMachineCtorFn)
       return nullptr;
     return TargetMachineCtorFn(*this, Triple(TT), CPU, Features, Options, RM,
@@ -538,10 +508,11 @@ public:
 
   /// createMCCodeEmitter - Create a target specific code emitter.
   MCCodeEmitter *createMCCodeEmitter(const MCInstrInfo &II,
+                                     const MCRegisterInfo &MRI,
                                      MCContext &Ctx) const {
     if (!MCCodeEmitterCtorFn)
       return nullptr;
-    return MCCodeEmitterCtorFn(II, Ctx);
+    return MCCodeEmitterCtorFn(II, MRI, Ctx);
   }
 
   /// Create a target specific MCStreamer.
@@ -604,22 +575,6 @@ public:
       else
         S = createXCOFFStreamer(Ctx, std::move(TAB), std::move(OW),
                                 std::move(Emitter), RelaxAll);
-      break;
-    case Triple::SPIRV:
-      if (SPIRVStreamerCtorFn)
-        S = SPIRVStreamerCtorFn(T, Ctx, std::move(TAB), std::move(OW),
-                                std::move(Emitter), RelaxAll);
-      else
-        S = createSPIRVStreamer(Ctx, std::move(TAB), std::move(OW),
-                                std::move(Emitter), RelaxAll);
-      break;
-    case Triple::DXContainer:
-      if (DXContainerStreamerCtorFn)
-        S = DXContainerStreamerCtorFn(T, Ctx, std::move(TAB), std::move(OW),
-                              std::move(Emitter), RelaxAll);
-      else
-        S = createDXContainerStreamer(Ctx, std::move(TAB), std::move(OW),
-                                      std::move(Emitter), RelaxAll);
       break;
     }
     if (ObjectTargetStreamerCtorFn)
@@ -713,17 +668,6 @@ public:
                                                 const MCInstrInfo &MCII) const {
     if (InstrPostProcessCtorFn)
       return InstrPostProcessCtorFn(STI, MCII);
-    return nullptr;
-  }
-
-  /// createInstrumentManager - Create a target specific
-  /// InstrumentManager. This class is used by llvm-mca and requires
-  /// backend functionality.
-  mca::InstrumentManager *
-  createInstrumentManager(const MCSubtargetInfo &STI,
-                          const MCInstrInfo &MCII) const {
-    if (InstrumentManagerCtorFn)
-      return InstrumentManagerCtorFn(STI, MCII);
     return nullptr;
   }
 
@@ -1012,14 +956,6 @@ struct TargetRegistry {
     T.ELFStreamerCtorFn = Fn;
   }
 
-  static void RegisterSPIRVStreamer(Target &T, Target::SPIRVStreamerCtorTy Fn) {
-    T.SPIRVStreamerCtorFn = Fn;
-  }
-
-  static void RegisterDXContainerStreamer(Target &T, Target::DXContainerStreamerCtorTy Fn) {
-    T.DXContainerStreamerCtorFn = Fn;
-  }
-
   static void RegisterWasmStreamer(Target &T, Target::WasmStreamerCtorTy Fn) {
     T.WasmStreamerCtorFn = Fn;
   }
@@ -1097,21 +1033,6 @@ struct TargetRegistry {
   static void RegisterInstrPostProcess(Target &T,
                                        Target::InstrPostProcessCtorTy Fn) {
     T.InstrPostProcessCtorFn = Fn;
-  }
-
-  /// RegisterInstrumentManager - Register an InstrumentManager
-  /// implementation for the given target.
-  ///
-  /// Clients are responsible for ensuring that registration doesn't occur
-  /// while another thread is attempting to access the registry. Typically
-  /// this is done by initializing all targets at program startup.
-  ///
-  /// @param T - The target being registered.
-  /// @param Fn - A function to construct an InstrumentManager for the
-  /// target.
-  static void RegisterInstrumentManager(Target &T,
-                                        Target::InstrumentManagerCtorTy Fn) {
-    T.InstrumentManagerCtorFn = Fn;
   }
 
   /// @}
@@ -1357,12 +1278,10 @@ template <class TargetMachineImpl> struct RegisterTargetMachine {
   }
 
 private:
-  static TargetMachine *Allocator(const Target &T, const Triple &TT,
-                                  StringRef CPU, StringRef FS,
-                                  const TargetOptions &Options,
-                                  std::optional<Reloc::Model> RM,
-                                  std::optional<CodeModel::Model> CM,
-                                  CodeGenOpt::Level OL, bool JIT) {
+  static TargetMachine *
+  Allocator(const Target &T, const Triple &TT, StringRef CPU, StringRef FS,
+            const TargetOptions &Options, Optional<Reloc::Model> RM,
+            Optional<CodeModel::Model> CM, CodeGenOpt::Level OL, bool JIT) {
     return new TargetMachineImpl(T, TT, CPU, FS, Options, RM, CM, OL, JIT);
   }
 };
@@ -1443,6 +1362,7 @@ template <class MCCodeEmitterImpl> struct RegisterMCCodeEmitter {
 
 private:
   static MCCodeEmitter *Allocator(const MCInstrInfo & /*II*/,
+                                  const MCRegisterInfo & /*MRI*/,
                                   MCContext & /*Ctx*/) {
     return new MCCodeEmitterImpl();
   }

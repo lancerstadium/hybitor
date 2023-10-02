@@ -62,20 +62,11 @@ struct Export {
   uint32_t Index;
 };
 
-struct InitExpr {
-  InitExpr() {}
-  bool Extended;
-  union {
-    wasm::WasmInitExprMVP Inst;
-    yaml::BinaryRef Body;
-  };
-};
-
 struct ElemSegment {
   uint32_t Flags;
   uint32_t TableNumber;
   ValueType ElemKind;
-  InitExpr Offset;
+  wasm::WasmInitExpr Offset;
   std::vector<uint32_t> Functions;
 };
 
@@ -83,20 +74,19 @@ struct Global {
   uint32_t Index;
   ValueType Type;
   bool Mutable;
-  InitExpr Init;
+  wasm::WasmInitExpr InitExpr;
 };
 
 struct Import {
-  Import() {}
   StringRef Module;
   StringRef Field;
   ExportKind Kind;
   union {
     uint32_t SigIndex;
+    Global GlobalImport;
     Table TableImport;
     Limits Memory;
     uint32_t TagIndex;
-    Global GlobalImport;
   };
 };
 
@@ -124,7 +114,7 @@ struct DataSegment {
   uint32_t SectionOffset;
   uint32_t InitFlags;
   uint32_t MemoryIndex;
-  InitExpr Offset;
+  wasm::WasmInitExpr Offset;
   yaml::BinaryRef Content;
 };
 
@@ -536,8 +526,8 @@ template <> struct MappingTraits<WasmYAML::LocalDecl> {
   static void mapping(IO &IO, WasmYAML::LocalDecl &LocalDecl);
 };
 
-template <> struct MappingTraits<WasmYAML::InitExpr> {
-  static void mapping(IO &IO, WasmYAML::InitExpr &Expr);
+template <> struct MappingTraits<wasm::WasmInitExpr> {
+  static void mapping(IO &IO, wasm::WasmInitExpr &Expr);
 };
 
 template <> struct MappingTraits<WasmYAML::DataSegment> {

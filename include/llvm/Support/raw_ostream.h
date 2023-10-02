@@ -15,14 +15,16 @@
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/Support/DataTypes.h"
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <optional>
 #include <string>
+#if __cplusplus > 201402L
 #include <string_view>
+#endif
 #include <system_error>
 #include <type_traits>
 
@@ -34,7 +36,7 @@ class format_object_base;
 class FormattedString;
 class FormattedNumber;
 class FormattedBytes;
-template <class T> class [[nodiscard]] Expected;
+template <class T> class LLVM_NODISCARD Expected;
 
 namespace sys {
 namespace fs {
@@ -223,20 +225,6 @@ public:
     return *this;
   }
 
-#if defined(__cpp_char8_t)
-  // When using `char8_t *` integers or pointers are written to the ostream
-  // instead of UTF-8 code as one might expect. This might lead to unexpected
-  // behavior, especially as `u8""` literals are of type `char8_t*` instead of
-  // type `char_t*` from C++20 onwards. Thus we disallow using them with
-  // raw_ostreams.
-  // If you have u8"" literals to stream, you can rewrite them as ordinary
-  // literals with escape sequences
-  // e.g.  replace `u8"\u00a0"` by `"\xc2\xa0"`
-  // or use `reinterpret_cast`:
-  // e.g. replace `u8"\u00a0"` by `reinterpret_cast<const char *>(u8"\u00a0")`
-  raw_ostream &operator<<(const char8_t *Str) = delete;
-#endif
-
   raw_ostream &operator<<(const char *Str) {
     // Inline fast path, particularly for constant strings where a sufficiently
     // smart compiler will simplify strlen.
@@ -249,9 +237,11 @@ public:
     return write(Str.data(), Str.length());
   }
 
+#if __cplusplus > 201402L
   raw_ostream &operator<<(const std::string_view &Str) {
     return write(Str.data(), Str.length());
   }
+#endif
 
   raw_ostream &operator<<(const SmallVectorImpl<char> &Str) {
     return write(Str.data(), Str.size());
@@ -456,7 +446,7 @@ class raw_fd_ostream : public raw_pwrite_stream {
   bool ShouldClose;
   bool SupportsSeeking = false;
   bool IsRegularFile = false;
-  mutable std::optional<bool> HasColors;
+  mutable Optional<bool> HasColors;
 
 #ifdef _WIN32
   /// True if this fd refers to a Windows console device. Mintty and other
@@ -575,7 +565,7 @@ public:
   ///     });
   ///   }
   ///   @endcode
-  [[nodiscard]] Expected<sys::fs::FileLocker> lock();
+  LLVM_NODISCARD Expected<sys::fs::FileLocker> lock();
 
   /// Tries to lock the underlying file within the specified period.
   ///
@@ -584,8 +574,8 @@ public:
   ///          error code.
   ///
   /// It is used as @ref lock.
-  [[nodiscard]] Expected<sys::fs::FileLocker>
-  tryLockFor(Duration const &Timeout);
+  LLVM_NODISCARD
+  Expected<sys::fs::FileLocker> tryLockFor(Duration const& Timeout);
 };
 
 /// This returns a reference to a raw_fd_ostream for standard output. Use it
@@ -720,7 +710,7 @@ class buffer_ostream : public raw_svector_ostream {
   raw_ostream &OS;
   SmallVector<char, 0> Buffer;
 
-  void anchor() override;
+  virtual void anchor() override;
 
 public:
   buffer_ostream(raw_ostream &OS) : raw_svector_ostream(Buffer), OS(OS) {}
@@ -731,7 +721,7 @@ class buffer_unique_ostream : public raw_svector_ostream {
   std::unique_ptr<raw_ostream> OS;
   SmallVector<char, 0> Buffer;
 
-  void anchor() override;
+  virtual void anchor() override;
 
 public:
   buffer_unique_ostream(std::unique_ptr<raw_ostream> OS)
@@ -753,18 +743,6 @@ class Error;
 /// temporary file after the \p Write function is finished.
 Error writeToOutput(StringRef OutputFileName,
                     std::function<Error(raw_ostream &)> Write);
-
-raw_ostream &operator<<(raw_ostream &OS, std::nullopt_t);
-
-template <typename T, typename = decltype(std::declval<raw_ostream &>()
-                                          << std::declval<const T &>())>
-raw_ostream &operator<<(raw_ostream &OS, const std::optional<T> &O) {
-  if (O)
-    OS << *O;
-  else
-    OS << std::nullopt;
-  return OS;
-}
 
 } // end namespace llvm
 

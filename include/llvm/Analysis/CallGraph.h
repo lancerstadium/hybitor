@@ -45,6 +45,9 @@
 #ifndef LLVM_ANALYSIS_CALLGRAPH_H
 #define LLVM_ANALYSIS_CALLGRAPH_H
 
+#include "llvm/ADT/GraphTraits.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/Function.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/PassManager.h"
@@ -58,9 +61,7 @@
 
 namespace llvm {
 
-template <class GraphType> struct GraphTraits;
 class CallGraphNode;
-class Function;
 class Module;
 class raw_ostream;
 
@@ -175,7 +176,7 @@ public:
   /// first field and it is not supposed to be `nullptr`.
   /// Reference edges, for example, are used for connecting broker function
   /// caller to the callback function for callback call sites.
-  using CallRecord = std::pair<std::optional<WeakTrackingVH>, CallGraphNode *>;
+  using CallRecord = std::pair<Optional<WeakTrackingVH>, CallGraphNode *>;
 
 public:
   using CalledFunctionsVector = std::vector<CallRecord>;
@@ -240,9 +241,11 @@ public:
 
   /// Adds a function to the list of functions called by this one.
   void addCalledFunction(CallBase *Call, CallGraphNode *M) {
-    CalledFunctions.emplace_back(Call ? std::optional<WeakTrackingVH>(Call)
-                                      : std::optional<WeakTrackingVH>(),
-                                 M);
+    assert(!Call || !Call->getCalledFunction() ||
+           !Call->getCalledFunction()->isIntrinsic() ||
+           !Intrinsic::isLeaf(Call->getCalledFunction()->getIntrinsicID()));
+    CalledFunctions.emplace_back(
+        Call ? Optional<WeakTrackingVH>(Call) : Optional<WeakTrackingVH>(), M);
     M->AddRef();
   }
 
@@ -320,17 +323,6 @@ class CallGraphPrinterPass : public PassInfoMixin<CallGraphPrinterPass> {
 
 public:
   explicit CallGraphPrinterPass(raw_ostream &OS) : OS(OS) {}
-
-  PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM);
-};
-
-/// Printer pass for the summarized \c CallGraphAnalysis results.
-class CallGraphSCCsPrinterPass
-    : public PassInfoMixin<CallGraphSCCsPrinterPass> {
-  raw_ostream &OS;
-
-public:
-  explicit CallGraphSCCsPrinterPass(raw_ostream &OS) : OS(OS) {}
 
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM);
 };

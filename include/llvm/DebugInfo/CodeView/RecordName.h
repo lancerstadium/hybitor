@@ -9,14 +9,11 @@
 #ifndef LLVM_DEBUGINFO_CODEVIEW_RECORDNAME_H
 #define LLVM_DEBUGINFO_CODEVIEW_RECORDNAME_H
 
-#include "llvm/ADT/StringRef.h"
-#include "llvm/DebugInfo/CodeView/CVRecord.h"
-#include <string>
+#include "llvm/DebugInfo/CodeView/TypeCollection.h"
+#include "llvm/DebugInfo/CodeView/TypeIndex.h"
 
 namespace llvm {
 namespace codeview {
-class TypeCollection;
-class TypeIndex;
 std::string computeTypeName(TypeCollection &Types, TypeIndex Index);
 StringRef getSymbolName(CVSymbol Sym);
 } // namespace codeview

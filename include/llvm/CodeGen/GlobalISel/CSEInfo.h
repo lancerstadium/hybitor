@@ -39,14 +39,14 @@ public:
 class CSEConfigFull : public CSEConfigBase {
 public:
   virtual ~CSEConfigFull() = default;
-  bool shouldCSEOpc(unsigned Opc) override;
+  virtual bool shouldCSEOpc(unsigned Opc) override;
 };
 
 // Commonly used for O0 config.
 class CSEConfigConstantOnly : public CSEConfigBase {
 public:
   virtual ~CSEConfigConstantOnly() = default;
-  bool shouldCSEOpc(unsigned Opc) override;
+  virtual bool shouldCSEOpc(unsigned Opc) override;
 };
 
 // Returns the standard expected CSEConfig for the given optimization level.

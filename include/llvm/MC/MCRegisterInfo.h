@@ -512,9 +512,9 @@ public:
   /// debugging info.
   int getDwarfRegNum(MCRegister RegNum, bool isEH) const;
 
-  /// Map a dwarf register back to a target register. Returns std::nullopt is
-  /// there is no mapping.
-  std::optional<unsigned> getLLVMRegNum(unsigned RegNum, bool isEH) const;
+  /// Map a dwarf register back to a target register. Returns None is there is
+  /// no mapping.
+  Optional<unsigned> getLLVMRegNum(unsigned RegNum, bool isEH) const;
 
   /// Map a target EH register number to an equivalent DWARF register
   /// number.
@@ -580,9 +580,6 @@ public:
   bool isSuperOrSubRegisterEq(MCRegister RegA, MCRegister RegB) const {
     return isSubRegisterEq(RegA, RegB) || isSuperRegister(RegA, RegB);
   }
-
-  /// Returns true if the two registers are equal or alias each other.
-  bool regsOverlap(MCRegister RegA, MCRegister RegB) const;
 };
 
 //===----------------------------------------------------------------------===//
@@ -700,11 +697,6 @@ public:
     // terminate the list, but since we know every register has at least one
     // unit, we can allow a 0 differential here.
     advance();
-  }
-
-  MCRegUnitIterator &operator++() {
-    MCRegisterInfo::DiffListIterator::operator++();
-    return *this;
   }
 };
 

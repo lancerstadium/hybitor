@@ -9,10 +9,14 @@
 #ifndef LLVM_DEBUGINFO_PDB_NATIVE_DBISTREAM_H
 #define LLVM_DEBUGINFO_PDB_NATIVE_DBISTREAM_H
 
+#include "llvm/DebugInfo/CodeView/DebugSubsection.h"
 #include "llvm/DebugInfo/CodeView/DebugFrameDataSubsection.h"
+#include "llvm/DebugInfo/MSF/MappedBlockStream.h"
+#include "llvm/DebugInfo/PDB/Native/DbiModuleDescriptor.h"
 #include "llvm/DebugInfo/PDB/Native/DbiModuleList.h"
 #include "llvm/DebugInfo/PDB/Native/PDBStringTable.h"
 #include "llvm/DebugInfo/PDB/Native/RawConstants.h"
+#include "llvm/DebugInfo/PDB/Native/RawTypes.h"
 #include "llvm/DebugInfo/PDB/PDBTypes.h"
 #include "llvm/Support/BinaryStreamArray.h"
 #include "llvm/Support/BinaryStreamRef.h"
@@ -20,19 +24,13 @@
 #include "llvm/Support/Error.h"
 
 namespace llvm {
-class BinaryStream;
 namespace object {
 struct FpoData;
 struct coff_section;
 }
-namespace msf {
-class MappedBlockStream;
-}
+
 namespace pdb {
-struct DbiStreamHeader;
-struct SecMapEntry;
-struct SectionContrib2;
-struct SectionContrib;
+class DbiStreamBuilder;
 class PDBFile;
 class ISectionContribVisitor;
 

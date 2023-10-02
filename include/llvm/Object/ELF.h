@@ -14,7 +14,6 @@
 #define LLVM_OBJECT_ELF_H
 
 #include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/BinaryFormat/ELF.h"
@@ -120,7 +119,7 @@ template <class T> struct DataRegion {
   }
 
   const T *First;
-  std::optional<uint64_t> Size;
+  Optional<uint64_t> Size = None;
   const uint8_t *BufEnd = nullptr;
 };
 
@@ -182,8 +181,6 @@ public:
 
 private:
   StringRef Buf;
-  std::vector<Elf_Shdr> FakeSections;
-  SmallString<0> FakeSectionStrings;
 
   ELFFile(StringRef Object);
 
@@ -202,10 +199,10 @@ public:
   Expected<std::vector<VerNeed>> getVersionDependencies(
       const Elf_Shdr &Sec,
       WarningHandler WarnHandler = &defaultWarningHandler) const;
-  Expected<StringRef> getSymbolVersionByIndex(
-      uint32_t SymbolVersionIndex, bool &IsDefault,
-      SmallVector<std::optional<VersionEntry>, 0> &VersionMap,
-      std::optional<bool> IsSymHidden) const;
+  Expected<StringRef>
+  getSymbolVersionByIndex(uint32_t SymbolVersionIndex, bool &IsDefault,
+                          SmallVector<Optional<VersionEntry>, 0> &VersionMap,
+                          Optional<bool> IsSymHidden) const;
 
   Expected<StringRef>
   getStringTable(const Elf_Shdr &Section,
@@ -233,7 +230,7 @@ public:
   Expected<const Elf_Sym *> getRelocationSymbol(const Elf_Rel &Rel,
                                                 const Elf_Shdr *SymTab) const;
 
-  Expected<SmallVector<std::optional<VersionEntry>, 0>>
+  Expected<SmallVector<Optional<VersionEntry>, 0>>
   loadVersionMap(const Elf_Shdr *VerNeedSec, const Elf_Shdr *VerDefSec) const;
 
   static Expected<ELFFile> create(StringRef Object);
@@ -259,7 +256,7 @@ public:
 
   Expected<Elf_Sym_Range> symbols(const Elf_Shdr *Sec) const {
     if (!Sec)
-      return ArrayRef<Elf_Sym>(nullptr, nullptr);
+      return makeArrayRef<Elf_Sym>(nullptr, nullptr);
     return getSectionContentsAsArray<Elf_Sym>(*Sec);
   }
 
@@ -296,7 +293,7 @@ public:
                          ", e_phentsize = " + Twine(getHeader().e_phentsize));
 
     auto *Begin = reinterpret_cast<const Elf_Phdr *>(base() + PhOff);
-    return ArrayRef(Begin, Begin + getHeader().e_phnum);
+    return makeArrayRef(Begin, Begin + getHeader().e_phnum);
   }
 
   /// Get an iterator over notes in a program header.
@@ -392,8 +389,6 @@ public:
   Expected<ArrayRef<uint8_t>> getSectionContents(const Elf_Shdr &Sec) const;
   Expected<ArrayRef<uint8_t>> getSegmentContents(const Elf_Phdr &Phdr) const;
   Expected<std::vector<BBAddrMap>> decodeBBAddrMap(const Elf_Shdr &Sec) const;
-
-  void createFakeSections();
 };
 
 using ELF32LEFile = ELFFile<ELF32LE>;
@@ -516,7 +511,7 @@ ELFFile<ELFT>::getSectionContentsAsArray(const Elf_Shdr &Sec) const {
     return createError("unaligned data");
 
   const T *Start = reinterpret_cast<const T *>(base() + Offset);
-  return ArrayRef(Start, Size / sizeof(T));
+  return makeArrayRef(Start, Size / sizeof(T));
 }
 
 template <class ELFT>
@@ -536,7 +531,7 @@ ELFFile<ELFT>::getSegmentContents(const Elf_Phdr &Phdr) const {
                        ") + p_filesz (0x" + Twine::utohexstr(Size) +
                        ") that is greater than the file size (0x" +
                        Twine::utohexstr(Buf.size()) + ")");
-  return ArrayRef(base() + Offset, Size);
+  return makeArrayRef(base() + Offset, Size);
 }
 
 template <class ELFT>
@@ -587,10 +582,10 @@ uint32_t ELFFile<ELFT>::getRelativeRelocationType() const {
 }
 
 template <class ELFT>
-Expected<SmallVector<std::optional<VersionEntry>, 0>>
+Expected<SmallVector<Optional<VersionEntry>, 0>>
 ELFFile<ELFT>::loadVersionMap(const Elf_Shdr *VerNeedSec,
                               const Elf_Shdr *VerDefSec) const {
-  SmallVector<std::optional<VersionEntry>, 0> VersionMap;
+  SmallVector<Optional<VersionEntry>, 0> VersionMap;
 
   // The first two version indexes are reserved.
   // Index 0 is VER_NDX_LOCAL, index 1 is VER_NDX_GLOBAL.
@@ -650,11 +645,8 @@ ELFFile<ELFT>::getSectionStringTable(Elf_Shdr_Range Sections,
     Index = Sections[0].sh_link;
   }
 
-  // There is no section name string table. Return FakeSectionStrings which
-  // is non-empty if we have created fake sections.
-  if (!Index)
-    return FakeSectionStrings;
-
+  if (!Index) // no section string table.
+    return "";
   if (Index >= Sections.size())
     return createError("section header string table index " + Twine(Index) +
                        " does not exist");
@@ -722,8 +714,8 @@ Expected<uint64_t> ELFFile<ELFT>::getDynSymtabSize() const {
   Expected<Elf_Dyn_Range> DynTable = dynamicEntries();
   if (!DynTable)
     return DynTable.takeError();
-  std::optional<uint64_t> ElfHash;
-  std::optional<uint64_t> ElfGnuHash;
+  llvm::Optional<uint64_t> ElfHash;
+  llvm::Optional<uint64_t> ElfGnuHash;
   for (const Elf_Dyn &Entry : *DynTable) {
     switch (Entry.d_tag) {
     case ELF::DT_HASH:
@@ -765,42 +757,11 @@ Expected<ELFFile<ELFT>> ELFFile<ELFT>::create(StringRef Object) {
   return ELFFile(Object);
 }
 
-/// Used by llvm-objdump -d (which needs sections for disassembly) to
-/// disassemble objects without a section header table (e.g. ET_CORE objects
-/// analyzed by linux perf or ET_EXEC with llvm-strip --strip-sections).
-template <class ELFT> void ELFFile<ELFT>::createFakeSections() {
-  if (!FakeSections.empty())
-    return;
-  auto PhdrsOrErr = program_headers();
-  if (!PhdrsOrErr)
-    return;
-
-  FakeSectionStrings += '\0';
-  for (auto [Idx, Phdr] : llvm::enumerate(*PhdrsOrErr)) {
-    if (Phdr.p_type != ELF::PT_LOAD || !(Phdr.p_flags & ELF::PF_X))
-      continue;
-    Elf_Shdr FakeShdr = {};
-    FakeShdr.sh_type = ELF::SHT_PROGBITS;
-    FakeShdr.sh_flags = ELF::SHF_ALLOC | ELF::SHF_EXECINSTR;
-    FakeShdr.sh_addr = Phdr.p_vaddr;
-    FakeShdr.sh_size = Phdr.p_memsz;
-    FakeShdr.sh_offset = Phdr.p_offset;
-    // Create a section name based on the p_type and index.
-    FakeShdr.sh_name = FakeSectionStrings.size();
-    FakeSectionStrings += ("PT_LOAD#" + Twine(Idx)).str();
-    FakeSectionStrings += '\0';
-    FakeSections.push_back(FakeShdr);
-  }
-}
-
 template <class ELFT>
 Expected<typename ELFT::ShdrRange> ELFFile<ELFT>::sections() const {
   const uintX_t SectionTableOffset = getHeader().e_shoff;
-  if (SectionTableOffset == 0) {
-    if (!FakeSections.empty())
-      return ArrayRef(FakeSections.data(), FakeSections.size());
+  if (SectionTableOffset == 0)
     return ArrayRef<Elf_Shdr>();
-  }
 
   if (getHeader().e_shentsize != sizeof(Elf_Shdr))
     return createError("invalid e_shentsize in ELF header: " +
@@ -842,7 +803,7 @@ Expected<typename ELFT::ShdrRange> ELFFile<ELFT>::sections() const {
   // Section table goes past end of file!
   if (SectionTableOffset + SectionTableSize > FileSize)
     return createError("section table goes past the end of file");
-  return ArrayRef(First, NumSections);
+  return makeArrayRef(First, NumSections);
 }
 
 template <class ELFT>
@@ -876,8 +837,8 @@ Expected<const T *> ELFFile<ELFT>::getEntry(const Elf_Shdr &Section,
 template <typename ELFT>
 Expected<StringRef> ELFFile<ELFT>::getSymbolVersionByIndex(
     uint32_t SymbolVersionIndex, bool &IsDefault,
-    SmallVector<std::optional<VersionEntry>, 0> &VersionMap,
-    std::optional<bool> IsSymHidden) const {
+    SmallVector<Optional<VersionEntry>, 0> &VersionMap,
+    Optional<bool> IsSymHidden) const {
   size_t VersionIndex = SymbolVersionIndex & llvm::ELF::VERSYM_VERSION;
 
   // Special markers for unversioned symbols.
@@ -894,7 +855,7 @@ Expected<StringRef> ELFFile<ELFT>::getSymbolVersionByIndex(
 
   const VersionEntry &Entry = *VersionMap[VersionIndex];
   // A default version (@@) is only available for defined symbols.
-  if (!Entry.IsVerDef || IsSymHidden.value_or(false))
+  if (!Entry.IsVerDef || IsSymHidden.getValueOr(false))
     IsDefault = false;
   else
     IsDefault = !(SymbolVersionIndex & llvm::ELF::VERSYM_HIDDEN);
@@ -1038,7 +999,7 @@ ELFFile<ELFT>::getVersionDependencies(const Elf_Shdr &Sec,
     VN.Offset = VerneedBuf - Start;
 
     if (Verneed->vn_file < StrTab.size())
-      VN.File = std::string(StrTab.data() + Verneed->vn_file);
+      VN.File = std::string(StrTab.drop_front(Verneed->vn_file));
     else
       VN.File = ("<corrupt vn_file: " + Twine(Verneed->vn_file) + ">").str();
 
@@ -1231,16 +1192,6 @@ inline unsigned hashSysV(StringRef SymbolName) {
     h &= ~g;
   }
   return h;
-}
-
-/// This function returns the hash value for a symbol in the .dynsym section
-/// for the GNU hash table. The implementation is defined in the GNU hash ABI.
-/// REF : https://sourceware.org/git/?p=binutils-gdb.git;a=blob;f=bfd/elf.c#l222
-inline uint32_t hashGnu(StringRef Name) {
-  uint32_t H = 5381;
-  for (uint8_t C : Name)
-    H = (H << 5) + H + C;
-  return H;
 }
 
 } // end namespace object

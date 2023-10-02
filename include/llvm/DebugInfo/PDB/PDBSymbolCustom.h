@@ -15,6 +15,8 @@
 
 namespace llvm {
 
+class raw_ostream;
+
 namespace pdb {
 /// PDBSymbolCustom represents symbols that are compiler-specific and do not
 /// fit anywhere else in the lexical hierarchy.

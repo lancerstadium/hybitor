@@ -59,7 +59,7 @@ class DWARFDebugAbbrev {
 
   mutable DWARFAbbreviationDeclarationSetMap AbbrDeclSets;
   mutable DWARFAbbreviationDeclarationSetMap::const_iterator PrevAbbrOffsetPos;
-  mutable std::optional<DataExtractor> Data;
+  mutable Optional<DataExtractor> Data;
 
 public:
   DWARFDebugAbbrev();

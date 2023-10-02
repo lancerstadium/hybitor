@@ -348,14 +348,9 @@ scc_member_iterator<GraphT, GT>::scc_member_iterator(
     NodeInfoMap[Edge->Target].Visited = false;
 
   std::queue<NodeType *> Queue;
-  // Initialze the queue with MST roots. Note that walking through SortedEdges
-  // instead of NodeInfoMap ensures an ordered deterministic push.
-  for (auto *Edge : SortedEdges) {
-    if (NodeInfoMap[Edge->Source].Visited) {
-      Queue.push(Edge->Source);
-      NodeInfoMap[Edge->Source].Visited = false;
-    }
-  }
+  for (auto &Node : NodeInfoMap)
+    if (Node.second.Visited)
+      Queue.push(Node.first);
 
   while (!Queue.empty()) {
     auto *Node = Queue.front();

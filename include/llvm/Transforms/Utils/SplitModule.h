@@ -15,7 +15,7 @@
 #ifndef LLVM_TRANSFORMS_UTILS_SPLITMODULE_H
 #define LLVM_TRANSFORMS_UTILS_SPLITMODULE_H
 
-#include "llvm/ADT/STLFunctionalExtras.h"
+#include "llvm/ADT/STLExtras.h"
 #include <memory>
 
 namespace llvm {

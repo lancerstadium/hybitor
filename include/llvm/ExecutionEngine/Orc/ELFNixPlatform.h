@@ -95,7 +95,7 @@ public:
   static Expected<std::unique_ptr<ELFNixPlatform>>
   Create(ExecutionSession &ES, ObjectLinkingLayer &ObjLinkingLayer,
          JITDylib &PlatformJD, const char *OrcRuntimePath,
-         std::optional<SymbolAliasMap> RuntimeAliases = std::nullopt);
+         Optional<SymbolAliasMap> RuntimeAliases = None);
 
   ExecutionSession &getExecutionSession() const { return ES; }
   ObjectLinkingLayer &getObjectLinkingLayer() const { return ObjLinkingLayer; }
@@ -109,8 +109,7 @@ public:
   /// Returns an AliasMap containing the default aliases for the ELFNixPlatform.
   /// This can be modified by clients when constructing the platform to add
   /// or remove aliases.
-  static Expected<SymbolAliasMap> standardPlatformAliases(ExecutionSession &ES,
-                                                          JITDylib &PlatformJD);
+  static SymbolAliasMap standardPlatformAliases(ExecutionSession &ES);
 
   /// Returns the array of required CXX aliases.
   static ArrayRef<std::pair<const char *, const char *>> requiredCXXAliases();
@@ -143,11 +142,11 @@ private:
       return Error::success();
     }
 
-    Error notifyRemovingResources(JITDylib &JD, ResourceKey K) override {
+    Error notifyRemovingResources(ResourceKey K) override {
       return Error::success();
     }
 
-    void notifyTransferringResources(JITDylib &JD, ResourceKey DstKey,
+    void notifyTransferringResources(ResourceKey DstKey,
                                      ResourceKey SrcKey) override {}
 
   private:

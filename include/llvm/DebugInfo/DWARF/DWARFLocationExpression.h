@@ -9,6 +9,7 @@
 #ifndef LLVM_DEBUGINFO_DWARF_DWARFLOCATIONEXPRESSION_H
 #define LLVM_DEBUGINFO_DWARF_DWARFLOCATIONEXPRESSION_H
 
+#include "llvm/ADT/Optional.h"
 #include "llvm/DebugInfo/DWARF/DWARFAddressRange.h"
 
 namespace llvm {
@@ -22,7 +23,7 @@ struct DWARFLocationExpression {
   /// The address range in which this expression is valid. None denotes a
   /// default entry which is valid in addresses not covered by other location
   /// expressions, or everywhere if there are no other expressions.
-  std::optional<DWARFAddressRange> Range;
+  Optional<DWARFAddressRange> Range;
 
   /// The expression itself.
   SmallVector<uint8_t, 4> Expr;

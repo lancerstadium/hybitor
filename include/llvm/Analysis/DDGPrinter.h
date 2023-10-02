@@ -16,11 +16,10 @@
 #define LLVM_ANALYSIS_DDGPRINTER_H
 
 #include "llvm/Analysis/DDG.h"
+#include "llvm/Pass.h"
 #include "llvm/Support/DOTGraphTraits.h"
 
 namespace llvm {
-class LPMUpdater;
-class Loop;
 
 //===--------------------------------------------------------------------===//
 // Implementation of DDG DOT Printer for a loop.

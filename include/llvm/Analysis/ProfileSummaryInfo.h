@@ -19,7 +19,6 @@
 #include "llvm/IR/ProfileSummary.h"
 #include "llvm/Pass.h"
 #include <memory>
-#include <optional>
 
 namespace llvm {
 class BasicBlock;
@@ -43,17 +42,17 @@ private:
   std::unique_ptr<ProfileSummary> Summary;
   void computeThresholds();
   // Count thresholds to answer isHotCount and isColdCount queries.
-  std::optional<uint64_t> HotCountThreshold, ColdCountThreshold;
+  Optional<uint64_t> HotCountThreshold, ColdCountThreshold;
   // True if the working set size of the code is considered huge,
   // because the number of profile counts required to reach the hot
   // percentile is above a huge threshold.
-  std::optional<bool> HasHugeWorkingSetSize;
+  Optional<bool> HasHugeWorkingSetSize;
   // True if the working set size of the code is considered large,
   // because the number of profile counts required to reach the hot
   // percentile is above a large threshold.
-  std::optional<bool> HasLargeWorkingSetSize;
+  Optional<bool> HasLargeWorkingSetSize;
   // Compute the threshold for a given cutoff.
-  std::optional<uint64_t> computeThreshold(int PercentileCutoff) const;
+  Optional<uint64_t> computeThreshold(int PercentileCutoff) const;
   // The map that caches the threshold values. The keys are the percentile
   // cutoff values and the values are the corresponding threshold values.
   mutable DenseMap<int, uint64_t> ThresholdCache;
@@ -98,9 +97,9 @@ public:
   }
 
   /// Returns the profile count for \p CallInst.
-  std::optional<uint64_t> getProfileCount(const CallBase &CallInst,
-                                          BlockFrequencyInfo *BFI,
-                                          bool AllowSynthetic = false) const;
+  Optional<uint64_t> getProfileCount(const CallBase &CallInst,
+                                     BlockFrequencyInfo *BFI,
+                                     bool AllowSynthetic = false) const;
   /// Returns true if module \c M has partial-profile sample profile.
   bool hasPartialSampleProfile() const;
   /// Returns true if the working set size of the code is considered huge.
@@ -171,11 +170,11 @@ public:
   uint64_t getOrCompColdCountThreshold() const;
   /// Returns HotCountThreshold if set.
   uint64_t getHotCountThreshold() const {
-    return HotCountThreshold.value_or(0);
+    return HotCountThreshold.getValueOr(0);
   }
   /// Returns ColdCountThreshold if set.
   uint64_t getColdCountThreshold() const {
-    return ColdCountThreshold.value_or(0);
+    return ColdCountThreshold.getValueOr(0);
   }
 
  private:

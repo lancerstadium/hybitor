@@ -13,6 +13,7 @@
 
 namespace llvm {
 
+class raw_ostream;
 namespace pdb {
 
 class PDBSymbolAnnotation : public PDBSymbol {

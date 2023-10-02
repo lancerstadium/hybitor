@@ -51,9 +51,10 @@ enum class ColorMode {
 /// An RAII object that temporarily switches an output stream to a specific
 /// color.
 class WithColor {
-public:
-  using AutoDetectFunctionType = bool (*)(const raw_ostream &OS);
+  raw_ostream &OS;
+  ColorMode Mode;
 
+public:
   /// To be used like this: WithColor(OS, HighlightColor::String) << "text";
   /// @param OS The output stream
   /// @param S Symbolic name for syntax element to color
@@ -131,19 +132,6 @@ public:
   /// Implement default handling for Warning.
   /// Print "warning: " to stderr.
   static void defaultWarningHandler(Error Warning);
-
-  /// Retrieve the default color auto detection function.
-  static AutoDetectFunctionType defaultAutoDetectFunction();
-
-  /// Change the global auto detection function.
-  static void
-  setAutoDetectFunction(AutoDetectFunctionType NewAutoDetectFunction);
-
-private:
-  raw_ostream &OS;
-  ColorMode Mode;
-
-  static AutoDetectFunctionType AutoDetectFunction;
 };
 
 } // end namespace llvm

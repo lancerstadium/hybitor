@@ -18,20 +18,21 @@
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SetVector.h"
+#include "llvm/Analysis/DomTreeUpdater.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/Dominators.h"
+#include "llvm/IR/CFG.h"
+#include "llvm/IR/InstrTypes.h"
 #include <cassert>
 
 namespace llvm {
-class BranchInst;
-class LandingPadInst;
-class Loop;
-class PHINode;
-template <typename PtrType> class SmallPtrSetImpl;
+
 class BlockFrequencyInfo;
 class BranchProbabilityInfo;
+class DominatorTree;
 class DomTreeUpdater;
 class Function;
+class Instruction;
 class LoopInfo;
 class MDNode;
 class MemoryDependenceResults;
@@ -90,14 +91,11 @@ bool DeleteDeadPHIs(BasicBlock *BB, const TargetLibraryInfo *TLI = nullptr,
 /// if BB's Pred has a branch to BB and to AnotherBB, and BB has a single
 /// successor Sing. In this case the branch will be updated with Sing instead of
 /// BB, and BB will still be merged into its predecessor and removed.
-/// If \p DT is not nullptr, update it directly; in that case, DTU must be
-/// nullptr.
 bool MergeBlockIntoPredecessor(BasicBlock *BB, DomTreeUpdater *DTU = nullptr,
                                LoopInfo *LI = nullptr,
                                MemorySSAUpdater *MSSAU = nullptr,
                                MemoryDependenceResults *MemDep = nullptr,
-                               bool PredecessorWithTwoSuccessors = false,
-                               DominatorTree *DT = nullptr);
+                               bool PredecessorWithTwoSuccessors = false);
 
 /// Merge block(s) sucessors, if possible. Return true if at least two
 /// of the blocks were merged together.
@@ -117,14 +115,15 @@ bool RemoveRedundantDbgInstrs(BasicBlock *BB);
 
 /// Replace all uses of an instruction (specified by BI) with a value, then
 /// remove and delete the original instruction.
-void ReplaceInstWithValue(BasicBlock::iterator &BI, Value *V);
+void ReplaceInstWithValue(BasicBlock::InstListType &BIL,
+                          BasicBlock::iterator &BI, Value *V);
 
 /// Replace the instruction specified by BI with the instruction specified by I.
 /// Copies DebugLoc from BI to I, if I doesn't already have a DebugLoc. The
 /// original instruction is deleted and BI is updated to point to the new
 /// instruction.
-void ReplaceInstWithInst(BasicBlock *BB, BasicBlock::iterator &BI,
-                         Instruction *I);
+void ReplaceInstWithInst(BasicBlock::InstListType &BIL,
+                         BasicBlock::iterator &BI, Instruction *I);
 
 /// Replace the instruction specified by From with the instruction specified by
 /// To. Copies DebugLoc from BI to I, if I doesn't already have a DebugLoc.
@@ -466,13 +465,10 @@ Instruction *SplitBlockAndInsertIfThen(Value *Cond, Instruction *SplitBefore,
 ///     ElseBlock
 ///   SplitBefore
 ///   Tail
-///
-/// Updates DT if given.
 void SplitBlockAndInsertIfThenElse(Value *Cond, Instruction *SplitBefore,
                                    Instruction **ThenTerm,
                                    Instruction **ElseTerm,
-                                   MDNode *BranchWeights = nullptr,
-                                   DomTreeUpdater *DTU = nullptr);
+                                   MDNode *BranchWeights = nullptr);
 
 /// Check whether BB is the merge point of a if-region.
 /// If so, return the branch instruction that determines which entry into
@@ -504,9 +500,7 @@ BranchInst *GetIfCondition(BasicBlock *BB, BasicBlock *&IfTrue,
 // create the following structure:
 // A -> D0A, B -> D0A, I -> D0B, D0A -> D1, D0B -> D1
 // If BPI and BFI aren't non-null, BPI/BFI will be updated accordingly.
-// When `IgnoreBlocksWithoutPHI` is set to `true` critical edges leading to a
-// block without phi-instructions will not be split.
-bool SplitIndirectBrCriticalEdges(Function &F, bool IgnoreBlocksWithoutPHI,
+bool SplitIndirectBrCriticalEdges(Function &F,
                                   BranchProbabilityInfo *BPI = nullptr,
                                   BlockFrequencyInfo *BFI = nullptr);
 
@@ -579,11 +573,11 @@ bool SplitIndirectBrCriticalEdges(Function &F, bool IgnoreBlocksWithoutPHI,
 ///    for the caller to accomplish, since each specific use of this function
 ///    may have additional information which simplifies this fixup. For example,
 ///    see restoreSSA() in the UnifyLoopExits pass.
-BasicBlock *CreateControlFlowHub(
-    DomTreeUpdater *DTU, SmallVectorImpl<BasicBlock *> &GuardBlocks,
-    const SetVector<BasicBlock *> &Predecessors,
-    const SetVector<BasicBlock *> &Successors, const StringRef Prefix,
-    std::optional<unsigned> MaxControlFlowBooleans = std::nullopt);
+BasicBlock *CreateControlFlowHub(DomTreeUpdater *DTU,
+                                 SmallVectorImpl<BasicBlock *> &GuardBlocks,
+                                 const SetVector<BasicBlock *> &Predecessors,
+                                 const SetVector<BasicBlock *> &Successors,
+                                 const StringRef Prefix);
 
 } // end namespace llvm
 

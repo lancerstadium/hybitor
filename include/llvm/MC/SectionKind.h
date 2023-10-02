@@ -24,10 +24,6 @@ class SectionKind {
     /// Metadata - Debug info sections or other metadata.
     Metadata,
 
-    /// Exclude - This section will be excluded from the final executable or
-    /// shared library. Only valid for ELF / COFF targets.
-    Exclude,
-
     /// Text - Text section, used for functions and other executable code.
     Text,
 
@@ -122,8 +118,6 @@ public:
 
   bool isMetadata() const { return K == Metadata; }
 
-  bool isExclude() const { return K == Exclude; }
-
   bool isText() const { return K == Text || K == ExecuteOnly; }
 
   bool isExecuteOnly() const { return K == ExecuteOnly; }
@@ -186,7 +180,6 @@ private:
 public:
 
   static SectionKind getMetadata() { return get(Metadata); }
-  static SectionKind getExclude() { return get(Exclude); }
   static SectionKind getText() { return get(Text); }
   static SectionKind getExecuteOnly() { return get(ExecuteOnly); }
   static SectionKind getReadOnly() { return get(ReadOnly); }

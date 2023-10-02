@@ -18,6 +18,7 @@
 #ifndef LLVM_ANALYSIS_CFGPRINTER_H
 #define LLVM_ANALYSIS_CFGPRINTER_H
 
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/Analysis/BlockFrequencyInfo.h"
 #include "llvm/Analysis/BranchProbabilityInfo.h"
 #include "llvm/Analysis/HeatUtils.h"
@@ -26,12 +27,10 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/PassManager.h"
-#include "llvm/IR/ProfDataUtils.h"
-#include "llvm/Support/DOTGraphTraits.h"
 #include "llvm/Support/FormatVariadic.h"
+#include "llvm/Support/GraphWriter.h"
 
 namespace llvm {
-template <class GraphType> struct GraphTraits;
 class CFGViewerPass : public PassInfoMixin<CFGViewerPass> {
 public:
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
@@ -120,96 +119,81 @@ struct GraphTraits<DOTFuncInfo *> : public GraphTraits<const BasicBlock *> {
   }
 };
 
-template <typename BasicBlockT>
-std::string SimpleNodeLabelString(const BasicBlockT *Node) {
-  if (!Node->getName().empty())
-    return Node->getName().str();
-
-  std::string Str;
-  raw_string_ostream OS(Str);
-
-  Node->printAsOperand(OS, false);
-  return OS.str();
-}
-
-template <typename BasicBlockT>
-std::string CompleteNodeLabelString(
-    const BasicBlockT *Node,
-    function_ref<void(raw_string_ostream &, const BasicBlockT &)>
-        HandleBasicBlock,
-    function_ref<void(std::string &, unsigned &, unsigned)>
-        HandleComment) {
-
-  enum { MaxColumns = 80 };
-  std::string Str;
-  raw_string_ostream OS(Str);
-
-  if (Node->getName().empty()) {
-    Node->printAsOperand(OS, false);
-    OS << ':';
-  }
-
-  HandleBasicBlock(OS, *Node);
-  std::string OutStr = OS.str();
-  if (OutStr[0] == '\n')
-    OutStr.erase(OutStr.begin());
-
-  unsigned ColNum = 0;
-  unsigned LastSpace = 0;
-  for (unsigned i = 0; i != OutStr.length(); ++i) {
-    if (OutStr[i] == '\n') { // Left justify
-      OutStr[i] = '\\';
-      OutStr.insert(OutStr.begin() + i + 1, 'l');
-      ColNum = 0;
-      LastSpace = 0;
-    } else if (OutStr[i] == ';') {             // Delete comments!
-      unsigned Idx = OutStr.find('\n', i + 1); // Find end of line
-      HandleComment(OutStr, i, Idx);
-    } else if (ColNum == MaxColumns) { // Wrap lines.
-      // Wrap very long names even though we can't find a space.
-      if (!LastSpace)
-        LastSpace = i;
-      OutStr.insert(LastSpace, "\\l...");
-      ColNum = i - LastSpace;
-      LastSpace = 0;
-      i += 3; // The loop will advance 'i' again.
-    } else
-      ++ColNum;
-    if (OutStr[i] == ' ')
-      LastSpace = i;
-  }
-  return OutStr;
-}
-
 template <>
 struct DOTGraphTraits<DOTFuncInfo *> : public DefaultDOTGraphTraits {
 
   // Cache for is hidden property
-  DenseMap<const BasicBlock *, bool> isOnDeoptOrUnreachablePath;
+  llvm::DenseMap<const BasicBlock *, bool> isOnDeoptOrUnreachablePath;
 
   DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
-
-  static void eraseComment(std::string &OutStr, unsigned &I, unsigned Idx) {
-    OutStr.erase(OutStr.begin() + I, OutStr.begin() + Idx);
-    --I;
-  }
 
   static std::string getGraphName(DOTFuncInfo *CFGInfo) {
     return "CFG for '" + CFGInfo->getFunction()->getName().str() + "' function";
   }
 
   static std::string getSimpleNodeLabel(const BasicBlock *Node, DOTFuncInfo *) {
-    return SimpleNodeLabelString(Node);
+    if (!Node->getName().empty())
+      return Node->getName().str();
+
+    std::string Str;
+    raw_string_ostream OS(Str);
+
+    Node->printAsOperand(OS, false);
+    return OS.str();
+  }
+
+  static void eraseComment(std::string &OutStr, unsigned &I, unsigned Idx) {
+    OutStr.erase(OutStr.begin() + I, OutStr.begin() + Idx);
+    --I;
   }
 
   static std::string getCompleteNodeLabel(
       const BasicBlock *Node, DOTFuncInfo *,
-      function_ref<void(raw_string_ostream &, const BasicBlock &)>
+      llvm::function_ref<void(raw_string_ostream &, const BasicBlock &)>
           HandleBasicBlock = [](raw_string_ostream &OS,
                                 const BasicBlock &Node) -> void { OS << Node; },
-      function_ref<void(std::string &, unsigned &, unsigned)>
+      llvm::function_ref<void(std::string &, unsigned &, unsigned)>
           HandleComment = eraseComment) {
-    return CompleteNodeLabelString(Node, HandleBasicBlock, HandleComment);
+    enum { MaxColumns = 80 };
+    std::string Str;
+    raw_string_ostream OS(Str);
+
+    if (Node->getName().empty()) {
+      Node->printAsOperand(OS, false);
+      OS << ":";
+    }
+
+    HandleBasicBlock(OS, *Node);
+    std::string OutStr = OS.str();
+    if (OutStr[0] == '\n')
+      OutStr.erase(OutStr.begin());
+
+    // Process string output to make it nicer...
+    unsigned ColNum = 0;
+    unsigned LastSpace = 0;
+    for (unsigned i = 0; i != OutStr.length(); ++i) {
+      if (OutStr[i] == '\n') { // Left justify
+        OutStr[i] = '\\';
+        OutStr.insert(OutStr.begin() + i + 1, 'l');
+        ColNum = 0;
+        LastSpace = 0;
+      } else if (OutStr[i] == ';') {             // Delete comments!
+        unsigned Idx = OutStr.find('\n', i + 1); // Find end of line
+        HandleComment(OutStr, i, Idx);
+      } else if (ColNum == MaxColumns) { // Wrap lines.
+        // Wrap very long names even though we can't find a space.
+        if (!LastSpace)
+          LastSpace = i;
+        OutStr.insert(LastSpace, "\\l...");
+        ColNum = i - LastSpace;
+        LastSpace = 0;
+        i += 3; // The loop will advance 'i' again.
+      } else
+        ++ColNum;
+      if (OutStr[i] == ' ')
+        LastSpace = i;
+    }
+    return OutStr;
   }
 
   std::string getNodeLabel(const BasicBlock *Node, DOTFuncInfo *CFGInfo) {
@@ -277,8 +261,12 @@ struct DOTGraphTraits<DOTFuncInfo *> : public DefaultDOTGraphTraits {
     if (Attrs.size())
       return Attrs;
 
-    MDNode *WeightsNode = getBranchWeightMDNode(*TI);
+    MDNode *WeightsNode = TI->getMetadata(LLVMContext::MD_prof);
     if (!WeightsNode)
+      return "";
+
+    MDString *MDName = cast<MDString>(WeightsNode->getOperand(0));
+    if (MDName->getString() != "branch_weights")
       return "";
 
     OpNo = I.getSuccessorIndex() + 1;

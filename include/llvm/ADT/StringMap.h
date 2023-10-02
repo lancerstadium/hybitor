@@ -107,9 +107,8 @@ public:
 /// funky memory allocation and hashing things to make it extremely efficient,
 /// storing the string data *after* the value in the map.
 template <typename ValueTy, typename AllocatorTy = MallocAllocator>
-class StringMap : public StringMapImpl,
-                  private detail::AllocatorHolder<AllocatorTy> {
-  using AllocTy = detail::AllocatorHolder<AllocatorTy>;
+class StringMap : public StringMapImpl {
+  AllocatorTy Allocator;
 
 public:
   using MapEntryTy = StringMapEntry<ValueTy>;
@@ -120,11 +119,12 @@ public:
       : StringMapImpl(InitialSize, static_cast<unsigned>(sizeof(MapEntryTy))) {}
 
   explicit StringMap(AllocatorTy A)
-      : StringMapImpl(static_cast<unsigned>(sizeof(MapEntryTy))), AllocTy(A) {}
+      : StringMapImpl(static_cast<unsigned>(sizeof(MapEntryTy))), Allocator(A) {
+  }
 
   StringMap(unsigned InitialSize, AllocatorTy A)
       : StringMapImpl(InitialSize, static_cast<unsigned>(sizeof(MapEntryTy))),
-        AllocTy(A) {}
+        Allocator(A) {}
 
   StringMap(std::initializer_list<std::pair<StringRef, ValueTy>> List)
       : StringMapImpl(List.size(), static_cast<unsigned>(sizeof(MapEntryTy))) {
@@ -132,11 +132,11 @@ public:
   }
 
   StringMap(StringMap &&RHS)
-      : StringMapImpl(std::move(RHS)), AllocTy(std::move(RHS.getAllocator())) {}
+      : StringMapImpl(std::move(RHS)), Allocator(std::move(RHS.Allocator)) {}
 
   StringMap(const StringMap &RHS)
       : StringMapImpl(static_cast<unsigned>(sizeof(MapEntryTy))),
-        AllocTy(RHS.getAllocator()) {
+        Allocator(RHS.Allocator) {
     if (RHS.empty())
       return;
 
@@ -155,8 +155,8 @@ public:
         continue;
       }
 
-      TheTable[I] = MapEntryTy::create(
-          static_cast<MapEntryTy *>(Bucket)->getKey(), getAllocator(),
+      TheTable[I] = MapEntryTy::Create(
+          static_cast<MapEntryTy *>(Bucket)->getKey(), Allocator,
           static_cast<MapEntryTy *>(Bucket)->getValue());
       HashTable[I] = RHSHashTable[I];
     }
@@ -171,7 +171,7 @@ public:
 
   StringMap &operator=(StringMap RHS) {
     StringMapImpl::swap(RHS);
-    std::swap(getAllocator(), RHS.getAllocator());
+    std::swap(Allocator, RHS.Allocator);
     return *this;
   }
 
@@ -183,14 +183,15 @@ public:
       for (unsigned I = 0, E = NumBuckets; I != E; ++I) {
         StringMapEntryBase *Bucket = TheTable[I];
         if (Bucket && Bucket != getTombstoneVal()) {
-          static_cast<MapEntryTy *>(Bucket)->Destroy(getAllocator());
+          static_cast<MapEntryTy *>(Bucket)->Destroy(Allocator);
         }
       }
     }
     free(TheTable);
   }
 
-  using AllocTy::getAllocator;
+  AllocatorTy &getAllocator() { return Allocator; }
+  const AllocatorTy &getAllocator() const { return Allocator; }
 
   using key_type = const char *;
   using mapped_type = ValueTy;
@@ -326,7 +327,7 @@ public:
   /// if and only if the insertion takes place, and the iterator component of
   /// the pair points to the element with key equivalent to the key of the pair.
   template <typename... ArgsTy>
-  std::pair<iterator, bool> try_emplace(StringRef Key, ArgsTy &&...Args) {
+  std::pair<iterator, bool> try_emplace(StringRef Key, ArgsTy &&... Args) {
     unsigned BucketNo = LookupBucketFor(Key);
     StringMapEntryBase *&Bucket = TheTable[BucketNo];
     if (Bucket && Bucket != getTombstoneVal())
@@ -335,8 +336,7 @@ public:
 
     if (Bucket == getTombstoneVal())
       --NumTombstones;
-    Bucket =
-        MapEntryTy::create(Key, getAllocator(), std::forward<ArgsTy>(Args)...);
+    Bucket = MapEntryTy::Create(Key, Allocator, std::forward<ArgsTy>(Args)...);
     ++NumItems;
     assert(NumItems + NumTombstones <= NumBuckets);
 
@@ -354,7 +354,7 @@ public:
     for (unsigned I = 0, E = NumBuckets; I != E; ++I) {
       StringMapEntryBase *&Bucket = TheTable[I];
       if (Bucket && Bucket != getTombstoneVal()) {
-        static_cast<MapEntryTy *>(Bucket)->Destroy(getAllocator());
+        static_cast<MapEntryTy *>(Bucket)->Destroy(Allocator);
       }
       Bucket = nullptr;
     }
@@ -370,7 +370,7 @@ public:
   void erase(iterator I) {
     MapEntryTy &V = *I;
     remove(&V);
-    V.Destroy(getAllocator());
+    V.Destroy(Allocator);
   }
 
   bool erase(StringRef Key) {

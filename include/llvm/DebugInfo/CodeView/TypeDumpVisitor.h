@@ -9,18 +9,16 @@
 #ifndef LLVM_DEBUGINFO_CODEVIEW_TYPEDUMPVISITOR_H
 #define LLVM_DEBUGINFO_CODEVIEW_TYPEDUMPVISITOR_H
 
-#include "llvm/ADT/StringRef.h"
-#include "llvm/DebugInfo/CodeView/CVRecord.h"
-#include "llvm/DebugInfo/CodeView/CodeView.h"
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/StringSet.h"
+#include "llvm/DebugInfo/CodeView/TypeIndex.h"
+#include "llvm/DebugInfo/CodeView/TypeRecord.h"
 #include "llvm/DebugInfo/CodeView/TypeVisitorCallbacks.h"
 
 namespace llvm {
 class ScopedPrinter;
 
 namespace codeview {
-class TypeIndex;
-struct CVMemberRecord;
-struct MemberAttributes;
 
 class TypeCollection;
 

@@ -60,9 +60,10 @@ public:
                                unsigned SectionID, StringRef SectionName,
                                bool IsReadOnly) override;
 
-  void reserveAllocationSpace(uintptr_t CodeSize, Align CodeAlign,
-                              uintptr_t RODataSize, Align RODataAlign,
-                              uintptr_t RWDataSize, Align RWDataAlign) override;
+  void reserveAllocationSpace(uintptr_t CodeSize, uint32_t CodeAlign,
+                              uintptr_t RODataSize, uint32_t RODataAlign,
+                              uintptr_t RWDataSize,
+                              uint32_t RWDataAlign) override;
 
   bool needsToReserveAllocationSpace() override;
 
@@ -76,9 +77,9 @@ public:
   bool finalizeMemory(std::string *ErrMsg = nullptr) override;
 
 private:
-  struct SectionAlloc {
+  struct Alloc {
   public:
-    SectionAlloc(uint64_t Size, unsigned Align)
+    Alloc(uint64_t Size, unsigned Align)
         : Size(Size), Align(Align),
           Contents(std::make_unique<uint8_t[]>(Size + Align - 1)) {}
 
@@ -91,31 +92,30 @@ private:
   // Group of section allocations to be allocated together in the executor. The
   // RemoteCodeAddr will stand in as the id of the group for deallocation
   // purposes.
-  struct SectionAllocGroup {
-    SectionAllocGroup() = default;
-    SectionAllocGroup(const SectionAllocGroup &) = delete;
-    SectionAllocGroup &operator=(const SectionAllocGroup &) = delete;
-    SectionAllocGroup(SectionAllocGroup &&) = default;
-    SectionAllocGroup &operator=(SectionAllocGroup &&) = default;
+  struct AllocGroup {
+    AllocGroup() = default;
+    AllocGroup(const AllocGroup &) = delete;
+    AllocGroup &operator=(const AllocGroup &) = delete;
+    AllocGroup(AllocGroup &&) = default;
+    AllocGroup &operator=(AllocGroup &&) = default;
 
     ExecutorAddrRange RemoteCode;
     ExecutorAddrRange RemoteROData;
     ExecutorAddrRange RemoteRWData;
     std::vector<ExecutorAddrRange> UnfinalizedEHFrames;
-    std::vector<SectionAlloc> CodeAllocs, RODataAllocs, RWDataAllocs;
+    std::vector<Alloc> CodeAllocs, RODataAllocs, RWDataAllocs;
   };
 
-  // Maps all allocations in SectionAllocs to aligned blocks
-  void mapAllocsToRemoteAddrs(RuntimeDyld &Dyld,
-                              std::vector<SectionAlloc> &SecAllocs,
+  // Maps all allocations in Allocs to aligned blocks
+  void mapAllocsToRemoteAddrs(RuntimeDyld &Dyld, std::vector<Alloc> &Allocs,
                               ExecutorAddr NextAddr);
 
   ExecutorProcessControl &EPC;
   SymbolAddrs SAs;
 
   std::mutex M;
-  std::vector<SectionAllocGroup> Unmapped;
-  std::vector<SectionAllocGroup> Unfinalized;
+  std::vector<AllocGroup> Unmapped;
+  std::vector<AllocGroup> Unfinalized;
   std::vector<ExecutorAddr> FinalizedAllocs;
   std::string ErrMsg;
 };

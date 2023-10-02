@@ -46,8 +46,8 @@ OpDescriptor insertElementDescriptor(unsigned Weight);
 OpDescriptor shuffleVectorDescriptor(unsigned Weight);
 /// @}
 
-} // namespace fuzzerop
+} // end fuzzerop namespace
 
-} // namespace llvm
+} // end llvm namespace
 
 #endif // LLVM_FUZZMUTATE_OPERATIONS_H

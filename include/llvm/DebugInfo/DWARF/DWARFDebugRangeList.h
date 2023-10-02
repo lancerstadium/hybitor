@@ -10,16 +10,14 @@
 #define LLVM_DEBUGINFO_DWARF_DWARFDEBUGRANGELIST_H
 
 #include "llvm/DebugInfo/DWARF/DWARFAddressRange.h"
+#include "llvm/DebugInfo/DWARF/DWARFDataExtractor.h"
+#include <cassert>
 #include <cstdint>
 #include <vector>
 
 namespace llvm {
 
 class raw_ostream;
-class DWARFDataExtractor;
-namespace object {
-struct SectionedAddress;
-}
 
 class DWARFDebugRangeList {
 public:
@@ -72,7 +70,7 @@ public:
   /// list. Has to be passed base address of the compile unit referencing this
   /// range list.
   DWARFAddressRangesVector
-  getAbsoluteRanges(std::optional<object::SectionedAddress> BaseAddr) const;
+  getAbsoluteRanges(llvm::Optional<object::SectionedAddress> BaseAddr) const;
 };
 
 } // end namespace llvm

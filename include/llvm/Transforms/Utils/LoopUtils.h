@@ -13,20 +13,20 @@
 #ifndef LLVM_TRANSFORMS_UTILS_LOOPUTILS_H
 #define LLVM_TRANSFORMS_UTILS_LOOPUTILS_H
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Analysis/IVDescriptors.h"
-#include "llvm/Analysis/LoopAccessAnalysis.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Transforms/Utils/ValueMapper.h"
 
 namespace llvm {
 
 template <typename T> class DomTreeNodeBase;
 using DomTreeNode = DomTreeNodeBase<BasicBlock>;
-class AssumptionCache;
-class StringRef;
-class AnalysisUsage;
-class TargetTransformInfo;
 class AAResults;
+class AliasSet;
+class AliasSetTracker;
 class BasicBlock;
+class BlockFrequencyInfo;
 class ICFLoopSafetyInfo;
 class IRBuilderBase;
 class Loop;
@@ -47,7 +47,10 @@ typedef std::pair<const RuntimeCheckingPtrGroup *,
                   const RuntimeCheckingPtrGroup *>
     RuntimePointerCheck;
 
+template <typename T> class Optional;
 template <typename T, unsigned N> class SmallSetVector;
+template <typename T, unsigned N> class SmallVector;
+template <typename T> class SmallVectorImpl;
 template <typename T, unsigned N> class SmallPriorityWorklist;
 
 BasicBlock *InsertPreheaderForLoop(Loop *L, DominatorTree *DT, LoopInfo *LI,
@@ -140,23 +143,24 @@ protected:
 /// reverse depth first order w.r.t the DominatorTree. This allows us to visit
 /// uses before definitions, allowing us to sink a loop body in one pass without
 /// iteration. Takes DomTreeNode, AAResults, LoopInfo, DominatorTree,
-/// TargetLibraryInfo, Loop, AliasSet information for all
+/// BlockFrequencyInfo, TargetLibraryInfo, Loop, AliasSet information for all
 /// instructions of the loop and loop safety information as
 /// arguments. Diagnostics is emitted via \p ORE. It returns changed status.
 /// \p CurLoop is a loop to do sinking on. \p OutermostLoop is used only when
 /// this function is called by \p sinkRegionForLoopNest.
 bool sinkRegion(DomTreeNode *, AAResults *, LoopInfo *, DominatorTree *,
-                TargetLibraryInfo *, TargetTransformInfo *, Loop *CurLoop,
-                MemorySSAUpdater &, ICFLoopSafetyInfo *,
-                SinkAndHoistLICMFlags &, OptimizationRemarkEmitter *,
-                Loop *OutermostLoop = nullptr);
+                BlockFrequencyInfo *, TargetLibraryInfo *,
+                TargetTransformInfo *, Loop *CurLoop, MemorySSAUpdater *,
+                ICFLoopSafetyInfo *, SinkAndHoistLICMFlags &,
+                OptimizationRemarkEmitter *, Loop *OutermostLoop = nullptr);
 
 /// Call sinkRegion on loops contained within the specified loop
 /// in order from innermost to outermost.
 bool sinkRegionForLoopNest(DomTreeNode *, AAResults *, LoopInfo *,
-                           DominatorTree *, TargetLibraryInfo *,
-                           TargetTransformInfo *, Loop *, MemorySSAUpdater &,
-                           ICFLoopSafetyInfo *, SinkAndHoistLICMFlags &,
+                           DominatorTree *, BlockFrequencyInfo *,
+                           TargetLibraryInfo *, TargetTransformInfo *, Loop *,
+                           MemorySSAUpdater *, ICFLoopSafetyInfo *,
+                           SinkAndHoistLICMFlags &,
                            OptimizationRemarkEmitter *);
 
 /// Walk the specified region of the CFG (defined by all blocks
@@ -164,14 +168,14 @@ bool sinkRegionForLoopNest(DomTreeNode *, AAResults *, LoopInfo *,
 /// first order w.r.t the DominatorTree.  This allows us to visit definitions
 /// before uses, allowing us to hoist a loop body in one pass without iteration.
 /// Takes DomTreeNode, AAResults, LoopInfo, DominatorTree,
-/// TargetLibraryInfo, Loop, AliasSet information for all
+/// BlockFrequencyInfo, TargetLibraryInfo, Loop, AliasSet information for all
 /// instructions of the loop and loop safety information as arguments.
 /// Diagnostics is emitted via \p ORE. It returns changed status.
 /// \p AllowSpeculation is whether values should be hoisted even if they are not
 /// guaranteed to execute in the loop, but are safe to speculatively execute.
 bool hoistRegion(DomTreeNode *, AAResults *, LoopInfo *, DominatorTree *,
-                 AssumptionCache *, TargetLibraryInfo *, Loop *,
-                 MemorySSAUpdater &, ScalarEvolution *, ICFLoopSafetyInfo *,
+                 BlockFrequencyInfo *, TargetLibraryInfo *, Loop *,
+                 MemorySSAUpdater *, ScalarEvolution *, ICFLoopSafetyInfo *,
                  SinkAndHoistLICMFlags &, OptimizationRemarkEmitter *, bool,
                  bool AllowSpeculation);
 
@@ -208,10 +212,9 @@ void breakLoopBackedge(Loop *L, DominatorTree &DT, ScalarEvolution &SE,
 bool promoteLoopAccessesToScalars(
     const SmallSetVector<Value *, 8> &, SmallVectorImpl<BasicBlock *> &,
     SmallVectorImpl<Instruction *> &, SmallVectorImpl<MemoryAccess *> &,
-    PredIteratorCache &, LoopInfo *, DominatorTree *, AssumptionCache *AC,
-    const TargetLibraryInfo *, TargetTransformInfo *, Loop *,
-    MemorySSAUpdater &, ICFLoopSafetyInfo *, OptimizationRemarkEmitter *,
-    bool AllowSpeculation, bool HasReadsOutsideSet);
+    PredIteratorCache &, LoopInfo *, DominatorTree *, const TargetLibraryInfo *,
+    Loop *, MemorySSAUpdater *, ICFLoopSafetyInfo *,
+    OptimizationRemarkEmitter *, bool AllowSpeculation);
 
 /// Does a BFS from a given node to all of its children inside a given loop.
 /// The returned vector of nodes includes the starting point.
@@ -224,8 +227,8 @@ SmallVector<Instruction *, 8> findDefsUsedOutsideOfLoop(Loop *L);
 /// Find a combination of metadata ("llvm.loop.vectorize.width" and
 /// "llvm.loop.vectorize.scalable.enable") for a loop and use it to construct a
 /// ElementCount. If the metadata "llvm.loop.vectorize.width" cannot be found
-/// then std::nullopt is returned.
-std::optional<ElementCount>
+/// then None is returned.
+Optional<ElementCount>
 getOptionalElementCountLoopAttribute(const Loop *TheLoop);
 
 /// Create a new loop identifier for a loop created from a loop transformation.
@@ -243,16 +246,16 @@ getOptionalElementCountLoopAttribute(const Loop *TheLoop);
 ///                    <prefix>; commonly used to remove metadata for the
 ///                    applied transformation.
 /// @param AlwaysNew If true, do not try to reuse OrigLoopID and never return
-///                  std::nullopt.
+///                  None.
 ///
 /// @return The loop ID for the after-transformation loop. The following values
 ///         can be returned:
-///         std::nullopt : No followup attribute was found; it is up to the
+///         None         : No followup attribute was found; it is up to the
 ///                        transformation to choose attributes that make sense.
 ///         @p OrigLoopID: The original identifier can be reused.
 ///         nullptr      : The new loop has no attributes.
 ///         MDNode*      : A new unique loop identifier.
-std::optional<MDNode *>
+Optional<MDNode *>
 makeFollowupLoopID(MDNode *OrigLoopID, ArrayRef<StringRef> FollowupAttrs,
                    const char *InheritOptionsAttrsPrefix = "",
                    bool AlwaysNew = false);
@@ -308,9 +311,9 @@ void addStringMetadataToLoop(Loop *TheLoop, const char *MDString,
 /// Returns a loop's estimated trip count based on branch weight metadata.
 /// In addition if \p EstimatedLoopInvocationWeight is not null it is
 /// initialized with weight of loop's latch leading to the exit.
-/// Returns 0 when the count is estimated to be 0, or std::nullopt when a
-/// meaningful estimate can not be made.
-std::optional<unsigned>
+/// Returns 0 when the count is estimated to be 0, or None when a meaningful
+/// estimate can not be made.
+Optional<unsigned>
 getLoopEstimatedTripCount(Loop *L,
                           unsigned *EstimatedLoopInvocationWeight = nullptr);
 
@@ -344,9 +347,9 @@ void getLoopAnalysisUsage(AnalysisUsage &AU);
 /// true when moving out of loop and not true when moving into loops.
 /// If \p ORE is set use it to emit optimization remarks.
 bool canSinkOrHoistInst(Instruction &I, AAResults *AA, DominatorTree *DT,
-                        Loop *CurLoop, MemorySSAUpdater &MSSAU,
-                        bool TargetExecutesOncePerLoop,
-                        SinkAndHoistLICMFlags &LICMFlags,
+                        Loop *CurLoop, AliasSetTracker *CurAST,
+                        MemorySSAUpdater *MSSAU, bool TargetExecutesOncePerLoop,
+                        SinkAndHoistLICMFlags *LICMFlags = nullptr,
                         OptimizationRemarkEmitter *ORE = nullptr);
 
 /// Returns the comparison predicate used when expanding a min/max reduction.
@@ -412,10 +415,8 @@ Value *createOrderedReduction(IRBuilderBase &B,
 /// of each scalar operation (VL) that will be converted into a vector (I).
 /// If OpValue is non-null, we only consider operations similar to OpValue
 /// when intersecting.
-/// Flag set: NSW, NUW (if IncludeWrapFlags is true), exact, and all of
-/// fast-math.
-void propagateIRFlags(Value *I, ArrayRef<Value *> VL, Value *OpValue = nullptr,
-                      bool IncludeWrapFlags = true);
+/// Flag set: NSW, NUW, exact, and all of fast-math.
+void propagateIRFlags(Value *I, ArrayRef<Value *> VL, Value *OpValue = nullptr);
 
 /// Returns true if we can prove that \p S is defined and always negative in
 /// loop \p L.
@@ -434,13 +435,7 @@ bool cannotBeMaxInLoop(const SCEV *S, const Loop *L, ScalarEvolution &SE,
 bool cannotBeMinInLoop(const SCEV *S, const Loop *L, ScalarEvolution &SE,
                        bool Signed);
 
-enum ReplaceExitVal {
-  NeverRepl,
-  OnlyCheapRepl,
-  NoHardUse,
-  UnusedIndVarInLoop,
-  AlwaysRepl
-};
+enum ReplaceExitVal { NeverRepl, OnlyCheapRepl, NoHardUse, AlwaysRepl };
 
 /// If the final value of any expressions that are recurrent in the loop can
 /// be computed, substitute the exit values from the loop into any instructions
@@ -507,10 +502,6 @@ addRuntimeChecks(Instruction *Loc, Loop *TheLoop,
                  const SmallVectorImpl<RuntimePointerCheck> &PointerChecks,
                  SCEVExpander &Expander);
 
-Value *addDiffRuntimeChecks(
-    Instruction *Loc, ArrayRef<PointerDiffInfo> Checks, SCEVExpander &Expander,
-    function_ref<Value *(IRBuilderBase &, unsigned)> GetVF, unsigned IC);
-
 /// Struct to hold information about a partially invariant condition.
 struct IVConditionInfo {
   /// Instructions that need to be duplicated and checked for the unswitching
@@ -540,10 +531,8 @@ struct IVConditionInfo {
 /// If the branch condition of the header is partially invariant, return a pair
 /// containing the instructions to duplicate and a boolean Constant to update
 /// the condition in the loops created for the true or false successors.
-std::optional<IVConditionInfo> hasPartialIVCondition(const Loop &L,
-                                                     unsigned MSSAThreshold,
-                                                     const MemorySSA &MSSA,
-                                                     AAResults &AA);
+Optional<IVConditionInfo> hasPartialIVCondition(Loop &L, unsigned MSSAThreshold,
+                                                MemorySSA &MSSA, AAResults &AA);
 
 } // end namespace llvm
 

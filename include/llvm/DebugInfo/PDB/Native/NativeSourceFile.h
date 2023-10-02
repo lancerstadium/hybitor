@@ -11,12 +11,11 @@
 
 #include "llvm/DebugInfo/CodeView/DebugChecksumsSubsection.h"
 #include "llvm/DebugInfo/PDB/IPDBSourceFile.h"
-#include "llvm/DebugInfo/PDB/PDBTypes.h"
+#include "llvm/DebugInfo/PDB/Native/PDBFile.h"
+#include "llvm/DebugInfo/PDB/Native/PDBStringTable.h"
 
 namespace llvm {
 namespace pdb {
-class PDBSymbolCompiland;
-template <typename ChildType> class IPDBEnumChildren;
 class NativeSession;
 
 class NativeSourceFile : public IPDBSourceFile {

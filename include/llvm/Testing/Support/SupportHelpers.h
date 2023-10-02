@@ -9,6 +9,7 @@
 #ifndef LLVM_TESTING_SUPPORT_SUPPORTHELPERS_H
 #define LLVM_TESTING_SUPPORT_SUPPORTHELPERS_H
 
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
@@ -17,7 +18,6 @@
 #include "gmock/gmock-matchers.h"
 #include "gtest/gtest-printers.h"
 
-#include <optional>
 #include <string>
 
 namespace llvm {
@@ -64,20 +64,20 @@ public:
       : ValueMatcher(ValueMatcher) {}
 
   template <class T>
-  operator ::testing::Matcher<const std::optional<T> &>() const {
+  operator ::testing::Matcher<const llvm::Optional<T> &>() const {
     return ::testing::MakeMatcher(
         new Impl<T>(::testing::SafeMatcherCast<T>(ValueMatcher)));
   }
 
-  template <class T, class O = std::optional<T>>
-  class Impl : public ::testing::MatcherInterface<const O &> {
+  template <class T>
+  class Impl : public ::testing::MatcherInterface<const llvm::Optional<T> &> {
   public:
     explicit Impl(const ::testing::Matcher<T> &ValueMatcher)
         : ValueMatcher(ValueMatcher) {}
 
-    bool MatchAndExplain(const O &Input,
+    bool MatchAndExplain(const llvm::Optional<T> &Input,
                          testing::MatchResultListener *L) const override {
-      return Input && ValueMatcher.MatchAndExplain(*Input, L);
+      return Input && ValueMatcher.MatchAndExplain(Input.getValue(), L);
     }
 
     void DescribeTo(std::ostream *OS) const override {
@@ -98,8 +98,8 @@ private:
 };
 } // namespace detail
 
-/// Matches an std::optional<T> with a value that conforms to an inner matcher.
-/// To match std::nullopt you could use Eq(std::nullopt).
+/// Matches an llvm::Optional<T> with a value that conforms to an inner matcher.
+/// To match llvm::None you could use Eq(llvm::None).
 template <class InnerMatcher>
 detail::ValueIsMatcher<InnerMatcher> ValueIs(const InnerMatcher &ValueMatcher) {
   return detail::ValueIsMatcher<InnerMatcher>(ValueMatcher);
@@ -237,12 +237,6 @@ public:
       EXPECT_FALSE(llvm::sys::fs::remove(Path.str()));
     }
   }
-
-  TempFile(const TempFile &) = delete;
-  TempFile &operator=(const TempFile &) = delete;
-
-  TempFile(TempFile &&) = default;
-  TempFile &operator=(TempFile &&) = default;
 
   /// The path to the file.
   StringRef path() const { return Path; }

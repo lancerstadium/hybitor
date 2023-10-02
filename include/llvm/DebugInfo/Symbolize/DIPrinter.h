@@ -14,6 +14,7 @@
 #ifndef LLVM_DEBUGINFO_SYMBOLIZE_DIPRINTER_H
 #define LLVM_DEBUGINFO_SYMBOLIZE_DIPRINTER_H
 
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/JSON.h"
 #include <memory>
@@ -33,7 +34,7 @@ class SourceCode;
 
 struct Request {
   StringRef ModuleName;
-  std::optional<uint64_t> Address;
+  Optional<uint64_t> Address;
 };
 
 class DIPrinter {

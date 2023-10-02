@@ -68,10 +68,10 @@ public:
                                      bool &TAAParsed,     // Out.
                                      unsigned &StubSize); // Out.
 
-  void printSwitchToSection(const MCAsmInfo &MAI, const Triple &T,
+  void PrintSwitchToSection(const MCAsmInfo &MAI, const Triple &T,
                             raw_ostream &OS,
                             const MCExpr *Subsection) const override;
-  bool useCodeAlign() const override;
+  bool UseCodeAlign() const override;
   bool isVirtualSection() const override;
 
   static bool classof(const MCSection *S) {

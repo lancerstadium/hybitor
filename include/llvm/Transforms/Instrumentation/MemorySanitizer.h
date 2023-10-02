@@ -13,13 +13,10 @@
 #ifndef LLVM_TRANSFORMS_INSTRUMENTATION_MEMORYSANITIZER_H
 #define LLVM_TRANSFORMS_INSTRUMENTATION_MEMORYSANITIZER_H
 
-#include "llvm/ADT/STLFunctionalExtras.h"
 #include "llvm/IR/PassManager.h"
+#include "llvm/Pass.h"
 
 namespace llvm {
-class Module;
-class StringRef;
-class raw_ostream;
 
 struct MemorySanitizerOptions {
   MemorySanitizerOptions() : MemorySanitizerOptions(0, false, false, false){};
@@ -33,7 +30,11 @@ struct MemorySanitizerOptions {
   bool EagerChecks;
 };
 
-/// A module pass for msan instrumentation.
+// Insert MemorySanitizer instrumentation (detection of uninitialized reads)
+FunctionPass *
+createMemorySanitizerLegacyPassPass(MemorySanitizerOptions Options = {});
+
+/// A function pass for msan instrumentation.
 ///
 /// Instruments functions to detect unitialized reads. This function pass
 /// inserts calls to runtime library functions. If the functions aren't declared
@@ -42,9 +43,25 @@ struct MemorySanitizerOptions {
 struct MemorySanitizerPass : public PassInfoMixin<MemorySanitizerPass> {
   MemorySanitizerPass(MemorySanitizerOptions Options) : Options(Options) {}
 
-  PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM);
+  PreservedAnalyses run(Function &F, FunctionAnalysisManager &FAM);
   void printPipeline(raw_ostream &OS,
                      function_ref<StringRef(StringRef)> MapClassName2PassName);
+  static bool isRequired() { return true; }
+
+private:
+  MemorySanitizerOptions Options;
+};
+
+/// A module pass for msan instrumentation.
+///
+/// Instruments functions to detect unitialized reads. This function pass
+/// inserts calls to runtime library functions. If the functions aren't declared
+/// yet, the pass inserts the declarations. Otherwise the existing globals are
+/// used.
+struct ModuleMemorySanitizerPass : public PassInfoMixin<ModuleMemorySanitizerPass> {
+  ModuleMemorySanitizerPass(MemorySanitizerOptions Options) : Options(Options) {}
+
+  PreservedAnalyses run(Module &M, ModuleAnalysisManager &AM);
   static bool isRequired() { return true; }
 
 private:

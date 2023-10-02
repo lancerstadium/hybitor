@@ -13,15 +13,16 @@
 #ifndef LLVM_INTERFACESTUB_ELFOBJHANDLER_H
 #define LLVM_INTERFACESTUB_ELFOBJHANDLER_H
 
-#include "llvm/ADT/StringRef.h"
-#include "llvm/Support/Error.h"
-#include "llvm/Support/MemoryBufferRef.h"
-#include <memory>
+#include "llvm/InterfaceStub/IFSStub.h"
+#include "llvm/Object/ELFObjectFile.h"
+#include "llvm/Object/ELFTypes.h"
+#include "llvm/Support/FileSystem.h"
 
 namespace llvm {
 
+class MemoryBuffer;
+
 namespace ifs {
-struct IFSStub;
 
 /// Attempt to read a binary ELF file from a MemoryBuffer.
 Expected<std::unique_ptr<IFSStub>> readELFFile(MemoryBufferRef Buf);

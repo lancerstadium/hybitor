@@ -14,9 +14,11 @@
 #ifndef LLVM_ANALYSIS_OVERFLOWINSTANALYSIS_H
 #define LLVM_ANALYSIS_OVERFLOWINSTANALYSIS_H
 
+#include "llvm/IR/InstrTypes.h"
+
 namespace llvm {
-class Use;
 class Value;
+class Use;
 
 /// Match one of the patterns up to the select/logic op:
 ///   %Op0 = icmp ne i4 %X, 0

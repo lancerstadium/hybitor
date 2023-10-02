@@ -14,10 +14,9 @@
 #define LLVM_TRANSFORMS_IPO_FORCEFUNCTIONATTRS_H
 
 #include "llvm/IR/PassManager.h"
+#include "llvm/Pass.h"
 
 namespace llvm {
-class Module;
-class Pass;
 
 /// Pass which forces specific function attributes into the IR, primarily as
 /// a debugging tool.

@@ -15,7 +15,6 @@
 #define LLVM_ANALYSIS_CODEMETRICS_H
 
 #include "llvm/ADT/DenseMap.h"
-#include "llvm/Support/InstructionCost.h"
 
 namespace llvm {
 class AssumptionCache;
@@ -48,14 +47,14 @@ struct CodeMetrics {
   /// True if this function calls alloca (in the C sense).
   bool usesDynamicAlloca = false;
 
-  /// Code size cost of the analyzed blocks.
-  InstructionCost NumInsts = 0;
+  /// Number of instructions in the analyzed blocks.
+  unsigned NumInsts = false;
 
   /// Number of analyzed blocks.
   unsigned NumBlocks = false;
 
   /// Keeps track of basic block code size estimates.
-  DenseMap<const BasicBlock *, InstructionCost> NumBBInsts;
+  DenseMap<const BasicBlock *, unsigned> NumBBInsts;
 
   /// Keep track of the number of calls to 'big' functions.
   unsigned NumCalls = false;

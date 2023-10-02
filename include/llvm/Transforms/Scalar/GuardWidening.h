@@ -15,13 +15,12 @@
 #ifndef LLVM_TRANSFORMS_SCALAR_GUARDWIDENING_H
 #define LLVM_TRANSFORMS_SCALAR_GUARDWIDENING_H
 
-#include "llvm/Analysis/LoopAnalysisManager.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/PassManager.h"
+#include "llvm/Transforms/Scalar/LoopPassManager.h"
 
 namespace llvm {
 
-class LPMUpdater;
-class Loop;
 class Function;
 
 struct GuardWideningPass : public PassInfoMixin<GuardWideningPass> {

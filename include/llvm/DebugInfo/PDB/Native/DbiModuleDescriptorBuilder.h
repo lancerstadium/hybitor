@@ -9,12 +9,13 @@
 #ifndef LLVM_DEBUGINFO_PDB_NATIVE_DBIMODULEDESCRIPTORBUILDER_H
 #define LLVM_DEBUGINFO_PDB_NATIVE_DBIMODULEDESCRIPTORBUILDER_H
 
-#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/DebugInfo/CodeView/CVRecord.h"
+#include "llvm/DebugInfo/CodeView/DebugChecksumsSubsection.h"
+#include "llvm/DebugInfo/CodeView/DebugInlineeLinesSubsection.h"
+#include "llvm/DebugInfo/CodeView/DebugLinesSubsection.h"
 #include "llvm/DebugInfo/CodeView/DebugSubsectionRecord.h"
+#include "llvm/DebugInfo/CodeView/SymbolRecord.h"
 #include "llvm/DebugInfo/PDB/Native/RawTypes.h"
-#include "llvm/Support/BinaryStreamRef.h"
 #include "llvm/Support/Error.h"
 #include <cstdint>
 #include <string>
@@ -22,8 +23,9 @@
 
 namespace llvm {
 class BinaryStreamWriter;
+
 namespace codeview {
-class DebugSubsection;
+class DebugSubsectionRecordBuilder;
 }
 
 namespace msf {
@@ -108,7 +110,9 @@ public:
 
   unsigned getModuleIndex() const { return Layout.Mod; }
 
-  ArrayRef<std::string> source_files() const { return SourceFiles; }
+  ArrayRef<std::string> source_files() const {
+    return makeArrayRef(SourceFiles);
+  }
 
   uint32_t calculateSerializedLength() const;
 

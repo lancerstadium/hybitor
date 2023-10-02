@@ -183,12 +183,11 @@ public:
   NodeMetadata() = default;
 
   NodeMetadata(const NodeMetadata &Other)
-      : RS(Other.RS), NumOpts(Other.NumOpts), DeniedOpts(Other.DeniedOpts),
-        OptUnsafeEdges(new unsigned[NumOpts]), VReg(Other.VReg),
-        AllowedRegs(Other.AllowedRegs)
-#if LLVM_ENABLE_ABI_BREAKING_CHECKS
-        ,
-        everConservativelyAllocatable(Other.everConservativelyAllocatable)
+    : RS(Other.RS), NumOpts(Other.NumOpts), DeniedOpts(Other.DeniedOpts),
+      OptUnsafeEdges(new unsigned[NumOpts]), VReg(Other.VReg),
+      AllowedRegs(Other.AllowedRegs)
+#ifndef NDEBUG
+      , everConservativelyAllocatable(Other.everConservativelyAllocatable)
 #endif
   {
     if (NumOpts > 0) {
@@ -218,7 +217,7 @@ public:
     assert(RS >= this->RS && "A node's reduction state can not be downgraded");
     this->RS = RS;
 
-#if LLVM_ENABLE_ABI_BREAKING_CHECKS
+#ifndef NDEBUG
     // Remember this state to assert later that a non-infinite register
     // option was available.
     if (RS == ConservativelyAllocatable)
@@ -248,7 +247,7 @@ public:
        &OptUnsafeEdges[NumOpts]);
   }
 
-#if LLVM_ENABLE_ABI_BREAKING_CHECKS
+#ifndef NDEBUG
   bool wasConservativelyAllocatable() const {
     return everConservativelyAllocatable;
   }
@@ -262,7 +261,7 @@ private:
   Register VReg;
   GraphMetadata::AllowedRegVecRef AllowedRegs;
 
-#if LLVM_ENABLE_ABI_BREAKING_CHECKS
+#ifndef NDEBUG
   bool everConservativelyAllocatable = false;
 #endif
 };

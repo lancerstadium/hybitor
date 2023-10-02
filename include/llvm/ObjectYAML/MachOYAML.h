@@ -21,7 +21,6 @@
 #include "llvm/ObjectYAML/YAML.h"
 #include "llvm/Support/YAMLTraits.h"
 #include <cstdint>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -55,7 +54,7 @@ struct Section {
   llvm::yaml::Hex32 reserved1;
   llvm::yaml::Hex32 reserved2;
   llvm::yaml::Hex32 reserved3;
-  std::optional<llvm::yaml::BinaryRef> content;
+  Optional<llvm::yaml::BinaryRef> content;
   std::vector<Relocation> relocations;
 };
 
@@ -114,12 +113,6 @@ struct ExportEntry {
   std::vector<MachOYAML::ExportEntry> Children;
 };
 
-struct DataInCodeEntry {
-  llvm::yaml::Hex32 Offset;
-  uint16_t Length;
-  llvm::yaml::Hex16 Kind;
-};
-
 struct LinkEditData {
   std::vector<MachOYAML::RebaseOpcode> RebaseOpcodes;
   std::vector<MachOYAML::BindOpcode> BindOpcodes;
@@ -129,9 +122,6 @@ struct LinkEditData {
   std::vector<NListEntry> NameList;
   std::vector<StringRef> StringTable;
   std::vector<yaml::Hex32> IndirectSymbols;
-  std::vector<yaml::Hex64> FunctionStarts;
-  std::vector<DataInCodeEntry> DataInCode;
-  std::vector<yaml::Hex8> ChainedFixups;
 
   bool isEmpty() const;
 };
@@ -142,7 +132,7 @@ struct Object {
   std::vector<LoadCommand> LoadCommands;
   std::vector<Section> Sections;
   LinkEditData LinkEdit;
-  std::optional<llvm::yaml::BinaryRef> RawLinkEditSegment;
+  Optional<llvm::yaml::BinaryRef> RawLinkEditSegment;
   DWARFYAML::Data DWARF;
 };
 
@@ -178,7 +168,6 @@ LLVM_YAML_IS_SEQUENCE_VECTOR(llvm::MachOYAML::ExportEntry)
 LLVM_YAML_IS_SEQUENCE_VECTOR(llvm::MachOYAML::NListEntry)
 LLVM_YAML_IS_SEQUENCE_VECTOR(llvm::MachOYAML::Object)
 LLVM_YAML_IS_SEQUENCE_VECTOR(llvm::MachOYAML::FatArch)
-LLVM_YAML_IS_SEQUENCE_VECTOR(llvm::MachOYAML::DataInCodeEntry)
 LLVM_YAML_IS_SEQUENCE_VECTOR(llvm::MachO::build_tool_version)
 
 namespace llvm {
@@ -242,10 +231,6 @@ template <> struct MappingTraits<MachOYAML::NListEntry> {
 
 template <> struct MappingTraits<MachO::build_tool_version> {
   static void mapping(IO &IO, MachO::build_tool_version &tool);
-};
-
-template <> struct MappingTraits<MachOYAML::DataInCodeEntry> {
-  static void mapping(IO &IO, MachOYAML::DataInCodeEntry &DataInCodeEntry);
 };
 
 #define HANDLE_LOAD_COMMAND(LCName, LCValue, LCStruct)                         \

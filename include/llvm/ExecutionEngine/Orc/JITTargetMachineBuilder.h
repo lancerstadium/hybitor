@@ -13,6 +13,7 @@
 #ifndef LLVM_EXECUTIONENGINE_ORC_JITTARGETMACHINEBUILDER_H
 #define LLVM_EXECUTIONENGINE_ORC_JITTARGETMACHINEBUILDER_H
 
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/MC/SubtargetFeature.h"
 #include "llvm/Support/CodeGen.h"
@@ -20,7 +21,6 @@
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
 #include <memory>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -83,22 +83,22 @@ public:
   const std::string &getCPU() const { return CPU; }
 
   /// Set the relocation model.
-  JITTargetMachineBuilder &setRelocationModel(std::optional<Reloc::Model> RM) {
+  JITTargetMachineBuilder &setRelocationModel(Optional<Reloc::Model> RM) {
     this->RM = std::move(RM);
     return *this;
   }
 
   /// Get the relocation model.
-  const std::optional<Reloc::Model> &getRelocationModel() const { return RM; }
+  const Optional<Reloc::Model> &getRelocationModel() const { return RM; }
 
   /// Set the code model.
-  JITTargetMachineBuilder &setCodeModel(std::optional<CodeModel::Model> CM) {
+  JITTargetMachineBuilder &setCodeModel(Optional<CodeModel::Model> CM) {
     this->CM = std::move(CM);
     return *this;
   }
 
   /// Get the code model.
-  const std::optional<CodeModel::Model> &getCodeModel() const { return CM; }
+  const Optional<CodeModel::Model> &getCodeModel() const { return CM; }
 
   /// Set the LLVM CodeGen optimization level.
   JITTargetMachineBuilder &setCodeGenOptLevel(CodeGenOpt::Level OptLevel) {
@@ -125,7 +125,7 @@ public:
   /// Set TargetOptions.
   ///
   /// Note: This operation will overwrite any previously configured options,
-  /// including EmulatedTLS, ExplicitEmulatedTLS, and UseInitArray which
+  /// including EmulatedTLS and ExplicitEmulatedTLS which
   /// the JITTargetMachineBuilder sets by default. Clients are responsible
   /// for re-enabling these overwritten options.
   JITTargetMachineBuilder &setOptions(TargetOptions Options) {
@@ -150,8 +150,8 @@ private:
   std::string CPU;
   SubtargetFeatures Features;
   TargetOptions Options;
-  std::optional<Reloc::Model> RM;
-  std::optional<CodeModel::Model> CM;
+  Optional<Reloc::Model> RM;
+  Optional<CodeModel::Model> CM;
   CodeGenOpt::Level OptLevel = CodeGenOpt::Default;
 };
 

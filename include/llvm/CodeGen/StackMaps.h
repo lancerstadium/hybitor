@@ -13,6 +13,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/IR/CallingConv.h"
+#include "llvm/MC/MCSymbol.h"
 #include "llvm/Support/Debug.h"
 #include <algorithm>
 #include <cassert>
@@ -22,7 +23,6 @@
 namespace llvm {
 
 class AsmPrinter;
-class MCSymbol;
 class MCExpr;
 class MCStreamer;
 class raw_ostream;
@@ -242,14 +242,6 @@ public:
   /// Returns number of elements in GCMap.
   unsigned
   getGCPointerMap(SmallVectorImpl<std::pair<unsigned, unsigned>> &GCMap);
-
-  /// Return true if Reg is used only in operands which can be folded to
-  /// stack usage.
-  bool isFoldableReg(Register Reg) const;
-
-  /// Return true if Reg is used only in operands of MI which can be folded to
-  /// stack usage and MI is a statepoint instruction.
-  static bool isFoldableReg(const MachineInstr *MI, Register Reg);
 
 private:
   const MachineInstr *MI;

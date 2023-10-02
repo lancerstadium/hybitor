@@ -36,7 +36,7 @@ public:
 private:
   std::string ProfileFileName;
   std::string ProfileRemappingFileName;
-  const ThinOrFullLTOPhase LTOPhase;
+  ThinOrFullLTOPhase LTOPhase;
 };
 
 } // end namespace llvm

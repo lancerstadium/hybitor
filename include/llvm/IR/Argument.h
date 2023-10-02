@@ -14,6 +14,7 @@
 #define LLVM_IR_ARGUMENT_H
 
 #include "llvm/ADT/Twine.h"
+#include "llvm/ADT/ilist_node.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/Value.h"
 
@@ -96,7 +97,6 @@ public:
   /// If this is a byval or inalloca argument, return its alignment.
   /// FIXME: Remove this function once transition to Align is over.
   /// Use getParamAlign() instead.
-  LLVM_DEPRECATED("Use getParamAlign() instead", "getParamAlign")
   uint64_t getParamAlignment() const;
 
   /// If this is a byval or inalloca argument, return its alignment.

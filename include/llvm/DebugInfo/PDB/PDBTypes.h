@@ -352,8 +352,7 @@ enum class PDB_BuiltinType {
   BSTR = 30,
   HResult = 31,
   Char16 = 32,
-  Char32 = 33,
-  Char8 = 34,
+  Char32 = 33
 };
 
 /// These values correspond to the flags that can be combined to control the

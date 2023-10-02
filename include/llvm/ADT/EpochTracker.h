@@ -34,10 +34,10 @@ namespace llvm {
 /// is still valid.
 ///
 class DebugEpochBase {
-  uint64_t Epoch = 0;
+  uint64_t Epoch;
 
 public:
-  DebugEpochBase() = default;
+  DebugEpochBase() : Epoch(0) {}
 
   /// Calling incrementEpoch invalidates all handles pointing into the
   /// calling instance.
@@ -56,11 +56,11 @@ public:
   /// make an iterator-invalidating modification.
   ///
   class HandleBase {
-    const uint64_t *EpochAddress = nullptr;
-    uint64_t EpochAtCreation = UINT64_MAX;
+    const uint64_t *EpochAddress;
+    uint64_t EpochAtCreation;
 
   public:
-    HandleBase() = default;
+    HandleBase() : EpochAddress(nullptr), EpochAtCreation(UINT64_MAX) {}
 
     explicit HandleBase(const DebugEpochBase *Parent)
         : EpochAddress(&Parent->Epoch), EpochAtCreation(Parent->Epoch) {}

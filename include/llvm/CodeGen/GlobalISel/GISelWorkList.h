@@ -28,7 +28,7 @@ class GISelWorkList {
   SmallVector<MachineInstr *, N> Worklist;
   DenseMap<MachineInstr *, unsigned> WorklistMap;
 
-#if LLVM_ENABLE_ABI_BREAKING_CHECKS
+#ifndef NDEBUG
   bool Finalized = true;
 #endif
 
@@ -49,7 +49,7 @@ public:
   // of most passes.
   void deferred_insert(MachineInstr *I) {
     Worklist.push_back(I);
-#if LLVM_ENABLE_ABI_BREAKING_CHECKS
+#ifndef NDEBUG
     Finalized = false;
 #endif
   }
@@ -65,25 +65,21 @@ public:
     for (unsigned i = 0; i < Worklist.size(); ++i)
       if (!WorklistMap.try_emplace(Worklist[i], i).second)
         llvm_unreachable("Duplicate elements in the list");
-#if LLVM_ENABLE_ABI_BREAKING_CHECKS
+#ifndef NDEBUG
     Finalized = true;
 #endif
   }
 
   /// Add the specified instruction to the worklist if it isn't already in it.
   void insert(MachineInstr *I) {
-#if LLVM_ENABLE_ABI_BREAKING_CHECKS
     assert(Finalized && "GISelWorkList used without finalizing");
-#endif
     if (WorklistMap.try_emplace(I, Worklist.size()).second)
       Worklist.push_back(I);
   }
 
   /// Remove I from the worklist if it exists.
   void remove(const MachineInstr *I) {
-#if LLVM_ENABLE_ABI_BREAKING_CHECKS
     assert((Finalized || WorklistMap.empty()) && "Neither finalized nor empty");
-#endif
     auto It = WorklistMap.find(I);
     if (It == WorklistMap.end())
       return; // Not in worklist.
@@ -100,9 +96,7 @@ public:
   }
 
   MachineInstr *pop_back_val() {
-#if LLVM_ENABLE_ABI_BREAKING_CHECKS
     assert(Finalized && "GISelWorkList used without finalizing");
-#endif
     MachineInstr *I;
     do {
       I = Worklist.pop_back_val();

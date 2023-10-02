@@ -9,11 +9,11 @@
 #ifndef LLVM_DEBUGINFO_PDB_NATIVE_NATIVETYPEPOINTER_H
 #define LLVM_DEBUGINFO_PDB_NATIVE_NATIVETYPEPOINTER_H
 
-#include "llvm/DebugInfo/CodeView/TypeIndex.h"
+#include "llvm/ADT/Optional.h"
+#include "llvm/DebugInfo/CodeView/CodeView.h"
 #include "llvm/DebugInfo/CodeView/TypeRecord.h"
-#include "llvm/DebugInfo/PDB/IPDBRawSymbol.h"
 #include "llvm/DebugInfo/PDB/Native/NativeRawSymbol.h"
-#include "llvm/DebugInfo/PDB/PDBTypes.h"
+#include "llvm/DebugInfo/PDB/Native/NativeSession.h"
 
 namespace llvm {
 namespace pdb {
@@ -51,7 +51,7 @@ public:
 protected:
   bool isMemberPointer() const;
   codeview::TypeIndex TI;
-  std::optional<codeview::PointerRecord> Record;
+  Optional<codeview::PointerRecord> Record;
 };
 
 } // namespace pdb

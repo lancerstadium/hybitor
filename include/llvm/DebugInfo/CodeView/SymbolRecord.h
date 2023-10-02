@@ -11,6 +11,7 @@
 
 #include "llvm/ADT/APSInt.h"
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/iterator.h"
 #include "llvm/ADT/iterator_range.h"
@@ -195,7 +196,7 @@ struct BinaryAnnotationIterator
 
   const DecodedAnnotation &operator*() {
     ParseCurrentAnnotation();
-    return *Current;
+    return Current.getValue();
   }
 
 private:
@@ -248,7 +249,7 @@ private:
   }
 
   bool ParseCurrentAnnotation() {
-    if (Current)
+    if (Current.hasValue())
       return true;
 
     Next = Data;
@@ -323,7 +324,7 @@ private:
     return true;
   }
 
-  std::optional<DecodedAnnotation> Current;
+  Optional<DecodedAnnotation> Current;
   ArrayRef<uint8_t> Data;
   ArrayRef<uint8_t> Next;
 };

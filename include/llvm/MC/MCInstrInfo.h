@@ -13,7 +13,6 @@
 #ifndef LLVM_MC_MCINSTRINFO_H
 #define LLVM_MC_MCINSTRINFO_H
 
-#include "llvm/ADT/StringRef.h"
 #include "llvm/MC/MCInstrDesc.h"
 #include <cassert>
 
@@ -30,7 +29,7 @@ public:
                                                std::string &);
 
 private:
-  const MCInstrDesc *LastDesc;      // Raw array to allow static init'n
+  const MCInstrDesc *Desc;          // Raw array to allow static init'n
   const unsigned *InstrNameIndices; // Array for name indices in InstrNameData
   const char *InstrNameData;        // Instruction name string pool
   // Subtarget feature that an instruction is deprecated on, if any
@@ -48,7 +47,7 @@ public:
   void InitMCInstrInfo(const MCInstrDesc *D, const unsigned *NI, const char *ND,
                        const uint8_t *DF,
                        const ComplexDeprecationPredicate *CDI, unsigned NO) {
-    LastDesc = D + NO - 1;
+    Desc = D;
     InstrNameIndices = NI;
     InstrNameData = ND;
     DeprecatedFeatures = DF;
@@ -62,8 +61,7 @@ public:
   /// specified instruction opcode.
   const MCInstrDesc &get(unsigned Opcode) const {
     assert(Opcode < NumOpcodes && "Invalid opcode!");
-    // The table is indexed backwards from the last entry.
-    return *(LastDesc - Opcode);
+    return Desc[Opcode];
   }
 
   /// Returns the name for the instructions with the given opcode.

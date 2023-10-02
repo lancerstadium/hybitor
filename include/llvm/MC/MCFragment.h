@@ -17,6 +17,7 @@
 #include "llvm/MC/MCFixup.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/Support/Alignment.h"
+#include "llvm/Support/Casting.h"
 #include "llvm/Support/SMLoc.h"
 #include <cstdint>
 #include <utility>
@@ -293,7 +294,7 @@ public:
 
 class MCAlignFragment : public MCFragment {
   /// The alignment to ensure, in bytes.
-  Align Alignment;
+  unsigned Alignment;
 
   /// Flag to indicate that (optimal) NOPs should be emitted instead
   /// of using the provided value. The exact interpretation of this flag is
@@ -314,12 +315,12 @@ class MCAlignFragment : public MCFragment {
   const MCSubtargetInfo *STI;
 
 public:
-  MCAlignFragment(Align Alignment, int64_t Value, unsigned ValueSize,
+  MCAlignFragment(unsigned Alignment, int64_t Value, unsigned ValueSize,
                   unsigned MaxBytesToEmit, MCSection *Sec = nullptr)
       : MCFragment(FT_Align, false, Sec), Alignment(Alignment), EmitNops(false),
         Value(Value), ValueSize(ValueSize), MaxBytesToEmit(MaxBytesToEmit) {}
 
-  Align getAlignment() const { return Alignment; }
+  unsigned getAlignment() const { return Alignment; }
 
   int64_t getValue() const { return Value; }
 

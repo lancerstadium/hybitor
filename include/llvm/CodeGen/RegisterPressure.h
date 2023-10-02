@@ -22,6 +22,7 @@
 #include "llvm/CodeGen/TargetRegisterInfo.h"
 #include "llvm/MC/LaneBitmask.h"
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <limits>
@@ -537,11 +538,6 @@ public:
 
   void dump() const;
 
-  void increaseRegPressure(Register RegUnit, LaneBitmask PreviousMask,
-                           LaneBitmask NewMask);
-  void decreaseRegPressure(Register RegUnit, LaneBitmask PreviousMask,
-                           LaneBitmask NewMask);
-
 protected:
   /// Add Reg to the live out set and increase max pressure.
   void discoverLiveOut(RegisterMaskPair Pair);
@@ -551,6 +547,11 @@ protected:
   /// Get the SlotIndex for the first nondebug instruction including or
   /// after the current position.
   SlotIndex getCurrSlot() const;
+
+  void increaseRegPressure(Register RegUnit, LaneBitmask PreviousMask,
+                           LaneBitmask NewMask);
+  void decreaseRegPressure(Register RegUnit, LaneBitmask PreviousMask,
+                           LaneBitmask NewMask);
 
   void bumpDeadDefs(ArrayRef<RegisterMaskPair> DeadDefs);
 

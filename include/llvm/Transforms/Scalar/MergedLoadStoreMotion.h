@@ -23,11 +23,10 @@
 #ifndef LLVM_TRANSFORMS_SCALAR_MERGEDLOADSTOREMOTION_H
 #define LLVM_TRANSFORMS_SCALAR_MERGEDLOADSTOREMOTION_H
 
-#include "llvm/ADT/STLFunctionalExtras.h"
+#include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
 
 namespace llvm {
-class Function;
 struct MergedLoadStoreMotionOptions {
   bool SplitFooterBB;
   MergedLoadStoreMotionOptions(bool SplitFooterBB = false)

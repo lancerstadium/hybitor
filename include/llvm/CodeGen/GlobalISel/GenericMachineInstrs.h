@@ -14,7 +14,6 @@
 #ifndef LLVM_CODEGEN_GLOBALISEL_GENERICMACHINEINSTRS_H
 #define LLVM_CODEGEN_GLOBALISEL_GENERICMACHINEINSTRS_H
 
-#include "llvm/IR/Instructions.h"
 #include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/CodeGen/MachineMemOperand.h"
 #include "llvm/CodeGen/TargetOpcodes.h"
@@ -153,7 +152,7 @@ public:
 /// Represents G_BUILD_VECTOR, G_CONCAT_VECTORS or G_MERGE_VALUES.
 /// All these have the common property of generating a single value from
 /// multiple sources.
-class GMergeLikeInstr : public GenericMachineInstr {
+class GMergeLikeOp : public GenericMachineInstr {
 public:
   /// Returns the number of source registers.
   unsigned getNumSources() const { return getNumOperands() - 1; }
@@ -173,7 +172,7 @@ public:
 };
 
 /// Represents a G_MERGE_VALUES.
-class GMerge : public GMergeLikeInstr {
+class GMerge : public GMergeLikeOp {
 public:
   static bool classof(const MachineInstr *MI) {
     return MI->getOpcode() == TargetOpcode::G_MERGE_VALUES;
@@ -181,7 +180,7 @@ public:
 };
 
 /// Represents a G_CONCAT_VECTORS.
-class GConcatVectors : public GMergeLikeInstr {
+class GConcatVectors : public GMergeLikeOp {
 public:
   static bool classof(const MachineInstr *MI) {
     return MI->getOpcode() == TargetOpcode::G_CONCAT_VECTORS;
@@ -189,7 +188,7 @@ public:
 };
 
 /// Represents a G_BUILD_VECTOR.
-class GBuildVector : public GMergeLikeInstr {
+class GBuildVector : public GMergeLikeOp {
 public:
   static bool classof(const MachineInstr *MI) {
     return MI->getOpcode() == TargetOpcode::G_BUILD_VECTOR;
@@ -224,37 +223,6 @@ public:
 
   static bool classof(const MachineInstr *MI) {
     return MI->getOpcode() == TargetOpcode::G_SELECT;
-  }
-};
-
-/// Represent a G_ICMP or G_FCMP.
-class GAnyCmp : public GenericMachineInstr {
-public:
-  CmpInst::Predicate getCond() const {
-    return static_cast<CmpInst::Predicate>(getOperand(1).getPredicate());
-  }
-  Register getLHSReg() const { return getReg(2); }
-  Register getRHSReg() const { return getReg(3); }
-
-  static bool classof(const MachineInstr *MI) {
-    return MI->getOpcode() == TargetOpcode::G_ICMP ||
-           MI->getOpcode() == TargetOpcode::G_FCMP;
-  }
-};
-
-/// Represent a G_ICMP.
-class GICmp : public GAnyCmp {
-public:
-  static bool classof(const MachineInstr *MI) {
-    return MI->getOpcode() == TargetOpcode::G_ICMP;
-  }
-};
-
-/// Represent a G_FCMP.
-class GFCmp : public GAnyCmp {
-public:
-  static bool classof(const MachineInstr *MI) {
-    return MI->getOpcode() == TargetOpcode::G_FCMP;
   }
 };
 

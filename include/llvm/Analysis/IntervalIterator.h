@@ -36,6 +36,8 @@
 #include "llvm/Analysis/Interval.h"
 #include "llvm/Analysis/IntervalPartition.h"
 #include "llvm/IR/CFG.h"
+#include "llvm/IR/Function.h"
+#include "llvm/Support/ErrorHandling.h"
 #include <algorithm>
 #include <cassert>
 #include <iterator>
@@ -46,7 +48,6 @@
 namespace llvm {
 
 class BasicBlock;
-class Function;
 
 // getNodeHeader - Given a source graph node and the source graph, return the
 // BasicBlock that is the header node.  This is the opposite of

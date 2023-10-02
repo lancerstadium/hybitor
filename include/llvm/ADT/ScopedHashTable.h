@@ -147,9 +147,7 @@ public:
 };
 
 template <typename K, typename V, typename KInfo, typename AllocatorTy>
-class ScopedHashTable : detail::AllocatorHolder<AllocatorTy> {
-  using AllocTy = detail::AllocatorHolder<AllocatorTy>;
-
+class ScopedHashTable {
 public:
   /// ScopeTy - This is a helpful typedef that allows clients to get easy access
   /// to the name of the scope for this hash table.
@@ -164,9 +162,11 @@ private:
   DenseMap<K, ValTy*, KInfo> TopLevelMap;
   ScopeTy *CurScope = nullptr;
 
+  AllocatorTy Allocator;
+
 public:
   ScopedHashTable() = default;
-  ScopedHashTable(AllocatorTy A) : AllocTy(A) {}
+  ScopedHashTable(AllocatorTy A) : Allocator(A) {}
   ScopedHashTable(const ScopedHashTable &) = delete;
   ScopedHashTable &operator=(const ScopedHashTable &) = delete;
 
@@ -175,7 +175,8 @@ public:
   }
 
   /// Access to the allocator.
-  using AllocTy::getAllocator;
+  AllocatorTy &getAllocator() { return Allocator; }
+  const AllocatorTy &getAllocator() const { return Allocator; }
 
   /// Return 1 if the specified key is in the table, 0 otherwise.
   size_type count(const K &Key) const {
@@ -216,7 +217,7 @@ public:
     assert(S && "No scope active!");
     ScopedHashTableVal<K, V> *&KeyEntry = TopLevelMap[Key];
     KeyEntry = ValTy::Create(S->getLastValInScope(), KeyEntry, Key, Val,
-                             getAllocator());
+                             Allocator);
     S->setLastValInScope(KeyEntry);
   }
 };

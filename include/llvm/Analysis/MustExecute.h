@@ -28,6 +28,7 @@
 #include "llvm/Analysis/EHPersonalities.h"
 #include "llvm/Analysis/InstructionPrecedenceTracking.h"
 #include "llvm/IR/PassManager.h"
+#include "llvm/Support/raw_ostream.h"
 
 namespace llvm {
 
@@ -41,7 +42,6 @@ class Instruction;
 class Loop;
 class LoopInfo;
 class PostDominatorTree;
-class raw_ostream;
 
 /// Captures loop safety information.
 /// It keep information for loop blocks may throw exception or otherwise
@@ -528,10 +528,10 @@ private:
   ///}
 
   /// Map to cache isGuaranteedToTransferExecutionToSuccessor results.
-  DenseMap<const BasicBlock *, std::optional<bool>> BlockTransferMap;
+  DenseMap<const BasicBlock *, Optional<bool>> BlockTransferMap;
 
   /// Map to cache containsIrreducibleCFG results.
-  DenseMap<const Function *, std::optional<bool>> IrreducibleControlMap;
+  DenseMap<const Function*, Optional<bool>> IrreducibleControlMap;
 
   /// Map from instructions to associated must be executed iterators.
   DenseMap<const Instruction *, std::unique_ptr<MustBeExecutedIterator>>

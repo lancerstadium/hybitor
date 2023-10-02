@@ -10,6 +10,7 @@
 #define LLVM_DWARFLINKER_DWARFSTREAMER_H
 
 #include "llvm/BinaryFormat/Swift.h"
+#include "llvm/CodeGen/AccelTable.h"
 #include "llvm/CodeGen/AsmPrinter.h"
 #include "llvm/DWARFLinker/DWARFLinker.h"
 #include "llvm/MC/MCAsmInfo.h"
@@ -17,11 +18,9 @@
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCObjectFileInfo.h"
 #include "llvm/MC/MCRegisterInfo.h"
-#include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/Target/TargetMachine.h"
 
 namespace llvm {
-template <typename DataT> class AccelTable;
 
 enum class OutputFileType {
   Object,
@@ -37,7 +36,6 @@ enum class OutputFileType {
 ///   InitializeAllAsmPrinters();
 
 class MCCodeEmitter;
-class DWARFDebugMacro;
 
 /// The Dwarf streaming logic.
 ///
@@ -93,10 +91,13 @@ public:
       llvm::binaryformat::Swift5ReflectionSectionKind ReflSectionKind,
       StringRef Buffer, uint32_t Alignment, uint32_t Size);
 
-  /// Emit piece of .debug_ranges for \p Ranges.
-  virtual void
-  emitDwarfDebugRangesTableFragment(const CompileUnit &Unit,
-                                    const AddressRanges &LinkedRanges) override;
+  /// Emit debug_ranges for \p FuncRange by translating the
+  /// original \p Entries.
+  void emitRangesEntries(
+      int64_t UnitPcOffset, uint64_t OrigLowPc,
+      const FunctionIntervals::const_iterator &FuncRange,
+      const std::vector<DWARFDebugRangeList::RangeListEntry> &Entries,
+      unsigned AddressSize) override;
 
   /// Emit debug_aranges entries for \p Unit and if \p DoRangesSection is true,
   /// also emit the debug_ranges entries for the DW_TAG_compile_unit's
@@ -135,7 +136,7 @@ public:
   void emitCIE(StringRef CIEBytes) override;
 
   /// Emit an FDE with data \p Bytes.
-  void emitFDE(uint32_t CIEOffset, uint32_t AddreSize, uint64_t Address,
+  void emitFDE(uint32_t CIEOffset, uint32_t AddreSize, uint32_t Address,
                StringRef Bytes) override;
 
   /// Emit DWARF debug names.
@@ -163,18 +164,6 @@ public:
     return DebugInfoSectionSize;
   }
 
-  uint64_t getDebugMacInfoSectionSize() const override {
-    return MacInfoSectionSize;
-  }
-
-  uint64_t getDebugMacroSectionSize() const override {
-    return MacroSectionSize;
-  }
-
-  void emitMacroTables(DWARFContext *Context,
-                       const Offset2UnitMap &UnitMacroMap,
-                       OffsetsStringPool &StringPool) override;
-
 private:
   inline void error(const Twine &Error, StringRef Context = "") {
     if (ErrorHandler)
@@ -185,12 +174,6 @@ private:
     if (WarningHandler)
       WarningHandler(Warning, Context, nullptr);
   }
-
-  void emitMacroTableImpl(const DWARFDebugMacro *MacroTable,
-                          const Offset2UnitMap &UnitMacroMap,
-                          OffsetsStringPool &StringPool, uint64_t &OutOffset);
-  void emitDwarfDebugArangesTable(const CompileUnit &Unit,
-                                  const AddressRanges &LinkedRanges);
 
   /// \defgroup MCObjects MC layer objects constructed by the streamer
   /// @{
@@ -218,8 +201,6 @@ private:
   uint64_t LineSectionSize = 0;
   uint64_t FrameSectionSize = 0;
   uint64_t DebugInfoSectionSize = 0;
-  uint64_t MacInfoSectionSize = 0;
-  uint64_t MacroSectionSize = 0;
 
   /// Keep track of emitted CUs and their Unique ID.
   struct EmittedUnit {

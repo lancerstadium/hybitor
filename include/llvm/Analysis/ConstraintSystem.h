@@ -11,6 +11,7 @@
 
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
 
 #include <string>
@@ -36,11 +37,11 @@ class ConstraintSystem {
   bool mayHaveSolutionImpl();
 
 public:
-  bool addVariableRow(ArrayRef<int64_t> R) {
+  bool addVariableRow(const SmallVector<int64_t, 8> &R) {
     assert(Constraints.empty() || R.size() == Constraints.back().size());
     // If all variable coefficients are 0, the constraint does not provide any
     // usable information.
-    if (all_of(ArrayRef(R).drop_front(1), [](int64_t C) { return C == 0; }))
+    if (all_of(makeArrayRef(R).drop_front(1), [](int64_t C) { return C == 0; }))
       return false;
 
     for (const auto &C : R) {
@@ -48,16 +49,11 @@ public:
       GCD = APIntOps::GreatestCommonDivisor({32, (uint32_t)A}, {32, GCD})
                 .getZExtValue();
     }
-    Constraints.emplace_back(R.begin(), R.end());
+    Constraints.push_back(R);
     return true;
   }
 
-  bool addVariableRowFill(ArrayRef<int64_t> R) {
-    // If all variable coefficients are 0, the constraint does not provide any
-    // usable information.
-    if (all_of(ArrayRef(R).drop_front(1), [](int64_t C) { return C == 0; }))
-      return false;
-
+  bool addVariableRowFill(const SmallVector<int64_t, 8> &R) {
     for (auto &CR : Constraints) {
       while (CR.size() != R.size())
         CR.push_back(0);
@@ -79,14 +75,7 @@ public:
 
   bool isConditionImplied(SmallVector<int64_t, 8> R) const;
 
-  ArrayRef<int64_t> getLastConstraint() { return Constraints[0]; }
   void popLastConstraint() { Constraints.pop_back(); }
-  void popLastNVariables(unsigned N) {
-    for (auto &C : Constraints) {
-      for (unsigned i = 0; i < N; i++)
-        C.pop_back();
-    }
-  }
 
   /// Returns the number of rows in the constraint system.
   unsigned size() const { return Constraints.size(); }

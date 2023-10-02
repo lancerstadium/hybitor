@@ -1,4 +1,4 @@
-//===- llvm/Support/DivisionByConstantInfo.h ---------------------*- C++ -*-==//
+//== llvm/Support/DivisonByConstantInfo.h - division by constant -*- C++ -*-==//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -25,14 +25,12 @@ struct SignedDivisionByConstantInfo {
 };
 
 /// Magic data for optimising unsigned division by a constant.
-struct UnsignedDivisionByConstantInfo {
-  static UnsignedDivisionByConstantInfo
-  get(const APInt &D, unsigned LeadingZeros = 0,
-      bool AllowEvenDivisorOptimization = true);
+struct UnsignedDivisonByConstantInfo {
+  static UnsignedDivisonByConstantInfo get(const APInt &D,
+                                           unsigned LeadingZeros = 0);
   APInt Magic;          ///< magic number
   bool IsAdd;           ///< add indicator
-  unsigned PostShift;   ///< post-shift amount
-  unsigned PreShift;    ///< pre-shift amount
+  unsigned ShiftAmount; ///< shift amount
 };
 
 } // namespace llvm

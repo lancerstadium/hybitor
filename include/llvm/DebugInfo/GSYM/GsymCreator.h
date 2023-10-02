@@ -14,11 +14,11 @@
 #include <mutex>
 #include <thread>
 
-#include "llvm/ADT/AddressRanges.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/DebugInfo/GSYM/FileEntry.h"
 #include "llvm/DebugInfo/GSYM/FunctionInfo.h"
+#include "llvm/DebugInfo/GSYM/Range.h"
 #include "llvm/MC/StringTableBuilder.h"
 #include "llvm/Support/Endian.h"
 #include "llvm/Support/Error.h"
@@ -139,9 +139,9 @@ class GsymCreator {
   DenseMap<llvm::gsym::FileEntry, uint32_t> FileEntryToIndex;
   std::vector<llvm::gsym::FileEntry> Files;
   std::vector<uint8_t> UUID;
-  std::optional<AddressRanges> ValidTextRanges;
+  Optional<AddressRanges> ValidTextRanges;
   AddressRanges Ranges;
-  std::optional<uint64_t> BaseAddress;
+  llvm::Optional<uint64_t> BaseAddress;
   bool Finalized = false;
   bool Quiet;
 
@@ -249,7 +249,7 @@ public:
   }
 
   /// Get the valid text ranges.
-  const std::optional<AddressRanges> GetValidTextRanges() const {
+  const Optional<AddressRanges> GetValidTextRanges() const {
     return ValidTextRanges;
   }
 

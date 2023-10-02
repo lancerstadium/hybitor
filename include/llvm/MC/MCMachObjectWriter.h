@@ -263,8 +263,6 @@ public:
                                               const MCFragment &FB, bool InSet,
                                               bool IsPCRel) const override;
 
-  void populateAddrSigSection(MCAssembler &Asm);
-
   uint64_t writeObject(MCAssembler &Asm, const MCAsmLayout &Layout) override;
 };
 

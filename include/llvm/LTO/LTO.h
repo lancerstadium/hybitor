@@ -86,7 +86,7 @@ std::string getThinLTOOutputFile(const std::string &Path,
 Expected<std::unique_ptr<ToolOutputFile>> setupLLVMOptimizationRemarks(
     LLVMContext &Context, StringRef RemarksFilename, StringRef RemarksPasses,
     StringRef RemarksFormat, bool RemarksWithHotness,
-    std::optional<uint64_t> RemarksHotnessThreshold = 0, int Count = -1);
+    Optional<uint64_t> RemarksHotnessThreshold = 0, int Count = -1);
 
 /// Setups the output file for saving statistics.
 Expected<std::unique_ptr<ToolOutputFile>>
@@ -197,17 +197,7 @@ using ThinBackend = std::function<std::unique_ptr<ThinBackendProc>(
 
 /// This ThinBackend runs the individual backend jobs in-process.
 /// The default value means to use one job per hardware core (not hyper-thread).
-/// OnWrite is callback which receives module identifier and notifies LTO user
-/// that index file for the module (and optionally imports file) was created.
-/// ShouldEmitIndexFiles being true will write sharded ThinLTO index files
-/// to the same path as the input module, with suffix ".thinlto.bc"
-/// ShouldEmitImportsFiles is true it also writes a list of imported files to a
-/// similar path with ".imports" appended instead.
-using IndexWriteCallback = std::function<void(const std::string &)>;
-ThinBackend createInProcessThinBackend(ThreadPoolStrategy Parallelism,
-                                       IndexWriteCallback OnWrite = nullptr,
-                                       bool ShouldEmitIndexFiles = false,
-                                       bool ShouldEmitImportsFiles = false);
+ThinBackend createInProcessThinBackend(ThreadPoolStrategy Parallelism);
 
 /// This ThinBackend writes individual module indexes to files, instead of
 /// running the individual backend jobs. This backend is for distributed builds
@@ -222,6 +212,7 @@ ThinBackend createInProcessThinBackend(ThreadPoolStrategy Parallelism,
 /// the final ThinLTO linking. Can be nullptr.
 /// OnWrite is callback which receives module identifier and notifies LTO user
 /// that index file for the module (and optionally imports file) was created.
+using IndexWriteCallback = std::function<void(const std::string &)>;
 ThinBackend createWriteIndexesThinBackend(std::string OldPrefix,
                                           std::string NewPrefix,
                                           bool ShouldEmitImportsFiles,
@@ -322,7 +313,7 @@ private:
     // The full set of bitcode modules in input order.
     ModuleMapType ModuleMap;
     // The bitcode modules to compile, if specified by the LTO Config.
-    std::optional<ModuleMapType> ModulesToCompile;
+    Optional<ModuleMapType> ModulesToCompile;
     DenseMap<GlobalValue::GUID, StringRef> PrevailingModuleForGUID;
   } ThinLTO;
 
@@ -415,7 +406,7 @@ private:
   mutable bool CalledGetMaxTasks = false;
 
   // Use Optional to distinguish false from not yet initialized.
-  std::optional<bool> EnableSplitLTOUnit;
+  Optional<bool> EnableSplitLTOUnit;
 
   // Identify symbols exported dynamically, and that therefore could be
   // referenced by a shared library not visible to the linker.

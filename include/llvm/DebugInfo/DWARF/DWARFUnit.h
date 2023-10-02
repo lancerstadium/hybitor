@@ -9,25 +9,28 @@
 #ifndef LLVM_DEBUGINFO_DWARF_DWARFUNIT_H
 #define LLVM_DEBUGINFO_DWARF_DWARFUNIT_H
 
-#include "llvm/ADT/DenseSet.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/iterator_range.h"
 #include "llvm/BinaryFormat/Dwarf.h"
-#include "llvm/DebugInfo/DWARF/DWARFAddressRange.h"
-#include "llvm/DebugInfo/DWARF/DWARFDataExtractor.h"
 #include "llvm/DebugInfo/DWARF/DWARFDebugInfoEntry.h"
+#include "llvm/DebugInfo/DWARF/DWARFDebugLoc.h"
+#include "llvm/DebugInfo/DWARF/DWARFDebugRangeList.h"
+#include "llvm/DebugInfo/DWARF/DWARFDebugRnglists.h"
 #include "llvm/DebugInfo/DWARF/DWARFDie.h"
-#include "llvm/DebugInfo/DWARF/DWARFLocationExpression.h"
+#include "llvm/DebugInfo/DWARF/DWARFFormValue.h"
+#include "llvm/DebugInfo/DWARF/DWARFRelocMap.h"
+#include "llvm/DebugInfo/DWARF/DWARFSection.h"
 #include "llvm/DebugInfo/DWARF/DWARFUnitIndex.h"
 #include "llvm/Support/DataExtractor.h"
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -37,12 +40,6 @@ class DWARFAbbreviationDeclarationSet;
 class DWARFContext;
 class DWARFDebugAbbrev;
 class DWARFUnit;
-class DWARFDebugRangeList;
-class DWARFLocationTable;
-class DWARFObject;
-class raw_ostream;
-struct DIDumpOptions;
-struct DWARFSection;
 
 /// Base class describing the header of any kind of "unit."  Some information
 /// is specific to certain unit types.  We separate this class out so we can
@@ -63,7 +60,7 @@ class DWARFUnitHeader {
   uint64_t TypeOffset = 0;
 
   // For v5 split or skeleton compile units only.
-  std::optional<uint64_t> DWOId;
+  Optional<uint64_t> DWOId;
 
   // Unit type as parsed, or derived from the section kind.
   uint8_t UnitType = 0;
@@ -92,7 +89,7 @@ public:
   }
   uint64_t getLength() const { return Length; }
   uint64_t getAbbrOffset() const { return AbbrOffset; }
-  std::optional<uint64_t> getDWOId() const { return DWOId; }
+  Optional<uint64_t> getDWOId() const { return DWOId; }
   void setDWOId(uint64_t Id) {
     assert((!DWOId || *DWOId == Id) && "setting DWOId to a different value");
     DWOId = Id;
@@ -222,18 +219,17 @@ class DWARFUnit {
   const DWARFSection &StringOffsetSection;
   const DWARFSection *AddrOffsetSection;
   DWARFUnit *SU;
-  std::optional<uint64_t> AddrOffsetSectionBase;
-  bool IsLittleEndian;
+  Optional<uint64_t> AddrOffsetSectionBase;
+  bool isLittleEndian;
   bool IsDWO;
   const DWARFUnitVector &UnitVector;
 
   /// Start, length, and DWARF format of the unit's contribution to the string
   /// offsets table (DWARF v5).
-  std::optional<StrOffsetsContributionDescriptor>
-      StringOffsetsTableContribution;
+  Optional<StrOffsetsContributionDescriptor> StringOffsetsTableContribution;
 
   mutable const DWARFAbbreviationDeclarationSet *Abbrevs;
-  std::optional<object::SectionedAddress> BaseAddr;
+  llvm::Optional<object::SectionedAddress> BaseAddr;
   /// The compile unit debug information entry items.
   std::vector<DWARFDebugInfoEntry> DieArray;
 
@@ -242,59 +238,31 @@ class DWARFUnit {
   /// std::map::upper_bound for address range lookup.
   std::map<uint64_t, std::pair<uint64_t, DWARFDie>> AddrDieMap;
 
-  /// Map from the location (interpreted DW_AT_location) of a DW_TAG_variable,
-  /// to the end address and the corresponding DIE.
-  std::map<uint64_t, std::pair<uint64_t, DWARFDie>> VariableDieMap;
-  DenseSet<uint64_t> RootsParsedForVariables;
-
   using die_iterator_range =
       iterator_range<std::vector<DWARFDebugInfoEntry>::iterator>;
 
   std::shared_ptr<DWARFUnit> DWO;
 
-protected:
-  /// Return the index of a \p Die entry inside the unit's DIE vector.
-  ///
-  /// It is illegal to call this method with a DIE that hasn't be
-  /// created by this unit. In other word, it's illegal to call this
-  /// method on a DIE that isn't accessible by following
-  /// children/sibling links starting from this unit's getUnitDIE().
-  uint32_t getDIEIndex(const DWARFDebugInfoEntry *Die) const {
+  uint32_t getDIEIndex(const DWARFDebugInfoEntry *Die) {
     auto First = DieArray.data();
     assert(Die >= First && Die < First + DieArray.size());
     return Die - First;
   }
 
-  /// Return DWARFDebugInfoEntry for the specified index \p Index.
-  const DWARFDebugInfoEntry *getDebugInfoEntry(unsigned Index) const {
-    assert(Index < DieArray.size());
-    return &DieArray[Index];
-  }
-
-  const DWARFDebugInfoEntry *
-  getParentEntry(const DWARFDebugInfoEntry *Die) const;
-  const DWARFDebugInfoEntry *
-  getSiblingEntry(const DWARFDebugInfoEntry *Die) const;
-  const DWARFDebugInfoEntry *
-  getPreviousSiblingEntry(const DWARFDebugInfoEntry *Die) const;
-  const DWARFDebugInfoEntry *
-  getFirstChildEntry(const DWARFDebugInfoEntry *Die) const;
-  const DWARFDebugInfoEntry *
-  getLastChildEntry(const DWARFDebugInfoEntry *Die) const;
-
+protected:
   const DWARFUnitHeader &getHeader() const { return Header; }
 
   /// Find the unit's contribution to the string offsets table and determine its
   /// length and form. The given offset is expected to be derived from the unit
   /// DIE's DW_AT_str_offsets_base attribute.
-  Expected<std::optional<StrOffsetsContributionDescriptor>>
+  Expected<Optional<StrOffsetsContributionDescriptor>>
   determineStringOffsetsTableContribution(DWARFDataExtractor &DA);
 
   /// Find the unit's contribution to the string offsets table and determine its
   /// length and form. The given offset is expected to be 0 in a dwo file or,
   /// in a dwp file, the start of the unit's contribution to the string offsets
   /// table section (as determined by the index table).
-  Expected<std::optional<StrOffsetsContributionDescriptor>>
+  Expected<Optional<StrOffsetsContributionDescriptor>>
   determineStringOffsetsTableContributionDWO(DWARFDataExtractor &DA);
 
 public:
@@ -307,7 +275,6 @@ public:
 
   virtual ~DWARFUnit();
 
-  bool isLittleEndian() const { return IsLittleEndian; }
   bool isDWOUnit() const { return IsDWO; }
   DWARFContext& getContext() const { return Context; }
   const DWARFSection &getInfoSection() const { return InfoSection; }
@@ -346,15 +313,12 @@ public:
     AddrOffsetSectionBase = Base;
   }
 
-  std::optional<uint64_t> getAddrOffsetSectionBase() const {
+  Optional<uint64_t> getAddrOffsetSectionBase() const {
     return AddrOffsetSectionBase;
   }
 
   /// Recursively update address to Die map.
   void updateAddressDieMap(DWARFDie Die);
-
-  /// Recursively update address to variable Die map.
-  void updateVariableDieMap(DWARFDie Die);
 
   void setRangesSection(const DWARFSection *RS, uint64_t Base) {
     RangeSection = RS;
@@ -365,7 +329,7 @@ public:
     return LocSectionBase;
   }
 
-  std::optional<object::SectionedAddress>
+  Optional<object::SectionedAddress>
   getAddrOffsetSectionItem(uint32_t Index) const;
   Expected<uint64_t> getStringOffsetSectionItem(uint32_t Index) const;
 
@@ -385,7 +349,7 @@ public:
                          DWARFDebugRangeList &RangeList) const;
   void clear();
 
-  const std::optional<StrOffsetsContributionDescriptor> &
+  const Optional<StrOffsetsContributionDescriptor> &
   getStringOffsetsTableContribution() const {
     return StringOffsetsTableContribution;
   }
@@ -421,7 +385,7 @@ public:
     return false;
   }
 
-  std::optional<object::SectionedAddress> getBaseAddress();
+  llvm::Optional<object::SectionedAddress> getBaseAddress();
 
   DWARFDie getUnitDIE(bool ExtractUnitDIEOnly = true) {
     extractDIEsIfNeeded(ExtractUnitDIEOnly);
@@ -430,15 +394,15 @@ public:
     return DWARFDie(this, &DieArray[0]);
   }
 
-  DWARFDie getNonSkeletonUnitDIE(bool ExtractUnitDIEOnly = true,
-                                 StringRef DWOAlternativeLocation = {}) {
-    parseDWO(DWOAlternativeLocation);
-    return DWO ? DWO->getUnitDIE(ExtractUnitDIEOnly)
-               : getUnitDIE(ExtractUnitDIEOnly);
+  DWARFDie getNonSkeletonUnitDIE(bool ExtractUnitDIEOnly = true) {
+    parseDWO();
+    if (DWO)
+      return DWO->getUnitDIE(ExtractUnitDIEOnly);
+    return getUnitDIE(ExtractUnitDIEOnly);
   }
 
   const char *getCompilationDir();
-  std::optional<uint64_t> getDWOId() {
+  Optional<uint64_t> getDWOId() {
     extractDIEsIfNeeded(/*CUDieOnly*/ true);
     return getHeader().getDWOId();
   }
@@ -456,9 +420,9 @@ public:
   /// Return a rangelist's offset based on an index. The index designates
   /// an entry in the rangelist table's offset array and is supplied by
   /// DW_FORM_rnglistx.
-  std::optional<uint64_t> getRnglistOffset(uint32_t Index);
+  Optional<uint64_t> getRnglistOffset(uint32_t Index);
 
-  std::optional<uint64_t> getLoclistOffset(uint32_t Index);
+  Optional<uint64_t> getLoclistOffset(uint32_t Index);
 
   Expected<DWARFAddressRangesVector> collectAddressRanges();
 
@@ -469,10 +433,6 @@ public:
   /// address. The pointer is alive as long as parsed compile unit DIEs are not
   /// cleared.
   DWARFDie getSubroutineForAddress(uint64_t Address);
-
-  /// Returns variable DIE for the address provided. The pointer is alive as
-  /// long as parsed compile unit DIEs are not cleared.
-  DWARFDie getVariableForAddress(uint64_t Address);
 
   /// getInlinedChainForAddress - fetches inlined chain for a given address.
   /// Returns empty chain if there is no subprogram containing address. The
@@ -496,13 +456,14 @@ public:
   /// created by this unit. In other word, it's illegal to call this
   /// method on a DIE that isn't accessible by following
   /// children/sibling links starting from this unit's getUnitDIE().
-  uint32_t getDIEIndex(const DWARFDie &D) const {
+  uint32_t getDIEIndex(const DWARFDie &D) {
     return getDIEIndex(D.getDebugInfoEntry());
   }
 
-  /// Return the DIE object at the given index \p Index.
+  /// Return the DIE object at the given index.
   DWARFDie getDIEAtIndex(unsigned Index) {
-    return DWARFDie(this, getDebugInfoEntry(Index));
+    assert(Index < DieArray.size());
+    return DWARFDie(this, &DieArray[Index]);
   }
 
   DWARFDie getParent(const DWARFDebugInfoEntry *Die);
@@ -511,32 +472,25 @@ public:
   DWARFDie getFirstChild(const DWARFDebugInfoEntry *Die);
   DWARFDie getLastChild(const DWARFDebugInfoEntry *Die);
 
-  /// Return the DIE object for a given offset \p Offset inside the
+  /// Return the DIE object for a given offset inside the
   /// unit's DIE vector.
+  ///
+  /// The unit needs to have its DIEs extracted for this method to work.
   DWARFDie getDIEForOffset(uint64_t Offset) {
-    if (std::optional<uint32_t> DieIdx = getDIEIndexForOffset(Offset))
-      return DWARFDie(this, &DieArray[*DieIdx]);
-
-    return DWARFDie();
-  }
-
-  /// Return the DIE index for a given offset \p Offset inside the
-  /// unit's DIE vector.
-  std::optional<uint32_t> getDIEIndexForOffset(uint64_t Offset) {
     extractDIEsIfNeeded(false);
     auto It =
         llvm::partition_point(DieArray, [=](const DWARFDebugInfoEntry &DIE) {
           return DIE.getOffset() < Offset;
         });
     if (It != DieArray.end() && It->getOffset() == Offset)
-      return It - DieArray.begin();
-    return std::nullopt;
+      return DWARFDie(this, &*It);
+    return DWARFDie();
   }
 
   uint32_t getLineTableOffset() const {
     if (auto IndexEntry = Header.getIndexEntry())
       if (const auto *Contrib = IndexEntry->getContribution(DW_SECT_LINE))
-        return Contrib->getOffset32();
+        return Contrib->Offset;
     return 0;
   }
 
@@ -569,10 +523,7 @@ private:
 
   /// parseDWO - Parses .dwo file for current compile unit. Returns true if
   /// it was actually constructed.
-  /// The \p AlternativeLocation specifies an alternative location to get
-  /// the DWARF context for the DWO object; this is the case when it has
-  /// been moved from its original location.
-  bool parseDWO(StringRef AlternativeLocation = {});
+  bool parseDWO();
 };
 
 inline bool isCompileUnit(const std::unique_ptr<DWARFUnit> &U) {

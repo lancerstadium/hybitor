@@ -13,10 +13,8 @@
 #ifndef LLVM_CODEGEN_GLOBALISEL_INSTRUCTIONSELECT_H
 #define LLVM_CODEGEN_GLOBALISEL_INSTRUCTIONSELECT_H
 
-#include "llvm/ADT/StringRef.h"
-#include "llvm/CodeGen/MachineFunction.h"
+#include "llvm/CodeGen/GlobalISel/InstructionSelector.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
-#include "llvm/Support/CodeGen.h"
 
 namespace llvm {
 

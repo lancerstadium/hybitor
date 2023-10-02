@@ -18,6 +18,9 @@
 #include <queue>
 #include <set>
 
+using namespace llvm;
+using namespace sampleprof;
+
 namespace llvm {
 namespace sampleprof {
 
@@ -48,10 +51,10 @@ struct ProfiledCallGraphNode {
     }
   };
 
+  using iterator = std::set<ProfiledCallGraphEdge>::iterator;
+  using const_iterator = std::set<ProfiledCallGraphEdge>::const_iterator;
   using edge = ProfiledCallGraphEdge;
-  using edges = std::set<edge, ProfiledCallGraphEdgeComparer>;
-  using iterator = edges::iterator;
-  using const_iterator = edges::const_iterator;
+  using edges = std::set<ProfiledCallGraphEdge, ProfiledCallGraphEdgeComparer>;
 
   ProfiledCallGraphNode(StringRef FName = StringRef()) : Name(FName) {}
 
@@ -61,11 +64,11 @@ struct ProfiledCallGraphNode {
 
 class ProfiledCallGraph {
 public:
-  using iterator = ProfiledCallGraphNode::iterator;
+  using iterator = std::set<ProfiledCallGraphEdge>::iterator;
 
   // Constructor for non-CS profile.
   ProfiledCallGraph(SampleProfileMap &ProfileMap) {
-    assert(!FunctionSamples::ProfileIsCS &&
+    assert(!FunctionSamples::ProfileIsCSFlat &&
            "CS flat profile is not handled here");
     for (const auto &Samples : ProfileMap) {
       addProfiledCalls(Samples.second);
@@ -105,7 +108,7 @@ public:
         if (!CalleeSamples || !CallerSamples) {
           Weight = 0;
         } else {
-          uint64_t CalleeEntryCount = CalleeSamples->getHeadSamplesEstimate();
+          uint64_t CalleeEntryCount = CalleeSamples->getEntrySamples();
           uint64_t CallsiteCount = 0;
           LineLocation Callsite = Callee->getCallSiteLoc();
           if (auto CallTargets = CallerSamples->findCallTargetMapAt(Callsite)) {
@@ -159,9 +162,9 @@ private:
     addProfiledFunction(Samples.getFuncName());
 
     for (const auto &Sample : Samples.getBodySamples()) {
-      for (const auto &[Target, Frequency] : Sample.second.getCallTargets()) {
-        addProfiledFunction(Target);
-        addProfiledCall(Samples.getFuncName(), Target, Frequency);
+      for (const auto &Target : Sample.second.getCallTargets()) {
+        addProfiledFunction(Target.first());
+        addProfiledCall(Samples.getFuncName(), Target.first(), Target.second);
       }
     }
 
@@ -169,7 +172,7 @@ private:
       for (const auto &InlinedSamples : CallsiteSamples.second) {
         addProfiledFunction(InlinedSamples.first);
         addProfiledCall(Samples.getFuncName(), InlinedSamples.first,
-                        InlinedSamples.second.getHeadSamplesEstimate());
+                        InlinedSamples.second.getEntrySamples());
         addProfiledCalls(InlinedSamples.second);
       }
     }

@@ -25,7 +25,6 @@
 #include "llvm/Target/TargetOptions.h"
 
 #include <functional>
-#include <optional>
 
 namespace llvm {
 
@@ -44,23 +43,22 @@ struct Config {
     ELF,
   };
   // Note: when adding fields here, consider whether they need to be added to
-  // computeLTOCacheKey in LTO.cpp.
+  // computeCacheKey in LTO.cpp.
   std::string CPU;
   TargetOptions Options;
   std::vector<std::string> MAttrs;
-  std::vector<std::string> MllvmArgs;
   std::vector<std::string> PassPlugins;
   /// For adding passes that run right before codegen.
   std::function<void(legacy::PassManager &)> PreCodeGenPassesHook;
-  std::optional<Reloc::Model> RelocModel = Reloc::PIC_;
-  std::optional<CodeModel::Model> CodeModel;
+  Optional<Reloc::Model> RelocModel = Reloc::PIC_;
+  Optional<CodeModel::Model> CodeModel = None;
   CodeGenOpt::Level CGOptLevel = CodeGenOpt::Default;
   CodeGenFileType CGFileType = CGFT_ObjectFile;
   unsigned OptLevel = 2;
   bool DisableVerify = false;
 
-  /// Use the standard optimization pipeline.
-  bool UseDefaultPipeline = false;
+  /// Use the new pass manager
+  bool UseNewPM = LLVM_ENABLE_NEW_PASS_MANAGER;
 
   /// Flag to indicate that the optimizer should not assume builtins are present
   /// on the target.
@@ -153,7 +151,7 @@ struct Config {
   ///                    compilation.
   ///
   /// If threshold option is not specified, it is disabled by default.
-  std::optional<uint64_t> RemarksHotnessThreshold = 0;
+  llvm::Optional<uint64_t> RemarksHotnessThreshold = 0;
 
   /// The format used for serializing remarks (default: YAML).
   std::string RemarksFormat;
@@ -178,10 +176,6 @@ struct Config {
 
   /// Add FSAFDO discriminators.
   bool AddFSDiscriminator = false;
-
-  /// Use opaque pointer types. Used to call LLVMContext::setOpaquePointers
-  /// unless already set by the `-opaque-pointers` commandline option.
-  bool OpaquePointers = true;
 
   /// If this field is set, LTO will write input file paths and symbol
   /// resolutions here in llvm-lto2 command line flag format. This can be
@@ -269,12 +263,8 @@ struct Config {
   /// the given output file name, and (2) creates a resolution file whose name
   /// is prefixed by the given output file name and sets ResolutionFile to its
   /// file handle.
-  ///
-  /// SaveTempsArgs can be specified to select which temps to save.
-  /// If SaveTempsArgs is not provided, all temps are saved.
   Error addSaveTemps(std::string OutputFileName,
-                     bool UseInputModulePath = false,
-                     const DenseSet<StringRef> &SaveTempsArgs = {});
+                     bool UseInputModulePath = false);
 };
 
 struct LTOLLVMDiagnosticHandler : public DiagnosticHandler {
@@ -298,7 +288,6 @@ struct LTOLLVMContext : LLVMContext {
     enableDebugTypeODRUniquing();
     setDiagnosticHandler(
         std::make_unique<LTOLLVMDiagnosticHandler>(&DiagHandler), true);
-    setOpaquePointers(C.OpaquePointers);
   }
   DiagnosticHandlerFunction DiagHandler;
 };

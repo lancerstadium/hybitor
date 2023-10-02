@@ -23,7 +23,6 @@
 #include "llvm/Support/type_traits.h"
 
 #include <iterator>
-#include <optional>
 #include <utility>
 
 namespace llvm {
@@ -40,9 +39,6 @@ struct IsHashableData
 /// Declares the hasher member, and functions forwarding directly to the hasher.
 template <typename HasherT> class HashBuilderBase {
 public:
-  template <typename HasherT_ = HasherT>
-  using HashResultTy = decltype(std::declval<HasherT_ &>().final());
-
   HasherT &getHasher() { return Hasher; }
 
   /// Forward to `HasherT::update(ArrayRef<uint8_t>)`.
@@ -58,17 +54,17 @@ public:
   /// Users of this function should pay attention to respect endianness
   /// contraints.
   void update(StringRef Data) {
-    update(
-        ArrayRef(reinterpret_cast<const uint8_t *>(Data.data()), Data.size()));
+    update(makeArrayRef(reinterpret_cast<const uint8_t *>(Data.data()),
+                        Data.size()));
   }
 
   /// Forward to `HasherT::final()` if available.
-  template <typename HasherT_ = HasherT> HashResultTy<HasherT_> final() {
+  template <typename HasherT_ = HasherT> StringRef final() {
     return this->getHasher().final();
   }
 
   /// Forward to `HasherT::result()` if available.
-  template <typename HasherT_ = HasherT> HashResultTy<HasherT_> result() {
+  template <typename HasherT_ = HasherT> StringRef result() {
     return this->getHasher().result();
   }
 
@@ -77,11 +73,11 @@ protected:
 
   template <typename... ArgTypes>
   explicit HashBuilderBase(ArgTypes &&...Args)
-      : OptionalHasher(std::in_place, std::forward<ArgTypes>(Args)...),
+      : OptionalHasher(in_place, std::forward<ArgTypes>(Args)...),
         Hasher(*OptionalHasher) {}
 
 private:
-  std::optional<HasherT> OptionalHasher;
+  Optional<HasherT> OptionalHasher;
   HasherT &Hasher;
 };
 
@@ -131,8 +127,9 @@ public:
     add(Value.size());
     if (hashbuilder_detail::IsHashableData<T>::value &&
         Endianness == support::endian::system_endianness()) {
-      this->update(ArrayRef(reinterpret_cast<const uint8_t *>(Value.begin()),
-                            Value.size() * sizeof(T)));
+      this->update(
+          makeArrayRef(reinterpret_cast<const uint8_t *>(Value.begin()),
+                       Value.size() * sizeof(T)));
     } else {
       for (auto &V : Value)
         add(V);
@@ -159,8 +156,8 @@ public:
     // `StringRef::begin()` and `StringRef::end()`. Explicitly call `update` to
     // guarantee the fast path.
     add(Value.size());
-    this->update(ArrayRef(reinterpret_cast<const uint8_t *>(Value.begin()),
-                          Value.size()));
+    this->update(makeArrayRef(reinterpret_cast<const uint8_t *>(Value.begin()),
+                              Value.size()));
     return *this;
   }
 
@@ -209,7 +206,7 @@ public:
   ///   friend void addHash(HashBuilderImpl<HasherT, Endianness> &HBuilder,
   ///                       const StructWithFastHash &Value) {
   ///     if (Endianness == support::endian::system_endianness()) {
-  ///       HBuilder.update(ArrayRef(
+  ///       HBuilder.update(makeArrayRef(
   ///           reinterpret_cast<const uint8_t *>(&Value), sizeof(Value)));
   ///     } else {
   ///       // Rely on existing `add` methods to handle endianness.
@@ -239,7 +236,7 @@ public:
   ///   friend void addHash(HashBuilderImpl<HasherT, Endianness> &HBuilder,
   ///                       const CustomContainer &Value) {
   ///     if (Endianness == support::endian::system_endianness()) {
-  ///       HBuilder.update(ArrayRef(
+  ///       HBuilder.update(makeArrayRef(
   ///           reinterpret_cast<const uint8_t *>(&Value.Size),
   ///           sizeof(Value.Size) + Value.Size * sizeof(Value.Elements[0])));
   ///     } else {
@@ -261,12 +258,13 @@ public:
 
   template <typename T1, typename T2>
   HashBuilderImpl &add(const std::pair<T1, T2> &Value) {
-    return add(Value.first, Value.second);
+    add(Value.first);
+    add(Value.second);
+    return *this;
   }
 
   template <typename... Ts> HashBuilderImpl &add(const std::tuple<Ts...> &Arg) {
-    std::apply([this](const auto &...Args) { this->add(Args...); }, Arg);
-    return *this;
+    return addTupleHelper(Arg, typename std::index_sequence_for<Ts...>());
   }
 
   /// A convenenience variadic helper.
@@ -279,10 +277,12 @@ public:
   /// add(Arg1)
   /// add(Arg2)
   /// ```
-  template <typename... Ts>
-  std::enable_if_t<(sizeof...(Ts) > 1), HashBuilderImpl &>
-  add(const Ts &...Args) {
-    return (add(Args), ...);
+  template <typename T, typename... Ts>
+  typename std::enable_if<(sizeof...(Ts) >= 1), HashBuilderImpl &>::type
+  add(const T &FirstArg, const Ts &...Args) {
+    add(FirstArg);
+    add(Args...);
+    return *this;
   }
 
   template <typename ForwardIteratorT>
@@ -316,12 +316,19 @@ public:
   std::enable_if_t<is_detected<HasByteSwapT, T>::value, HashBuilderImpl &>
   adjustForEndiannessAndAdd(const T &Value) {
     T SwappedValue = support::endian::byte_swap(Value, Endianness);
-    this->update(ArrayRef(reinterpret_cast<const uint8_t *>(&SwappedValue),
-                          sizeof(SwappedValue)));
+    this->update(makeArrayRef(reinterpret_cast<const uint8_t *>(&SwappedValue),
+                              sizeof(SwappedValue)));
     return *this;
   }
 
 private:
+  template <typename... Ts, std::size_t... Indices>
+  HashBuilderImpl &addTupleHelper(const std::tuple<Ts...> &Arg,
+                                  std::index_sequence<Indices...>) {
+    add(std::get<Indices>(Arg)...);
+    return *this;
+  }
+
   // FIXME: Once available, specialize this function for `contiguous_iterator`s,
   // and use it for `ArrayRef` and `StringRef`.
   template <typename ForwardIteratorT>
@@ -338,8 +345,8 @@ private:
                        Endianness == support::endian::system_endianness(),
                    HashBuilderImpl &>
   addRangeElementsImpl(T *First, T *Last, std::forward_iterator_tag) {
-    this->update(ArrayRef(reinterpret_cast<const uint8_t *>(First),
-                          (Last - First) * sizeof(T)));
+    this->update(makeArrayRef(reinterpret_cast<const uint8_t *>(First),
+                              (Last - First) * sizeof(T)));
     return *this;
   }
 };

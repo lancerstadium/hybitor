@@ -99,26 +99,9 @@ struct MachineFunctionInfo {
   /// supplied allocator.
   ///
   /// This function can be overridden in a derive class.
-  template <typename FuncInfoTy, typename SubtargetTy = TargetSubtargetInfo>
-  static FuncInfoTy *create(BumpPtrAllocator &Allocator, const Function &F,
-                            const SubtargetTy *STI) {
-    return new (Allocator.Allocate<FuncInfoTy>()) FuncInfoTy(F, STI);
-  }
-
-  template <typename Ty>
-  static Ty *create(BumpPtrAllocator &Allocator, const Ty &MFI) {
-    return new (Allocator.Allocate<Ty>()) Ty(MFI);
-  }
-
-  /// Make a functionally equivalent copy of this MachineFunctionInfo in \p MF.
-  /// This requires remapping MachineBasicBlock references from the original
-  /// parent to values in the new function. Targets may assume that virtual
-  /// register and frame index values are preserved in the new function.
-  virtual MachineFunctionInfo *
-  clone(BumpPtrAllocator &Allocator, MachineFunction &DestMF,
-        const DenseMap<MachineBasicBlock *, MachineBasicBlock *> &Src2DstMBB)
-      const {
-    return nullptr;
+  template<typename Ty>
+  static Ty *create(BumpPtrAllocator &Allocator, MachineFunction &MF) {
+    return new (Allocator.Allocate<Ty>()) Ty(MF);
   }
 };
 
@@ -281,7 +264,6 @@ class LLVM_EXTERNAL_VISIBILITY MachineFunction {
   // Keep track of the function section.
   MCSection *Section = nullptr;
 
-  // Catchpad unwind destination info for wasm EH.
   // Keeps track of Wasm exception handling related data. This will be null for
   // functions that aren't using a wasm EH personality.
   WasmEHFuncInfo *WasmEHInfo = nullptr;
@@ -294,6 +276,12 @@ class LLVM_EXTERNAL_VISIBILITY MachineFunction {
   // MachineBasicBlock is inserted into a MachineFunction is it automatically
   // numbered and this vector keeps track of the mapping from ID's to MBB's.
   std::vector<MachineBasicBlock*> MBBNumbering;
+
+  // Unary encoding of basic block symbols is used to reduce size of ".strtab".
+  // Basic block number 'i' gets a prefix of length 'i'.  The ith character also
+  // denotes the type of basic block number 'i'.  Return blocks are marked with
+  // 'r', landing pads with 'l' and regular blocks with 'a'.
+  std::vector<char> BBSectionsSymbolPrefix;
 
   // Pool-allocate MachineFunction-lifetime and IR objects.
   BumpPtrAllocator Allocator;
@@ -374,9 +362,6 @@ class LLVM_EXTERNAL_VISIBILITY MachineFunction {
   bool HasEHCatchret = false;
   bool HasEHScopes = false;
   bool HasEHFunclets = false;
-
-  /// BBID to assign to the next basic block of this function.
-  unsigned NextBBID = 0;
 
   /// Section Type for basic blocks, only relevant with basic block sections.
   BasicBlockSection BBSectionsType = BasicBlockSection::None;
@@ -527,10 +512,6 @@ public:
   /// during register allocation. See DebugPHIRegallocPos.
   DenseMap<unsigned, DebugPHIRegallocPos> DebugPHIPositions;
 
-  /// Flag for whether this function contains DBG_VALUEs (false) or
-  /// DBG_INSTR_REF (true).
-  bool UseDebugInstrRef = false;
-
   /// Create a substitution between one <instr,operand> value to a different,
   /// new value.
   void makeDebugValueSubstitution(DebugInstrOperandPair, DebugInstrOperandPair,
@@ -556,13 +537,8 @@ public:
   /// the copied value; or for parameters, creates a DBG_PHI on entry.
   /// May insert instructions into the entry block!
   /// \p MI The copy-like instruction to salvage.
-  /// \p DbgPHICache A container to cache already-solved COPYs.
   /// \returns An instruction/operand pair identifying the defining value.
-  DebugInstrOperandPair
-  salvageCopySSA(MachineInstr &MI,
-                 DenseMap<Register, DebugInstrOperandPair> &DbgPHICache);
-
-  DebugInstrOperandPair salvageCopySSAImpl(MachineInstr &MI);
+  DebugInstrOperandPair salvageCopySSA(MachineInstr &MI);
 
   /// Finalise any partially emitted debug instructions. These are DBG_INSTR_REF
   /// instructions where we only knew the vreg of the value they use, not the
@@ -571,16 +547,9 @@ public:
   /// (or DBG_PHI).
   void finalizeDebugInstrRefs();
 
-  /// Determine whether, in the current machine configuration, we should use
-  /// instruction referencing or not.
-  bool shouldUseDebugInstrRef() const;
-
-  /// Returns true if the function's variable locations are tracked with
+  /// Returns true if the function's variable locations should be tracked with
   /// instruction referencing.
   bool useDebugInstrRef() const;
-
-  /// Set whether this function will use instruction referencing or not.
-  void setUseDebugInstrRef(bool UseInstrRef);
 
   /// A reserved operand number representing the instructions memory operand,
   /// for instructions that have a stack spill fused into them.
@@ -768,30 +737,14 @@ public:
   ///
   template<typename Ty>
   Ty *getInfo() {
+    if (!MFInfo)
+      MFInfo = Ty::template create<Ty>(Allocator, *this);
     return static_cast<Ty*>(MFInfo);
   }
 
   template<typename Ty>
   const Ty *getInfo() const {
-    return static_cast<const Ty *>(MFInfo);
-  }
-
-  template <typename Ty> Ty *cloneInfo(const Ty &Old) {
-    assert(!MFInfo);
-    MFInfo = Ty::template create<Ty>(Allocator, Old);
-    return static_cast<Ty *>(MFInfo);
-  }
-
-  /// Initialize the target specific MachineFunctionInfo
-  void initTargetMachineFunctionInfo(const TargetSubtargetInfo &STI);
-
-  MachineFunctionInfo *cloneInfoFrom(
-      const MachineFunction &OrigMF,
-      const DenseMap<MachineBasicBlock *, MachineBasicBlock *> &Src2DstMBB) {
-    assert(!MFInfo && "new function already has MachineFunctionInfo");
-    if (!OrigMF.MFInfo)
-      return nullptr;
-    return OrigMF.MFInfo->clone(Allocator, *this, Src2DstMBB);
+     return const_cast<MachineFunction*>(this)->getInfo<Ty>();
   }
 
   /// Returns the denormal handling type for the default rounding mode of the
@@ -1047,8 +1000,7 @@ public:
   /// the function.
   MachineInstr::ExtraInfo *createMIExtraInfo(
       ArrayRef<MachineMemOperand *> MMOs, MCSymbol *PreInstrSymbol = nullptr,
-      MCSymbol *PostInstrSymbol = nullptr, MDNode *HeapAllocMarker = nullptr,
-      MDNode *PCSections = nullptr, uint32_t CFIType = 0);
+      MCSymbol *PostInstrSymbol = nullptr, MDNode *HeapAllocMarker = nullptr);
 
   /// Allocate a string and populate it with the given external symbol name.
   const char *createExternalSymbolName(StringRef Name);
@@ -1073,7 +1025,7 @@ public:
     return FrameInstructions;
   }
 
-  [[nodiscard]] unsigned addFrameInst(const MCCFIInstruction &Inst);
+  LLVM_NODISCARD unsigned addFrameInst(const MCCFIInstruction &Inst);
 
   /// Returns a reference to a list of symbols immediately following calls to
   /// _setjmp in the function. Used to construct the longjmp target table used
@@ -1119,6 +1071,10 @@ public:
   /// Find or create an LandingPadInfo for the specified MachineBasicBlock.
   LandingPadInfo &getOrCreateLandingPadInfo(MachineBasicBlock *LandingPad);
 
+  /// Remap landing pad labels and remove any deleted landing pads.
+  void tidyLandingPads(DenseMap<MCSymbol *, uintptr_t> *LPMap = nullptr,
+                       bool TidyIfNoBeginLabels = true);
+
   /// Return a reference to the landing pad info for the current function.
   const std::vector<LandingPadInfo> &getLandingPads() const {
     return LandingPads;
@@ -1134,19 +1090,31 @@ public:
   /// entry.
   MCSymbol *addLandingPad(MachineBasicBlock *LandingPad);
 
+  /// Provide the catch typeinfo for a landing pad.
+  void addCatchTypeInfo(MachineBasicBlock *LandingPad,
+                        ArrayRef<const GlobalValue *> TyInfo);
+
+  /// Provide the filter typeinfo for a landing pad.
+  void addFilterTypeInfo(MachineBasicBlock *LandingPad,
+                         ArrayRef<const GlobalValue *> TyInfo);
+
+  /// Add a cleanup action for a landing pad.
+  void addCleanup(MachineBasicBlock *LandingPad);
+
+  void addSEHCatchHandler(MachineBasicBlock *LandingPad, const Function *Filter,
+                          const BlockAddress *RecoverBA);
+
+  void addSEHCleanupHandler(MachineBasicBlock *LandingPad,
+                            const Function *Cleanup);
+
   /// Return the type id for the specified typeinfo.  This is function wide.
   unsigned getTypeIDFor(const GlobalValue *TI);
 
   /// Return the id of the filter encoded by TyIds.  This is function wide.
-  int getFilterIDFor(ArrayRef<unsigned> TyIds);
+  int getFilterIDFor(std::vector<unsigned> &TyIds);
 
   /// Map the landing pad's EH symbol to the call site indexes.
   void setCallSiteLandingPad(MCSymbol *Sym, ArrayRef<unsigned> Sites);
-
-  /// Return if there is any wasm exception handling.
-  bool hasAnyWasmLandingPadIndex() const {
-    return !WasmLPadToIndexMap.empty();
-  }
 
   /// Map the landing pad to its index. Used for Wasm exception handling.
   void setWasmLandingPadIndex(const MachineBasicBlock *LPad, unsigned Index) {
@@ -1164,10 +1132,6 @@ public:
     return WasmLPadToIndexMap.lookup(LPad);
   }
 
-  bool hasAnyCallSiteLandingPad() const {
-    return !LPadToCallSiteMap.empty();
-  }
-
   /// Get the call site indexes for a landing pad EH symbol.
   SmallVectorImpl<unsigned> &getCallSiteLandingPad(MCSymbol *Sym) {
     assert(hasCallSiteLandingPad(Sym) &&
@@ -1178,10 +1142,6 @@ public:
   /// Return true if the landing pad Eh symbol has an associated call site.
   bool hasCallSiteLandingPad(MCSymbol *Sym) {
     return !LPadToCallSiteMap[Sym].empty();
-  }
-
-  bool hasAnyCallSiteLabel() const {
-    return !CallSiteMap.empty();
   }
 
   /// Map the begin label for a call site.
@@ -1259,6 +1219,10 @@ public:
   /// of the instruction stream.
   void copyCallSiteInfo(const MachineInstr *Old,
                         const MachineInstr *New);
+
+  const std::vector<char> &getBBSectionsSymbolPrefix() const {
+    return BBSectionsSymbolPrefix;
+  }
 
   /// Move the call site info from \p Old to \New call site info. This function
   /// is used when we are replacing one call instruction with another one to

@@ -27,6 +27,8 @@
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseMapInfo.h"
+#include "llvm/ADT/None.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/IR/TrackingMDRef.h"
 #include "llvm/IR/ValueHandle.h"
 #include "llvm/Support/Casting.h"
@@ -36,7 +38,6 @@
 #include <cstddef>
 #include <iterator>
 #include <mutex>
-#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -90,7 +91,7 @@ class ValueMap {
   using ExtraData = typename Config::ExtraData;
 
   MapT Map;
-  std::optional<MDMapT> MDMap;
+  Optional<MDMapT> MDMap;
   ExtraData Data;
 
 public:
@@ -103,8 +104,8 @@ public:
       : Map(NumInitBuckets), Data() {}
   explicit ValueMap(const ExtraData &Data, unsigned NumInitBuckets = 64)
       : Map(NumInitBuckets), Data(Data) {}
-  // ValueMap can't be copied nor moved, because the callbacks store pointer to
-  // it.
+  // ValueMap can't be copied nor moved, beucase the callbacks store pointer
+  // to it.
   ValueMap(const ValueMap &) = delete;
   ValueMap(ValueMap &&) = delete;
   ValueMap &operator=(const ValueMap &) = delete;
@@ -116,15 +117,15 @@ public:
       MDMap.emplace();
     return *MDMap;
   }
-  std::optional<MDMapT> &getMDMap() { return MDMap; }
+  Optional<MDMapT> &getMDMap() { return MDMap; }
 
   /// Get the mapped metadata, if it's in the map.
-  std::optional<Metadata *> getMappedMD(const Metadata *MD) const {
+  Optional<Metadata *> getMappedMD(const Metadata *MD) const {
     if (!MDMap)
-      return std::nullopt;
+      return None;
     auto Where = MDMap->find(MD);
     if (Where == MDMap->end())
-      return std::nullopt;
+      return None;
     return Where->second.get();
   }
 
@@ -140,7 +141,7 @@ public:
   size_type size() const { return Map.size(); }
 
   /// Grow the map so that it has at least Size buckets. Does not shrink
-  void reserve(size_t Size) { Map.reserve(Size); }
+  void resize(size_t Size) { Map.resize(Size); }
 
   void clear() {
     Map.clear();

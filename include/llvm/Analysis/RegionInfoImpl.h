@@ -15,6 +15,8 @@
 #include "llvm/ADT/PostOrderIterator.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/iterator_range.h"
+#include "llvm/Analysis/DominanceFrontier.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/Analysis/RegionInfo.h"
@@ -22,6 +24,7 @@
 #include "llvm/Config/llvm-config.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/Support/raw_ostream.h"
 #include <algorithm>
 #include <cassert>
 #include <iterator>
@@ -34,7 +37,6 @@
 #define DEBUG_TYPE "region"
 
 namespace llvm {
-class raw_ostream;
 
 //===----------------------------------------------------------------------===//
 /// RegionBase Implementation
@@ -159,14 +161,20 @@ typename Tr::LoopT *RegionBase<Tr>::outermostLoopInRegion(LoopInfoT *LI,
 
 template <class Tr>
 typename RegionBase<Tr>::BlockT *RegionBase<Tr>::getEnteringBlock() const {
-  auto isEnteringBlock = [&](BlockT *Pred, bool AllowRepeats) -> BlockT * {
-    assert(!AllowRepeats && "Unexpected parameter value.");
-    return DT->getNode(Pred) && !contains(Pred) ? Pred : nullptr;
-  };
   BlockT *entry = getEntry();
-  return find_singleton<BlockT>(make_range(InvBlockTraits::child_begin(entry),
-                                           InvBlockTraits::child_end(entry)),
-                                isEnteringBlock);
+  BlockT *enteringBlock = nullptr;
+
+  for (BlockT *Pred : make_range(InvBlockTraits::child_begin(entry),
+                                 InvBlockTraits::child_end(entry))) {
+    if (DT->getNode(Pred) && !contains(Pred)) {
+      if (enteringBlock)
+        return nullptr;
+
+      enteringBlock = Pred;
+    }
+  }
+
+  return enteringBlock;
 }
 
 template <class Tr>
@@ -195,16 +203,22 @@ bool RegionBase<Tr>::getExitingBlocks(
 template <class Tr>
 typename RegionBase<Tr>::BlockT *RegionBase<Tr>::getExitingBlock() const {
   BlockT *exit = getExit();
+  BlockT *exitingBlock = nullptr;
+
   if (!exit)
     return nullptr;
 
-  auto isContained = [&](BlockT *Pred, bool AllowRepeats) -> BlockT * {
-    assert(!AllowRepeats && "Unexpected parameter value.");
-    return contains(Pred) ? Pred : nullptr;
-  };
-  return find_singleton<BlockT>(make_range(InvBlockTraits::child_begin(exit),
-                                           InvBlockTraits::child_end(exit)),
-                                isContained);
+  for (BlockT *Pred : make_range(InvBlockTraits::child_begin(exit),
+                                 InvBlockTraits::child_end(exit))) {
+    if (contains(Pred)) {
+      if (exitingBlock)
+        return nullptr;
+
+      exitingBlock = Pred;
+    }
+  }
+
+  return exitingBlock;
 }
 
 template <class Tr>
@@ -378,10 +392,10 @@ void RegionBase<Tr>::transferChildrenTo(RegionT *To) {
 template <class Tr>
 void RegionBase<Tr>::addSubRegion(RegionT *SubRegion, bool moveChildren) {
   assert(!SubRegion->parent && "SubRegion already has a parent!");
-  assert(llvm::none_of(*this,
+  assert(llvm::find_if(*this,
                        [&](const std::unique_ptr<RegionT> &R) {
                          return R.get() == SubRegion;
-                       }) &&
+                       }) == children.end() &&
          "Subregion already exists!");
 
   SubRegion->parent = static_cast<RegionT *>(this);
@@ -778,12 +792,12 @@ template <class Tr>
 void RegionInfoBase<Tr>::dump() const { print(dbgs()); }
 #endif
 
-template <class Tr> void RegionInfoBase<Tr>::releaseMemory() {
+template <class Tr>
+void RegionInfoBase<Tr>::releaseMemory() {
   BBtoRegion.clear();
-  if (TopLevelRegion) {
+  if (TopLevelRegion)
     delete TopLevelRegion;
-    TopLevelRegion = nullptr;
-  }
+  TopLevelRegion = nullptr;
 }
 
 template <class Tr>

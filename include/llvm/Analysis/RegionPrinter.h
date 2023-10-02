@@ -14,9 +14,6 @@
 #ifndef LLVM_ANALYSIS_REGIONPRINTER_H
 #define LLVM_ANALYSIS_REGIONPRINTER_H
 
-#include "llvm/Analysis/DOTGraphTraitsPass.h"
-#include "llvm/Analysis/RegionInfo.h"
-
 namespace llvm {
   class FunctionPass;
   class Function;
@@ -26,13 +23,6 @@ namespace llvm {
   FunctionPass *createRegionOnlyViewerPass();
   FunctionPass *createRegionPrinterPass();
   FunctionPass *createRegionOnlyPrinterPass();
-
-  template <>
-  struct DOTGraphTraits<RegionNode *> : public DefaultDOTGraphTraits {
-    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
-
-    std::string getNodeLabel(RegionNode *Node, RegionNode *Graph);
-  };
 
 #ifndef NDEBUG
   /// Open a viewer to display the GraphViz vizualization of the analysis

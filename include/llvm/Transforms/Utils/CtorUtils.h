@@ -13,7 +13,7 @@
 #ifndef LLVM_TRANSFORMS_UTILS_CTORUTILS_H
 #define LLVM_TRANSFORMS_UTILS_CTORUTILS_H
 
-#include "llvm/ADT/STLFunctionalExtras.h"
+#include "llvm/ADT/STLExtras.h"
 
 namespace llvm {
 
@@ -22,9 +22,9 @@ class Module;
 
 /// Call "ShouldRemove" for every entry in M's global_ctor list and remove the
 /// entries for which it returns true.  Return true if anything changed.
-bool optimizeGlobalCtorsList(
-    Module &M, function_ref<bool(uint32_t, Function *)> ShouldRemove);
+bool optimizeGlobalCtorsList(Module &M,
+                             function_ref<bool(Function *)> ShouldRemove);
 
-} // namespace llvm
+} // End llvm namespace
 
 #endif

@@ -30,7 +30,7 @@ class raw_sha1_ostream : public raw_ostream {
 
 public:
   /// Return the current SHA1 hash for the content of the stream
-  std::array<uint8_t, 20> sha1() {
+  StringRef sha1() {
     flush();
     return State.result();
   }

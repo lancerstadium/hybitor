@@ -11,12 +11,12 @@
 
 #include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/DebugInfo/DWARF/DWARFAbbreviationDeclaration.h"
+#include "llvm/DebugInfo/DWARF/DWARFDataExtractor.h"
 #include <cstdint>
 
 namespace llvm {
 
 class DWARFUnit;
-class DWARFDataExtractor;
 
 /// DWARFDebugInfoEntry - A DIE with only the minimum required data.
 class DWARFDebugInfoEntry {
@@ -45,17 +45,17 @@ public:
   uint64_t getOffset() const { return Offset; }
 
   /// Returns index of the parent die.
-  std::optional<uint32_t> getParentIdx() const {
+  Optional<uint32_t> getParentIdx() const {
     if (ParentIdx == UINT32_MAX)
-      return std::nullopt;
+      return None;
 
     return ParentIdx;
   }
 
   /// Returns index of the sibling die.
-  std::optional<uint32_t> getSiblingIdx() const {
+  Optional<uint32_t> getSiblingIdx() const {
     if (SiblingIdx == 0)
-      return std::nullopt;
+      return None;
 
     return SiblingIdx;
   }

@@ -18,22 +18,21 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
-#include "llvm/CodeGen/MachineInstrBuilder.h"
 #include "llvm/CodeGen/TargetLowering.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/CallingConv.h"
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/Support/MachineValueType.h"
+#include <algorithm>
 #include <cstdint>
 #include <utility>
 
 namespace llvm {
 
 class AllocaInst;
-class Instruction;
-class IntrinsicInst;
 class BasicBlock;
 class CallInst;
 class Constant;
@@ -205,7 +204,7 @@ protected:
   MachineRegisterInfo &MRI;
   MachineFrameInfo &MFI;
   MachineConstantPool &MCP;
-  MIMetadata MIMD;
+  DebugLoc DbgLoc;
   const TargetMachine &TM;
   const DataLayout &DL;
   const TargetInstrInfo &TII;
@@ -247,7 +246,7 @@ public:
   void finishBasicBlock();
 
   /// Return current debug location information.
-  DebugLoc getCurDebugLoc() const { return MIMD.getDL(); }
+  DebugLoc getCurDebugLoc() const { return DbgLoc; }
 
   /// Do "fast" instruction selection for function arguments and append
   /// the machine instructions to the current block. Returns true when

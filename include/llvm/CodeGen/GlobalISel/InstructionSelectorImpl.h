@@ -17,17 +17,16 @@
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/CodeGen/GlobalISel/InstructionSelector.h"
+#include "llvm/CodeGen/GlobalISel/RegisterBankInfo.h"
 #include "llvm/CodeGen/GlobalISel/Utils.h"
 #include "llvm/CodeGen/MachineInstrBuilder.h"
 #include "llvm/CodeGen/MachineOperand.h"
 #include "llvm/CodeGen/MachineRegisterInfo.h"
-#include "llvm/CodeGen/RegisterBankInfo.h"
 #include "llvm/CodeGen/TargetInstrInfo.h"
 #include "llvm/CodeGen/TargetOpcodes.h"
 #include "llvm/CodeGen/TargetRegisterInfo.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DataLayout.h"
-#include "llvm/Support/CodeGenCoverage.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
@@ -118,7 +117,7 @@ bool InstructionSelector::executeMatchTable(
           return false;
         break;
       }
-      if (MO.getReg().isPhysical()) {
+      if (Register::isPhysicalRegister(MO.getReg())) {
         DEBUG_WITH_TYPE(TgtInstructionSelector::getName(),
                         dbgs() << CurrentIdx << ": Is a physical register\n");
         if (handleReject() == RejectAndGiveUp)
@@ -377,25 +376,6 @@ bool InstructionSelector::executeMatchTable(
                               State.RecordedOperands))
         if (handleReject() == RejectAndGiveUp)
           return false;
-      break;
-    }
-    case GIM_CheckHasNoUse: {
-      int64_t InsnID = MatchTable[CurrentIdx++];
-
-      DEBUG_WITH_TYPE(TgtInstructionSelector::getName(),
-                      dbgs() << CurrentIdx << ": GIM_CheckHasNoUse(MIs["
-                             << InsnID << "]\n");
-
-      const MachineInstr *MI = State.MIs[InsnID];
-      assert(MI && "Used insn before defined");
-      assert(MI->getNumDefs() > 0 && "No defs");
-      const Register Res = MI->getOperand(0).getReg();
-
-      if (!MRI.use_nodbg_empty(Res)) {
-        if (handleReject() == RejectAndGiveUp)
-          return false;
-      }
-
       break;
     }
     case GIM_CheckAtomicOrdering: {
@@ -693,8 +673,8 @@ bool InstructionSelector::executeMatchTable(
       ComplexRendererFns Renderer =
           (ISel.*ISelInfo.ComplexPredicates[ComplexPredicateID])(
               State.MIs[InsnID]->getOperand(OpIdx));
-      if (Renderer)
-        State.Renderers[RendererID] = *Renderer;
+      if (Renderer.hasValue())
+        State.Renderers[RendererID] = Renderer.getValue();
       else
         if (handleReject() == RejectAndGiveUp)
           return false;
@@ -865,7 +845,7 @@ bool InstructionSelector::executeMatchTable(
         OutMIs.resize(NewInsnID + 1);
 
       OutMIs[NewInsnID] = BuildMI(*State.MIs[0]->getParent(), State.MIs[0],
-                                  MIMetadata(*State.MIs[0]), TII.get(Opcode));
+                                  State.MIs[0]->getDebugLoc(), TII.get(Opcode));
       DEBUG_WITH_TYPE(TgtInstructionSelector::getName(),
                       dbgs() << CurrentIdx << ": GIR_BuildMI(OutMIs["
                              << NewInsnID << "], " << Opcode << ")\n");

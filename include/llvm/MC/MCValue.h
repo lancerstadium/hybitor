@@ -15,6 +15,7 @@
 
 #include "llvm/MC/MCExpr.h"
 #include "llvm/Support/DataTypes.h"
+#include <cassert>
 
 namespace llvm {
 class raw_ostream;

@@ -9,9 +9,11 @@
 #ifndef LLVM_DEBUGINFO_PDB_PDBSYMBOL_H
 #define LLVM_DEBUGINFO_PDB_PDBSYMBOL_H
 
+#include "ConcreteSymbolEnumerator.h"
 #include "IPDBRawSymbol.h"
 #include "PDBExtras.h"
 #include "PDBTypes.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/Casting.h"
 
 #define FORWARD_SYMBOL_METHOD(MethodName)                                      \
@@ -41,9 +43,6 @@ class raw_ostream;
 
 namespace pdb {
 class IPDBSession;
-class PDBSymDumper;
-class PDBSymbol;
-template <typename ChildType> class ConcreteSymbolEnumerator;
 
 #define DECLARE_PDB_SYMBOL_CONCRETE_TYPE(TagValue)                             \
 private:                                                                       \

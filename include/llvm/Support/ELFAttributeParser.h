@@ -15,7 +15,6 @@
 #include "llvm/Support/Endian.h"
 #include "llvm/Support/Error.h"
 
-#include <optional>
 #include <unordered_map>
 
 namespace llvm {
@@ -43,10 +42,6 @@ protected:
   void parseIndexList(SmallVectorImpl<uint8_t> &indexList);
   Error parseSubsection(uint32_t length);
 
-  void setAttributeString(unsigned tag, StringRef value) {
-    attributesStr.emplace(tag, value);
-  }
-
 public:
   virtual ~ELFAttributeParser() { static_cast<void>(!cursor.takeError()); }
   Error integerAttribute(unsigned tag);
@@ -60,16 +55,16 @@ public:
 
   Error parse(ArrayRef<uint8_t> section, support::endianness endian);
 
-  std::optional<unsigned> getAttributeValue(unsigned tag) const {
+  Optional<unsigned> getAttributeValue(unsigned tag) const {
     auto I = attributes.find(tag);
     if (I == attributes.end())
-      return std::nullopt;
+      return None;
     return I->second;
   }
-  std::optional<StringRef> getAttributeString(unsigned tag) const {
+  Optional<StringRef> getAttributeString(unsigned tag) const {
     auto I = attributesStr.find(tag);
     if (I == attributesStr.end())
-      return std::nullopt;
+      return None;
     return I->second;
   }
 };

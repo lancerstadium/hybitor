@@ -14,15 +14,14 @@
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/CodeGen/NonRelocatableStringpool.h"
+#include "llvm/DWARFLinker/DWARFLinkerCompileUnit.h"
 #include "llvm/DebugInfo/DWARF/DWARFDebugLine.h"
 #include "llvm/DebugInfo/DWARF/DWARFDie.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
-#include <atomic>
 
 namespace llvm {
 
-class CompileUnit;
 struct DeclMapInfo;
 
 /// Small helper that resolves and caches file paths. This helps reduce the
@@ -92,10 +91,6 @@ public:
 
   bool setLastSeenDIE(CompileUnit &U, const DWARFDie &Die);
 
-  void setHasCanonicalDIE() { HasCanonicalDIE = true; }
-
-  bool hasCanonicalDIE() const { return HasCanonicalDIE; }
-
   uint32_t getCanonicalDIEOffset() const { return CanonicalDIEOffset; }
   void setCanonicalDIEOffset(uint32_t Offset) { CanonicalDIEOffset = Offset; }
 
@@ -117,8 +112,7 @@ private:
   const DeclContext &Parent;
   DWARFDie LastSeenDIE;
   uint32_t LastSeenCompileUnitID = 0;
-  std::atomic<uint32_t> CanonicalDIEOffset = {0};
-  bool HasCanonicalDIE = false;
+  uint32_t CanonicalDIEOffset = 0;
 };
 
 /// This class gives a tree-like API to the DenseMap that stores the

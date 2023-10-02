@@ -23,6 +23,7 @@
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringSet.h"
+#include "llvm/IR/GlobalValue.h"
 #include "llvm/IR/PassManager.h"
 #include <functional>
 

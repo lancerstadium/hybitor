@@ -14,156 +14,23 @@
 #define LLVM_ANALYSIS_DOTGRAPHTRAITSPASS_H
 
 #include "llvm/Analysis/CFGPrinter.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Support/GraphWriter.h"
 
 namespace llvm {
 
 /// Default traits class for extracting a graph from an analysis pass.
 ///
-/// This assumes that 'GraphT' is 'AnalysisT::Result *', and pass it through
-template <typename Result, typename GraphT = Result *>
-struct DefaultAnalysisGraphTraits {
-  static GraphT getGraph(Result R) { return &R; }
-};
-
-template <typename GraphT>
-void viewGraphForFunction(Function &F, GraphT Graph, StringRef Name,
-                          bool IsSimple) {
-  std::string GraphName = DOTGraphTraits<GraphT *>::getGraphName(&Graph);
-
-  ViewGraph(Graph, Name, IsSimple,
-            GraphName + " for '" + F.getName() + "' function");
-}
-
-template <typename AnalysisT, bool IsSimple,
-          typename GraphT = typename AnalysisT::Result *,
-          typename AnalysisGraphTraitsT =
-              DefaultAnalysisGraphTraits<typename AnalysisT::Result &, GraphT>>
-struct DOTGraphTraitsViewer
-    : PassInfoMixin<DOTGraphTraitsViewer<AnalysisT, IsSimple, GraphT,
-                                         AnalysisGraphTraitsT>> {
-  DOTGraphTraitsViewer(StringRef GraphName) : Name(GraphName) {}
-
-  /// Return true if this function should be processed.
-  ///
-  /// An implementation of this class my override this function to indicate that
-  /// only certain functions should be viewed.
-  ///
-  /// @param Result The current analysis result for this function.
-  virtual bool processFunction(Function &F,
-                               const typename AnalysisT::Result &Result) {
-    return true;
-  }
-
-  PreservedAnalyses run(Function &F, FunctionAnalysisManager &FAM) {
-    auto &Result = FAM.getResult<AnalysisT>(F);
-    if (!processFunction(F, Result))
-      return PreservedAnalyses::all();
-
-    GraphT Graph = AnalysisGraphTraitsT::getGraph(Result);
-    viewGraphForFunction(F, Graph, Name, IsSimple);
-
-    return PreservedAnalyses::all();
-  };
-
-protected:
-  /// Avoid compiler warning "has virtual functions but non-virtual destructor
-  /// [-Wnon-virtual-dtor]" in derived classes.
-  ///
-  /// DOTGraphTraitsViewer is also used as a mixin for avoiding repeated
-  /// implementation of viewer passes, ie there should be no
-  /// runtime-polymorphisms/downcasting involving this class and hence no
-  /// virtual destructor needed. Making this dtor protected stops accidental
-  /// invocation when the derived class destructor should have been called.
-  /// Those derived classes sould be marked final to avoid the warning.
-  ~DOTGraphTraitsViewer() {}
-
-private:
-  StringRef Name;
-};
-
-template <typename GraphT>
-void printGraphForFunction(Function &F, GraphT Graph, StringRef Name,
-                           bool IsSimple) {
-  std::string Filename = Name.str() + "." + F.getName().str() + ".dot";
-  std::error_code EC;
-
-  errs() << "Writing '" << Filename << "'...";
-
-  raw_fd_ostream File(Filename, EC, sys::fs::OF_TextWithCRLF);
-  std::string GraphName = DOTGraphTraits<GraphT>::getGraphName(Graph);
-
-  if (!EC)
-    WriteGraph(File, Graph, IsSimple,
-               GraphName + " for '" + F.getName() + "' function");
-  else
-    errs() << "  error opening file for writing!";
-  errs() << "\n";
-}
-
-template <typename AnalysisT, bool IsSimple,
-          typename GraphT = typename AnalysisT::Result *,
-          typename AnalysisGraphTraitsT =
-              DefaultAnalysisGraphTraits<typename AnalysisT::Result &, GraphT>>
-struct DOTGraphTraitsPrinter
-    : PassInfoMixin<DOTGraphTraitsPrinter<AnalysisT, IsSimple, GraphT,
-                                          AnalysisGraphTraitsT>> {
-  DOTGraphTraitsPrinter(StringRef GraphName) : Name(GraphName) {}
-
-  /// Return true if this function should be processed.
-  ///
-  /// An implementation of this class my override this function to indicate that
-  /// only certain functions should be viewed.
-  ///
-  /// @param Result The current analysis result for this function.
-  virtual bool processFunction(Function &F,
-                               const typename AnalysisT::Result &Result) {
-    return true;
-  }
-
-  PreservedAnalyses run(Function &F, FunctionAnalysisManager &FAM) {
-    auto &Result = FAM.getResult<AnalysisT>(F);
-    if (!processFunction(F, Result))
-      return PreservedAnalyses::all();
-
-    GraphT Graph = AnalysisGraphTraitsT::getGraph(Result);
-
-    printGraphForFunction(F, Graph, Name, IsSimple);
-
-    return PreservedAnalyses::all();
-  };
-
-protected:
-  /// Avoid compiler warning "has virtual functions but non-virtual destructor
-  /// [-Wnon-virtual-dtor]" in derived classes.
-  ///
-  /// DOTGraphTraitsPrinter is also used as a mixin for avoiding repeated
-  /// implementation of printer passes, ie there should be no
-  /// runtime-polymorphisms/downcasting involving this class and hence no
-  /// virtual destructor needed. Making this dtor protected stops accidental
-  /// invocation when the derived class destructor should have been called.
-  /// Those derived classes sould be marked final to avoid the warning.
-  ~DOTGraphTraitsPrinter() {}
-
-private:
-  StringRef Name;
-};
-
-/// Default traits class for extracting a graph from an analysis pass.
-///
 /// This assumes that 'GraphT' is 'AnalysisT *' and so just passes it through.
 template <typename AnalysisT, typename GraphT = AnalysisT *>
-struct LegacyDefaultAnalysisGraphTraits {
+struct DefaultAnalysisGraphTraits {
   static GraphT getGraph(AnalysisT *A) { return A; }
 };
 
-template <typename AnalysisT, bool IsSimple, typename GraphT = AnalysisT *,
-          typename AnalysisGraphTraitsT =
-              LegacyDefaultAnalysisGraphTraits<AnalysisT, GraphT>>
-class DOTGraphTraitsViewerWrapperPass : public FunctionPass {
+template <
+    typename AnalysisT, bool IsSimple, typename GraphT = AnalysisT *,
+    typename AnalysisGraphTraitsT = DefaultAnalysisGraphTraits<AnalysisT, GraphT> >
+class DOTGraphTraitsViewer : public FunctionPass {
 public:
-  DOTGraphTraitsViewerWrapperPass(StringRef GraphName, char &ID)
+  DOTGraphTraitsViewer(StringRef GraphName, char &ID)
       : FunctionPass(ID), Name(GraphName) {}
 
   /// Return true if this function should be processed.
@@ -183,7 +50,10 @@ public:
       return false;
 
     GraphT Graph = AnalysisGraphTraitsT::getGraph(&Analysis);
-    viewGraphForFunction(F, Graph, Name, IsSimple);
+    std::string GraphName = DOTGraphTraits<GraphT>::getGraphName(Graph);
+    std::string Title = GraphName + " for '" + F.getName().str() + "' function";
+
+    ViewGraph(Graph, Name, IsSimple, Title);
 
     return false;
   }
@@ -197,12 +67,12 @@ private:
   std::string Name;
 };
 
-template <typename AnalysisT, bool IsSimple, typename GraphT = AnalysisT *,
-          typename AnalysisGraphTraitsT =
-              LegacyDefaultAnalysisGraphTraits<AnalysisT, GraphT>>
-class DOTGraphTraitsPrinterWrapperPass : public FunctionPass {
+template <
+    typename AnalysisT, bool IsSimple, typename GraphT = AnalysisT *,
+    typename AnalysisGraphTraitsT = DefaultAnalysisGraphTraits<AnalysisT, GraphT> >
+class DOTGraphTraitsPrinter : public FunctionPass {
 public:
-  DOTGraphTraitsPrinterWrapperPass(StringRef GraphName, char &ID)
+  DOTGraphTraitsPrinter(StringRef GraphName, char &ID)
       : FunctionPass(ID), Name(GraphName) {}
 
   /// Return true if this function should be processed.
@@ -222,7 +92,20 @@ public:
       return false;
 
     GraphT Graph = AnalysisGraphTraitsT::getGraph(&Analysis);
-    printGraphForFunction(F, Graph, Name, IsSimple);
+    std::string Filename = Name + "." + F.getName().str() + ".dot";
+    std::error_code EC;
+
+    errs() << "Writing '" << Filename << "'...";
+
+    raw_fd_ostream File(Filename, EC, sys::fs::OF_TextWithCRLF);
+    std::string GraphName = DOTGraphTraits<GraphT>::getGraphName(Graph);
+    std::string Title = GraphName + " for '" + F.getName().str() + "' function";
+
+    if (!EC)
+      WriteGraph(File, Graph, IsSimple, Title);
+    else
+      errs() << "  error opening file for writing!";
+    errs() << "\n";
 
     return false;
   }
@@ -236,12 +119,12 @@ private:
   std::string Name;
 };
 
-template <typename AnalysisT, bool IsSimple, typename GraphT = AnalysisT *,
-          typename AnalysisGraphTraitsT =
-              LegacyDefaultAnalysisGraphTraits<AnalysisT, GraphT>>
-class DOTGraphTraitsModuleViewerWrapperPass : public ModulePass {
+template <
+    typename AnalysisT, bool IsSimple, typename GraphT = AnalysisT *,
+    typename AnalysisGraphTraitsT = DefaultAnalysisGraphTraits<AnalysisT, GraphT> >
+class DOTGraphTraitsModuleViewer : public ModulePass {
 public:
-  DOTGraphTraitsModuleViewerWrapperPass(StringRef GraphName, char &ID)
+  DOTGraphTraitsModuleViewer(StringRef GraphName, char &ID)
       : ModulePass(ID), Name(GraphName) {}
 
   bool runOnModule(Module &M) override {
@@ -262,12 +145,12 @@ private:
   std::string Name;
 };
 
-template <typename AnalysisT, bool IsSimple, typename GraphT = AnalysisT *,
-          typename AnalysisGraphTraitsT =
-              LegacyDefaultAnalysisGraphTraits<AnalysisT, GraphT>>
-class DOTGraphTraitsModulePrinterWrapperPass : public ModulePass {
+template <
+    typename AnalysisT, bool IsSimple, typename GraphT = AnalysisT *,
+    typename AnalysisGraphTraitsT = DefaultAnalysisGraphTraits<AnalysisT, GraphT> >
+class DOTGraphTraitsModulePrinter : public ModulePass {
 public:
-  DOTGraphTraitsModulePrinterWrapperPass(StringRef GraphName, char &ID)
+  DOTGraphTraitsModulePrinter(StringRef GraphName, char &ID)
       : ModulePass(ID), Name(GraphName) {}
 
   bool runOnModule(Module &M) override {

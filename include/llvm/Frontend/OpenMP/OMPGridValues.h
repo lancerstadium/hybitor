@@ -56,27 +56,24 @@ namespace omp {
 
 struct GV {
   /// The size reserved for data in a shared memory slot.
-  unsigned GV_Slot_Size;
+  const unsigned GV_Slot_Size;
   /// The default value of maximum number of threads in a worker warp.
-  unsigned GV_Warp_Size;
+  const unsigned GV_Warp_Size;
 
   constexpr unsigned warpSlotSize() const {
     return GV_Warp_Size * GV_Slot_Size;
   }
 
   /// the maximum number of teams.
-  unsigned GV_Max_Teams;
-  // The default number of teams in the absence of any other information.
-  unsigned GV_Default_Num_Teams;
-
+  const unsigned GV_Max_Teams;
   // An alternative to the heavy data sharing infrastructure that uses global
   // memory is one that uses device __shared__ memory.  The amount of such space
   // (in bytes) reserved by the OpenMP runtime is noted here.
-  unsigned GV_SimpleBufferSize;
+  const unsigned GV_SimpleBufferSize;
   // The absolute maximum team size for a working group
-  unsigned GV_Max_WG_Size;
+  const unsigned GV_Max_WG_Size;
   // The default maximum team size for a working group
-  unsigned GV_Default_WG_Size;
+  const unsigned GV_Default_WG_Size;
 
   constexpr unsigned maxWarpNumber() const {
     return GV_Max_WG_Size / GV_Warp_Size;
@@ -87,8 +84,7 @@ struct GV {
 static constexpr GV AMDGPUGridValues64 = {
     256,  // GV_Slot_Size
     64,   // GV_Warp_Size
-    (1 << 16), // GV_Max_Teams
-    440,  // GV_Default_Num_Teams
+    128,  // GV_Max_Teams
     896,  // GV_SimpleBufferSize
     1024, // GV_Max_WG_Size,
     256,  // GV_Default_WG_Size
@@ -97,15 +93,14 @@ static constexpr GV AMDGPUGridValues64 = {
 static constexpr GV AMDGPUGridValues32 = {
     256,  // GV_Slot_Size
     32,   // GV_Warp_Size
-    (1 << 16), // GV_Max_Teams
-    440,  // GV_Default_Num_Teams
+    128,  // GV_Max_Teams
     896,  // GV_SimpleBufferSize
     1024, // GV_Max_WG_Size,
     256,  // GV_Default_WG_Size
 };
 
 template <unsigned wavesize> constexpr const GV &getAMDGPUGridValues() {
-  static_assert(wavesize == 32 || wavesize == 64, "Unexpected wavesize");
+  static_assert(wavesize == 32 || wavesize == 64, "");
   return wavesize == 32 ? AMDGPUGridValues32 : AMDGPUGridValues64;
 }
 
@@ -113,8 +108,7 @@ template <unsigned wavesize> constexpr const GV &getAMDGPUGridValues() {
 static constexpr GV NVPTXGridValues = {
     256,  // GV_Slot_Size
     32,   // GV_Warp_Size
-    (1 << 16), // GV_Max_Teams
-    3200, // GV_Default_Num_Teams
+    1024, // GV_Max_Teams
     896,  // GV_SimpleBufferSize
     1024, // GV_Max_WG_Size
     128,  // GV_Default_WG_Size

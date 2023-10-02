@@ -16,7 +16,6 @@
 #include "llvm/Support/DataTypes.h"
 #include <algorithm>
 #include <cassert>
-#include <iterator>
 #include <numeric>
 
 namespace llvm {

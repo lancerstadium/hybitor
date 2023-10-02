@@ -9,20 +9,17 @@
 #ifndef LLVM_DEBUGINFO_CODEVIEW_TYPERECORDMAPPING_H
 #define LLVM_DEBUGINFO_CODEVIEW_TYPERECORDMAPPING_H
 
-#include "llvm/DebugInfo/CodeView/CVRecord.h"
-#include "llvm/DebugInfo/CodeView/CodeView.h"
+#include "llvm/ADT/Optional.h"
+#include "llvm/DebugInfo/CodeView/CVTypeVisitor.h"
 #include "llvm/DebugInfo/CodeView/CodeViewRecordIO.h"
 #include "llvm/DebugInfo/CodeView/TypeVisitorCallbacks.h"
 #include "llvm/Support/Error.h"
-#include <optional>
 
 namespace llvm {
 class BinaryStreamReader;
 class BinaryStreamWriter;
 
 namespace codeview {
-class TypeIndex;
-struct CVMemberRecord;
 class TypeRecordMapping : public TypeVisitorCallbacks {
 public:
   explicit TypeRecordMapping(BinaryStreamReader &Reader) : IO(Reader) {}
@@ -46,8 +43,8 @@ public:
 #include "llvm/DebugInfo/CodeView/CodeViewTypes.def"
 
 private:
-  std::optional<TypeLeafKind> TypeKind;
-  std::optional<TypeLeafKind> MemberKind;
+  Optional<TypeLeafKind> TypeKind;
+  Optional<TypeLeafKind> MemberKind;
 
   CodeViewRecordIO IO;
 };

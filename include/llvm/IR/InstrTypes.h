@@ -16,33 +16,36 @@
 #define LLVM_IR_INSTRTYPES_H
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/None.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/Sequence.h"
 #include "llvm/ADT/StringMap.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/ADT/iterator_range.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/CallingConv.h"
+#include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/OperandTraits.h"
+#include "llvm/IR/Type.h"
 #include "llvm/IR/User.h"
+#include "llvm/IR/Value.h"
+#include "llvm/Support/Casting.h"
+#include "llvm/Support/ErrorHandling.h"
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
-#include <optional>
 #include <string>
 #include <vector>
 
 namespace llvm {
-
-class StringRef;
-class Type;
-class Value;
 
 namespace Intrinsic {
 typedef unsigned ID;
@@ -833,17 +836,6 @@ public:
     return getInversePredicate(getPredicate());
   }
 
-  /// Returns the ordered variant of a floating point compare.
-  ///
-  /// For example, UEQ -> OEQ, ULT -> OLT, OEQ -> OEQ
-  static Predicate getOrderedPredicate(Predicate Pred) {
-    return static_cast<Predicate>(Pred & FCMP_ORD);
-  }
-
-  Predicate getOrderedPredicate() const {
-    return getOrderedPredicate(getPredicate());
-  }
-
   /// For example, EQ -> NE, UGT -> ULE, SLT -> SGE,
   ///              OEQ -> UNE, UGT -> OLE, OLT -> UGE, etc.
   /// @returns the inverse predicate for predicate provided in \p pred.
@@ -1623,18 +1615,12 @@ public:
 
   /// Get the attribute of a given kind for the function.
   Attribute getFnAttr(StringRef Kind) const {
-    Attribute Attr = getAttributes().getFnAttr(Kind);
-    if (Attr.isValid())
-      return Attr;
-    return getFnAttrOnCalledFunction(Kind);
+    return getAttributes().getFnAttr(Kind);
   }
 
   /// Get the attribute of a given kind for the function.
   Attribute getFnAttr(Attribute::AttrKind Kind) const {
-    Attribute A = getAttributes().getFnAttr(Kind);
-    if (A.isValid())
-      return A;
-    return getFnAttrOnCalledFunction(Kind);
+    return getAttributes().getFnAttr(Kind);
   }
 
   /// Get the attribute of a given kind from a given arg
@@ -1745,7 +1731,7 @@ public:
       return Align;
     if (const Function *F = getCalledFunction())
       return F->getAttributes().getRetAlignment();
-    return std::nullopt;
+    return None;
   }
 
   /// Extract the alignment for a call or parameter (0=unknown).
@@ -1775,29 +1761,13 @@ public:
     return nullptr;
   }
 
-  /// Extract the inalloca type for a call or parameter.
+  /// Extract the preallocated type for a call or parameter.
   Type *getParamInAllocaType(unsigned ArgNo) const {
     if (auto *Ty = Attrs.getParamInAllocaType(ArgNo))
       return Ty;
     if (const Function *F = getCalledFunction())
       return F->getAttributes().getParamInAllocaType(ArgNo);
     return nullptr;
-  }
-
-  /// Extract the sret type for a call or parameter.
-  Type *getParamStructRetType(unsigned ArgNo) const {
-    if (auto *Ty = Attrs.getParamStructRetType(ArgNo))
-      return Ty;
-    if (const Function *F = getCalledFunction())
-      return F->getAttributes().getParamStructRetType(ArgNo);
-    return nullptr;
-  }
-
-  /// Extract the elementtype type for a parameter.
-  /// Note that elementtype() can only be applied to call arguments, not
-  /// function declaration parameters.
-  Type *getParamElementType(unsigned ArgNo) const {
-    return Attrs.getParamElementType(ArgNo);
   }
 
   /// Extract the number of dereferenceable bytes for a call or
@@ -1836,13 +1806,7 @@ public:
 
   /// If one of the arguments has the 'returned' attribute, returns its
   /// operand value. Otherwise, return nullptr.
-  Value *getReturnedArgOperand() const {
-    return getArgOperandWithAttribute(Attribute::Returned);
-  }
-
-  /// If one of the arguments has the specified attribute, returns its
-  /// operand value. Otherwise, return nullptr.
-  Value *getArgOperandWithAttribute(Attribute::AttrKind Kind) const;
+  Value *getReturnedArgOperand() const;
 
   /// Return true if the call should not be treated as a call to a
   /// builtin.
@@ -1857,37 +1821,47 @@ public:
   /// Return true if the call should not be inlined.
   bool isNoInline() const { return hasFnAttr(Attribute::NoInline); }
   void setIsNoInline() { addFnAttr(Attribute::NoInline); }
-
-  MemoryEffects getMemoryEffects() const;
-  void setMemoryEffects(MemoryEffects ME);
-
   /// Determine if the call does not access memory.
-  bool doesNotAccessMemory() const;
-  void setDoesNotAccessMemory();
+  bool doesNotAccessMemory() const { return hasFnAttr(Attribute::ReadNone); }
+  void setDoesNotAccessMemory() { addFnAttr(Attribute::ReadNone); }
 
   /// Determine if the call does not access or only reads memory.
-  bool onlyReadsMemory() const;
-  void setOnlyReadsMemory();
+  bool onlyReadsMemory() const {
+    return hasImpliedFnAttr(Attribute::ReadOnly);
+  }
+
+  void setOnlyReadsMemory() { addFnAttr(Attribute::ReadOnly); }
 
   /// Determine if the call does not access or only writes memory.
-  bool onlyWritesMemory() const;
-  void setOnlyWritesMemory();
+  bool onlyWritesMemory() const {
+    return hasImpliedFnAttr(Attribute::WriteOnly);
+  }
+  void setOnlyWritesMemory() { addFnAttr(Attribute::WriteOnly); }
 
   /// Determine if the call can access memmory only using pointers based
   /// on its arguments.
-  bool onlyAccessesArgMemory() const;
-  void setOnlyAccessesArgMemory();
+  bool onlyAccessesArgMemory() const {
+    return hasFnAttr(Attribute::ArgMemOnly);
+  }
+  void setOnlyAccessesArgMemory() { addFnAttr(Attribute::ArgMemOnly); }
 
   /// Determine if the function may only access memory that is
   /// inaccessible from the IR.
-  bool onlyAccessesInaccessibleMemory() const;
-  void setOnlyAccessesInaccessibleMemory();
+  bool onlyAccessesInaccessibleMemory() const {
+    return hasFnAttr(Attribute::InaccessibleMemOnly);
+  }
+  void setOnlyAccessesInaccessibleMemory() {
+    addFnAttr(Attribute::InaccessibleMemOnly);
+  }
 
   /// Determine if the function may only access memory that is
   /// either inaccessible from the IR or pointed to by its arguments.
-  bool onlyAccessesInaccessibleMemOrArgMem() const;
-  void setOnlyAccessesInaccessibleMemOrArgMem();
-
+  bool onlyAccessesInaccessibleMemOrArgMem() const {
+    return hasFnAttr(Attribute::InaccessibleMemOrArgMemOnly);
+  }
+  void setOnlyAccessesInaccessibleMemOrArgMem() {
+    addFnAttr(Attribute::InaccessibleMemOrArgMemOnly);
+  }
   /// Determine if the call cannot return.
   bool doesNotReturn() const { return hasFnAttr(Attribute::NoReturn); }
   void setDoesNotReturn() { addFnAttr(Attribute::NoReturn); }
@@ -2024,7 +1998,7 @@ public:
   ///
   /// It is an error to call this for operand bundle types that may have
   /// multiple instances of them on the same instruction.
-  std::optional<OperandBundleUse> getOperandBundle(StringRef Name) const {
+  Optional<OperandBundleUse> getOperandBundle(StringRef Name) const {
     assert(countOperandBundlesOfType(Name) < 2 && "Precondition violated!");
 
     for (unsigned i = 0, e = getNumOperandBundles(); i != e; ++i) {
@@ -2033,14 +2007,14 @@ public:
         return U;
     }
 
-    return std::nullopt;
+    return None;
   }
 
   /// Return an operand bundle by tag ID, if present.
   ///
   /// It is an error to call this for operand bundle types that may have
   /// multiple instances of them on the same instruction.
-  std::optional<OperandBundleUse> getOperandBundle(uint32_t ID) const {
+  Optional<OperandBundleUse> getOperandBundle(uint32_t ID) const {
     assert(countOperandBundlesOfType(ID) < 2 && "Precondition violated!");
 
     for (unsigned i = 0, e = getNumOperandBundles(); i != e; ++i) {
@@ -2049,7 +2023,7 @@ public:
         return U;
     }
 
-    return std::nullopt;
+    return None;
   }
 
   /// Return the list of operand bundles attached to this instruction as
@@ -2075,7 +2049,19 @@ public:
 
   /// Return true if this operand bundle user has operand bundles that
   /// may write to the heap.
-  bool hasClobberingOperandBundles() const;
+  bool hasClobberingOperandBundles() const {
+    for (auto &BOI : bundle_op_infos()) {
+      if (BOI.Tag->second == LLVMContext::OB_deopt ||
+          BOI.Tag->second == LLVMContext::OB_funclet)
+        continue;
+
+      // This instruction has an operand bundle that is not known to us.
+      // Assume the worst.
+      return true;
+    }
+
+    return false;
+  }
 
   /// Return true if the bundle operand at index \p OpIdx has the
   /// attribute \p A.
@@ -2105,6 +2091,43 @@ public:
         return true;
     }
     return false;
+  }
+
+  /// Is the function attribute S disallowed by some operand bundle on
+  /// this operand bundle user?
+  bool isFnAttrDisallowedByOpBundle(StringRef S) const {
+    // Operand bundles only possibly disallow memory access attributes.  All
+    // String attributes are fine.
+    return false;
+  }
+
+  /// Is the function attribute A disallowed by some operand bundle on
+  /// this operand bundle user?
+  bool isFnAttrDisallowedByOpBundle(Attribute::AttrKind A) const {
+    switch (A) {
+    default:
+      return false;
+
+    case Attribute::InaccessibleMemOrArgMemOnly:
+      return hasReadingOperandBundles();
+
+    case Attribute::InaccessibleMemOnly:
+      return hasReadingOperandBundles();
+
+    case Attribute::ArgMemOnly:
+      return hasReadingOperandBundles();
+
+    case Attribute::ReadNone:
+      return hasReadingOperandBundles();
+
+    case Attribute::ReadOnly:
+      return hasClobberingOperandBundles();
+
+    case Attribute::WriteOnly:
+      return hasReadingOperandBundles();
+    }
+
+    llvm_unreachable("switch has a default case!");
   }
 
   /// Used to keep track of an operand bundle.  See the main comment on
@@ -2250,7 +2273,7 @@ protected:
   /// Return the total number of values used in \p Bundles.
   static unsigned CountBundleInputs(ArrayRef<OperandBundleDef> Bundles) {
     unsigned Total = 0;
-    for (const auto &B : Bundles)
+    for (auto &B : Bundles)
       Total += B.input_size();
     return Total;
   }
@@ -2266,9 +2289,33 @@ private:
     if (Attrs.hasFnAttr(Kind))
       return true;
 
+    // Operand bundles override attributes on the called function, but don't
+    // override attributes directly present on the call instruction.
+    if (isFnAttrDisallowedByOpBundle(Kind))
+      return false;
+
     return hasFnAttrOnCalledFunction(Kind);
   }
-  template <typename AK> Attribute getFnAttrOnCalledFunction(AK Kind) const;
+
+  /// A specialized version of hasFnAttrImpl for when the caller wants to
+  /// know if an attribute's semantics are implied, not whether the attribute
+  /// is actually present.  This distinction only exists when checking whether
+  /// something is readonly or writeonly since readnone implies both.  The case
+  /// which motivates the specialized code is a callee with readnone, and an
+  /// operand bundle on the call which disallows readnone but not either
+  /// readonly or writeonly.
+  bool hasImpliedFnAttr(Attribute::AttrKind Kind) const {
+    assert((Kind == Attribute::ReadOnly || Kind == Attribute::WriteOnly) &&
+           "use hasFnAttrImpl instead");
+    if (Attrs.hasFnAttr(Kind) || Attrs.hasFnAttr(Attribute::ReadNone))
+      return true;
+
+    if (isFnAttrDisallowedByOpBundle(Kind))
+      return false;
+
+    return hasFnAttrOnCalledFunction(Kind) ||
+      hasFnAttrOnCalledFunction(Attribute::ReadNone);
+  }
 
   /// Determine whether the return value has the given attribute. Supports
   /// Attribute::AttrKind and StringRef as \p AttrKind types.
@@ -2316,9 +2363,9 @@ public:
   /// Provide fast operand accessors
   DECLARE_TRANSPARENT_OPERAND_ACCESSORS(Value);
 
-  /// arg_size - Return the number of funcletpad arguments.
+  /// getNumArgOperands - Return the number of funcletpad arguments.
   ///
-  unsigned arg_size() const { return getNumOperands() - 1; }
+  unsigned getNumArgOperands() const { return getNumOperands() - 1; }
 
   /// Convenience accessors
 
