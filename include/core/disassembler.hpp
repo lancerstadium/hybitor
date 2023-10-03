@@ -16,6 +16,7 @@
 #include "loader.hpp"
 #include "writer.hpp"
 
+
 /// @brief 反汇编器
 class disassembler
 {
@@ -24,10 +25,11 @@ class disassembler
 public:
     csh handle;     // Capstone 引擎句柄
     cs_arch arch;   // 文件体系结构
-    cs_mode mode;   // 文件模式
-    cs_mode extra_mode; // 额外模式
+    cs_mode basic;  // 基本模式
+    cs_mode extra;  // 额外模式
     loader ld;      // 文件加载器
     writer wt;      // 文件输出器
+    // std::unique_ptr<capstone2llvmir::Capstone2LlvmIrTranslator> decorder;     // 译码器
 
 // ------------- disassembler Build 构造操作 ------------- //
 
@@ -60,7 +62,7 @@ public:
     bool open_capstone_engine()
     {
         parse_bianry_file_header();
-        if (cs_open(this->arch, this->mode, &this->handle) != CS_ERR_OK)
+        if (cs_open(this->arch, this->basic, &this->handle) != CS_ERR_OK)
         {
             std::cerr << "Failed to initialize Capstone" << std::endl;
             return false;
@@ -86,61 +88,72 @@ public:
     /// @param new_basic_mode 设置新的基本模式
     void set_cs_basic_mode(cs_mode new_basic_mode)
     {
-        this->mode = new_basic_mode;
+        this->basic = new_basic_mode;
     }
 
 // ------------- disassembler 反汇编接口区 ------------- //
 
-    /// @brief 映射表：解析二进制文件头部，并匹配 arch 和 mode 信息
+    /// @brief 映射表：解析二进制文件头部，并匹配 arch 和 basic 信息
     void parse_bianry_file_header()
     {
         LIEF::Header header = this->ld.binary->header();
+        bool Is_32 = header.is_32();
+        bool Is_64 = header.is_64();
+        std::set<LIEF::MODES> modes = header.modes();
+        /// TODO: 根据 modes 开启 mode
         switch (header.architecture())
         {
         case LIEF::ARCHITECTURES::ARCH_X86:
             this->arch = CS_ARCH_X86;
-            if (header.is_32()) {
-                this->mode = CS_MODE_32;
-            } else if (header.is_64()) {
-                this->mode = CS_MODE_64;
+            if (Is_32) {
+                this->basic = CS_MODE_32;
+            } else if (Is_64) {
+                this->basic = CS_MODE_64;
             } else {
-                this->mode = CS_MODE_LITTLE_ENDIAN;
+                this->basic = CS_MODE_LITTLE_ENDIAN;
             }
             break;
         case LIEF::ARCHITECTURES::ARCH_MIPS:
             this->arch = CS_ARCH_MIPS;
-            if (header.is_32()) {
-                this->mode = CS_MODE_MIPS32;
-            } else if (header.is_64()) {
-                this->mode = CS_MODE_MIPS64;
+            if (Is_32) {
+                this->basic = CS_MODE_MIPS32;
+            } else if (Is_64) {
+                this->basic = CS_MODE_MIPS64;
             } else {
-                this->mode = CS_MODE_LITTLE_ENDIAN;
+                this->basic = CS_MODE_LITTLE_ENDIAN;
             }
             break;
         case LIEF::ARCHITECTURES::ARCH_RISCV:
             this->arch = CS_ARCH_RISCV;
-            if (header.is_32()) {
-                this->mode = CS_MODE_RISCV32;
-            } else if (header.is_64()) {
-                this->mode = CS_MODE_RISCV64;
+            if (Is_32) {
+                this->basic = CS_MODE_RISCV32;
+            } else if (Is_64) {
+                this->basic = CS_MODE_RISCV64;
             } else {
-                this->mode = CS_MODE_LITTLE_ENDIAN;
+                this->basic = CS_MODE_LITTLE_ENDIAN;
             }
             break;
         case LIEF::ARCHITECTURES::ARCH_ARM64:
             this->arch = CS_ARCH_ARM64;
-            this->mode = CS_MODE_LITTLE_ENDIAN;
+            this->basic = CS_MODE_LITTLE_ENDIAN;
             break;
         case LIEF::ARCHITECTURES::ARCH_ARM:
             this->arch = CS_ARCH_ARM;
-            this->mode = CS_MODE_ARM;
+            this->basic = CS_MODE_ARM;
             break;
         default:
             this->arch = CS_ARCH_ALL;
-            this->mode = CS_MODE_LITTLE_ENDIAN;
+            this->basic = CS_MODE_LITTLE_ENDIAN;
             break;
         }
     }
+
+    // /// @brief 根据读入文件类型，自动匹配模式，创建译码器
+    // /// @param module 
+    // void create_decorder(llvm::Module &module)
+    // {
+    //     this->decorder = capstone2llvmir::Capstone2LlvmIrTranslator::createArch(this->arch, &module, this->basic, this->extra);
+    // }
 
 
     /// @brief 加载 ELF 文件并反汇编

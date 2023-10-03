@@ -98,6 +98,7 @@ public:
                     disasm += insn[i].op_str;
                     // 在基本块中创建 LLVM IR 指令
                     builder.SetInsertPoint(basicBlock);
+                    
                     builder.CreateCall(llvm::Intrinsic::getDeclaration(&module, llvm::Intrinsic::dbg_declare), {builder.CreateGlobalStringPtr(disasm)});
                 }
                 // 释放 Capstone 资源
