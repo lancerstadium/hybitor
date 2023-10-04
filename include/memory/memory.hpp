@@ -7,6 +7,12 @@
 #ifndef MEMORY_MEMORY_H
 #define MEMORY_MEMORY_H
 
+
+#define ROUNDDOWN(x, k) ((x) & -(k))
+#define ROUNDUP(x, k)   (((x) + (k)-1) & -(k))
+#define MIN(x, y)       ((y) > (x) ? (x) : (y))
+#define MAX(x, y)       ((y) < (x) ? (x) : (y))
+
 #include <unistd.h>
 
 #include "tools/types.hpp"
@@ -96,6 +102,7 @@ public:
 class MMU
 {
 private:
+    static const u64 guest_memory_offset = 0x088800000000ULL;
     
 public:
 
@@ -107,13 +114,37 @@ public:
     MMU() {}
     ~MMU() {}
 
-    void MMU_load_segment(loader ld)
-    {
-        int page_size = getpagesize();  
-        const LIEF::ELF::Header* header = (LIEF::ELF::Header *) &ld.binary->header();
-        u64 offset = header->program_headers_offset();
+    u64 inline to_host(u64 addr) {
+        return (addr + guest_memory_offset);
+    }
 
+    u64 inline to_guest(u64 addr) {
+        return (addr - guest_memory_offset);
+    }
+
+    void MMU_print_segment(std::unique_ptr<LIEF::ELF::Binary> elf)
+    {
         
+        // 获取可执行文件的segments
+        const auto& segments = elf->segments();
+        cout << "segment info: "<<endl;
+        cout << &segments << endl;
+        for (const auto& segment : segments) {
+            cout << "File offset: 0x" << std::hex << segment.file_offset() << endl;
+            cout << "Physical Address: 0x" << std::hex << segment.physical_address() << endl;
+        }
+        
+    }
+
+    void MMU_load_segment(std::unique_ptr<LIEF::ELF::Binary> elf)
+    {
+        // 获取页面大小
+        int page_size = getpagesize();          
+        // 获取可执行文件的segments
+        const auto& segments = elf->segments();
+        u64 offset = segments->file_offset();       // 获取偏移量
+        u64 vaddr = to_host(segments->virtual_address());    // 主机虚拟地址
+        u64 aligned_vaddr = ROUNDDOWN(vaddr, page_size);
     }
 
 };

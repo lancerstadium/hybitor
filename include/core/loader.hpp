@@ -31,6 +31,12 @@ public:
     string input_file_name;   // 待解析二进制文件名
     std::unique_ptr<LIEF::Binary> binary;  // 二进制文件
     LIEF::OBJECT_TYPES type;    // 二进制文件类型
+
+    std::unique_ptr<LIEF::ELF::Binary> elf; // elf 文件
+    LIEF::ELF::E_TYPE e_type;   // elf文件类型
+
+    std::unique_ptr<LIEF::MachO::FatBinary> macho; // macho 文件
+    LIEF::MachO::FILE_TYPES m_type; // macho文件类型
     
 
     // --------- loader build 构造&析构区 ---------
@@ -63,6 +69,23 @@ public:
         }
         return true;
     }
+
+    /// @brief 读入并解析 ELF 文件
+    /// @return 是否成功解析elf文件
+    std::unique_ptr<LIEF::ELF::Binary> parse_elf_file() 
+    {
+        // 解析elf文件
+        return LIEF::ELF::Parser::parse(this->input_file_name);
+    }
+
+    /// @brief 读入并解析 macho 文件
+    /// @return 是否成功解析 macho 文件
+    std::unique_ptr<LIEF::MachO::FatBinary> parse_macho_file() 
+    {
+        // 解析macho文件
+        return LIEF::MachO::Parser::parse(this->input_file_name);
+    }
+
 
     
 };

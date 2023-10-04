@@ -13,8 +13,8 @@
 #include <llvm/Support/raw_ostream.h>
 
 // 本地库
-#include "loader.hpp"
-#include "writer.hpp"
+#include "core/loader.hpp"
+#include "core/writer.hpp"
 
 
 /// @brief 反汇编器

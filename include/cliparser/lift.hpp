@@ -34,8 +34,10 @@ public:
     /// @return 错误信息
     void command_exec()
     {
-        lifter lt = lifter(this->in_file_path, this->out_file_path);
-        lt.lift_to_ll_file();
+        lifter lt(this->in_file_path, this->out_file_path);
+        // lt.lift_to_ll_file();
+        lt.print_segements();
+
     }
 
 };

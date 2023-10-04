@@ -16,9 +16,10 @@
 #include <llvm/Support/raw_ostream.h>
 
 // 本地库
-#include "loader.hpp"
-#include "writer.hpp"
-#include "disassembler.hpp"
+#include "core/loader.hpp"
+#include "core/writer.hpp"
+#include "core/disassembler.hpp"
+#include "cpu/cpu.hpp"
 
 /// @brief 反汇编器
 class lifter
@@ -35,8 +36,17 @@ public:
     /// @brief 析构函数
     ~lifter(){};
 
+    // --------- test --------- //
+    void print_segements()
+    {
+        MMU mmu;
+        // 解析 loader 内的二进制文件
+        mmu.MMU_print_segment(this->das.ld.parse_elf_file());
 
-    // --------- lifter 功能区 ---------
+    }
+
+
+    // --------- lifter 功能区 --------- //
 
     /// @brief 将二进制文件提升到LLVM IR，并生成.ll文件
     /// @return 

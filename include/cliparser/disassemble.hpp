@@ -35,7 +35,7 @@ public:
     /// @return 错误信息
     void command_exec()
     {
-        disassembler das = disassembler(this->in_file_path, this->out_file_path);
+        disassembler das(this->in_file_path, this->out_file_path);
         das.write_to_asm_file();
     }
 
