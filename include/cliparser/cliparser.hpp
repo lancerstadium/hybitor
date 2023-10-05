@@ -112,7 +112,7 @@ public:
     /// @param argc `main()` 读入参数个数
     /// @param argv `main()` 读入参数数组
     /// @return int 错误信息
-    int cli_parse(int argc, char **argv)
+    int cli_parse(int argc, char *argv[])
     {
         CLI11_PARSE(app, argc, argv);
         return CLI_PARSE_SUCCESS;
@@ -120,7 +120,7 @@ public:
     
 
     /// @brief CLI 执行触发事件（业务）
-    void cli_exec()
+    void cli_exec(int argc, char *argv[])
     {
         // --- CLI 子命令触发事件 ---
         // 0.触发`hello`
@@ -139,7 +139,7 @@ public:
         auto subcommand_lift = this->app.get_subcommand("lift");
         if(subcommand_lift->parsed())
         {
-            slp.command_exec();
+            slp.command_exec(argc, argv);
         }
         // 3.触发`translate`
         auto subcommand_translate = this->app.get_subcommand("translate");

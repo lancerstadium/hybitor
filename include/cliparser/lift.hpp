@@ -32,11 +32,11 @@ public:
 
     /// @brief 执行 lift 主业务：Guest指令提升到 LLVM IR
     /// @return 错误信息
-    void command_exec()
+    void command_exec(int argc, char* argv[])
     {
         lifter lt(this->in_file_path, this->out_file_path);
         // lt.lift_to_ll_file();
-        lt.print_segements();
+        lt.interp_exec(argc, argv);
 
     }
 

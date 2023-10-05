@@ -20,6 +20,9 @@
 #include "core/writer.hpp"
 #include "core/disassembler.hpp"
 #include "cpu/cpu.hpp"
+#include "insn/syscall.hpp"
+#include "tools/debug.hpp"
+
 
 /// @brief 反汇编器
 class lifter
@@ -37,11 +40,23 @@ public:
     ~lifter(){};
 
     // --------- test --------- //
-    void print_segements()
+    void interp_exec(int argc, char* argv[])
     {
-        MMU mmu;
-        // 解析 loader 内的二进制文件
-        mmu.MMU_print_segment(this->das.ld.parse_elf_file());
+        VM vm;
+        // vm.VM_setup(argc, argv);
+        vm.VM_load_program(this->das.ld);
+        vm.VM_exec_program();
+        while(true) {
+            // 执行指令
+            enum exit_reason_t reason = vm.VM_exec_program();
+            assert(reason == ecall);
+            // 获取系统调用编号：存储在通用寄存器 a7 里
+            u64 syscall = vm.get_gp_reg(a7);
+            // 执行系统调用
+            u64 ret = do_syscall(vm, syscall);
+            // 保存系统调用返回值：返回到通用寄存器 a0 里
+            vm.set_gp_reg(a0, ret);
+        }
 
     }
 

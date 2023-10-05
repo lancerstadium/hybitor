@@ -38,7 +38,8 @@ capstone = cpp.find_library(
 # 配置LLVM库
 # 设置LLVM版本
 llvm_version = ['>12', '=<16']
-llvm_lib_path = '/usr/lib/llvm-14/lib'  # 库地点
+# llvm_lib_path = '/usr/lib/llvm-14/lib'  # 库地点 x86_64 for linux
+llvm_lib_path = '/opt/homebrew/opt/llvm/lib' # aarch64 for macbook
 # 首先寻找llvm动态库
 LLVM = cpp.find_library(
     'LLVM', 
