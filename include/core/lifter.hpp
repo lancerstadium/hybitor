@@ -6,6 +6,7 @@
 
 #include <LIEF/LIEF.hpp>
 #include <capstone/capstone.h>
+// #include <retdec/capstone2llvmir/capstone2llvmir.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Function.h>
@@ -13,14 +14,13 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/raw_ostream.h>
 
 // 本地库
 #include "core/loader.hpp"
 #include "core/writer.hpp"
 #include "core/disassembler.hpp"
-#include "cpu/cpu.hpp"
-#include "insn/syscall.hpp"
 #include "tools/debug.hpp"
 
 
@@ -30,6 +30,7 @@ class lifter
 private:
 public:
     disassembler das;   // 反汇编器
+    
 
     /// @brief 构造函数
     /// @param input_file 输入文件
@@ -40,26 +41,52 @@ public:
     ~lifter(){};
 
     // --------- test --------- //
-    void interp_exec(int argc, char* argv[])
+    
+    /// @brief 解释器执行指令
+    void interp_exec()
     {
-        VM vm;
-        // vm.VM_setup(argc, argv);
-        vm.VM_load_program(this->das.ld);
-        vm.VM_exec_program();
-        while(true) {
-            // 执行指令
-            enum exit_reason_t reason = vm.VM_exec_program();
-            assert(reason == ecall);
-            // 获取系统调用编号：存储在通用寄存器 a7 里
-            u64 syscall = vm.get_gp_reg(a7);
-            // 执行系统调用
-            u64 ret = do_syscall(vm, syscall);
-            // 保存系统调用返回值：返回到通用寄存器 a0 里
-            vm.set_gp_reg(a0, ret);
-        }
 
     }
 
+    /// @brief 将反汇编后的指令提升到llvmir
+    /// @return 错误信息
+    int lift_to_llvm_ir()
+    {
+        llvm::LLVMContext ctx;  // llvm 上下文
+        llvm::Module module("test", ctx);   // llvm 模块
+
+        // llvm 函数
+        auto *f = llvm::Function::Create(
+			llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), false),
+			llvm::GlobalValue::ExternalLinkage,
+			"root",
+			&module);
+        
+        llvm::BasicBlock::Create(module.getContext(), "entry", f);  // llvm 基本块
+        llvm::IRBuilder<> irb(&f->front()); // llvm ir构造器
+
+        auto* ret = irb.CreateRetVoid();    // 创建void返回点
+	    irb.SetInsertPoint(ret);            // 设置插入点
+
+        try
+        {
+            // auto c2l = retdec::capstone2llvmir::Capstone2LlvmIrTranslator::createArch(
+			// 	this->das.arch,
+			// 	&module,
+			// 	this->das.basic,
+			// 	this->das.extra);
+            //     c2l->translate(this->das.in_asm.data(), this->das.in_asm.size(), this->das.base_addr, irb);
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+            return -1;
+        }
+        
+        this->das.wt.output_to_ll_file(module);
+
+        return 1;
+    }
 
     // --------- lifter 功能区 --------- //
 

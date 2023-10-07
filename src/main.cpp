@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     cliparser cp;                      
     cp.cli_init();              // 初始化 CLI 环境
     cp.cli_parse(argc, argv);   // 解析参数
-    cp.cli_exec(argc, argv);    // CLI 执行命令
+    cp.cli_exec();    // CLI 执行命令
 
 	return 0;
 }

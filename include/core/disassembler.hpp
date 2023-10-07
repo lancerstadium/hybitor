@@ -29,7 +29,8 @@ public:
     cs_mode extra;  // 额外模式
     loader ld;      // 文件加载器
     writer wt;      // 文件输出器
-    // std::unique_ptr<capstone2llvmir::Capstone2LlvmIrTranslator> decorder;     // 译码器
+    uint64_t base_addr = 0x1000;       // 基础地址
+    std::vector<uint8_t> in_asm;  // guest端
 
 // ------------- disassembler Build 构造操作 ------------- //
 

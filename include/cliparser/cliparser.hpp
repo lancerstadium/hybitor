@@ -10,6 +10,7 @@
 #include "cliparser/lift.hpp"
 #include "cliparser/translate.hpp"
 #include "cliparser/opt.hpp"
+#include "cliparser/repl.hpp"
 
 
 
@@ -32,6 +33,7 @@ public:
     SLP slp;
     STP stp;   
     SOP sop;
+    SRP srp;
 
     cliparser() {}   // 构造函数
     ~cliparser() {}                // 析构函数
@@ -52,12 +54,14 @@ public:
         auto subcommand_lift = this->app.add_subcommand("lift", "提升二进制文件到 LLVM IR.\nLift binary file to LLVM IR.");
         auto subcommand_translate = this->app.add_subcommand("translate", "翻译二进制文件到Host端\nTranslate binary file to host architecture.");
         auto subcommand_opt = this->app.add_subcommand("opt", "优化LLVM中间表示文件\nOptimizate .ll or .bc LLVM IR file.");
+        auto subcommand_repl = this->app.add_subcommand("repl", "进入交互式操作界面\nEnter REPL mode.");
         // 当出现的参数子命令解析不了时,尝试返回上一级主命令解析
         subcommand_hello->fallthrough();
         subcommand_disassemble->fallthrough();
         subcommand_lift->fallthrough();
         subcommand_translate->fallthrough(); 
         subcommand_opt->fallthrough();   
+        subcommand_repl->fallthrough();   
 
         // 0.如果执行`hello`子命令，则检查参数
         if(subcommand_hello)
@@ -106,6 +110,16 @@ public:
             // 检查输出文件目录是否存在
             subcommand_opt->add_option("-o", this->sop.out_file_path, "输出文件路径 Output file path")->check(CLI::ExistingDirectory);
         }
+        // 5.如果执行`repl`子命令，则检查参数
+        if(subcommand_repl)
+        {
+            // 初始化子命令参数
+            this->srp = SRP();    // *修改这里*：子命令`opt`的参数存储对象  
+            // 检查输入文件是否存在
+            subcommand_repl->add_option("file", this->sop.in_file_path, "输入文件路径 Input file path")->check(CLI::ExistingFile);
+            // 检查输出文件目录是否存在
+            subcommand_repl->add_option("-o", this->sop.out_file_path, "输出文件路径 Output file path")->check(CLI::ExistingDirectory);
+        }
     }
 
     /// @brief CLI 解析输入命令参数
@@ -120,7 +134,7 @@ public:
     
 
     /// @brief CLI 执行触发事件（业务）
-    void cli_exec(int argc, char *argv[])
+    void cli_exec()
     {
         // --- CLI 子命令触发事件 ---
         // 0.触发`hello`
@@ -139,7 +153,7 @@ public:
         auto subcommand_lift = this->app.get_subcommand("lift");
         if(subcommand_lift->parsed())
         {
-            slp.command_exec(argc, argv);
+            slp.command_exec();
         }
         // 3.触发`translate`
         auto subcommand_translate = this->app.get_subcommand("translate");
@@ -152,6 +166,12 @@ public:
         if(subcommand_opt->parsed())
         {
             sop.print_parsed_parameters();
+        }
+        // 5.触发`repl`
+        auto subcommand_repl = this->app.get_subcommand("repl");
+        if(subcommand_repl->parsed())
+        {
+            srp.command_exec();
         }
     }
 
