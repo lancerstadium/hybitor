@@ -35,12 +35,6 @@ capstone = cpp.find_library(
     dirs : join_paths(meson.source_root(), 'lib', host_arch + '-' + os_type)
 )
 
-# 配置retdec-capstone2llvmir库
-retdec_capstone2llvmir = cpp.find_library(
-    'retdec-capstone2llvmir', 
-    static: true, required: true, 
-    dirs : join_paths(meson.source_root(), 'lib', host_arch + '-' + os_type)
-)
 
 # 配置LLVM库
 # 设置LLVM版本
@@ -67,5 +61,5 @@ endif
 executable('hybitor',
   sources: ['src/main.cpp'],                # 源文件列表
   include_directories: ['include'],         # 头文件目录
-  dependencies: [LIEF, capstone, retdec_capstone2llvmir, LLVM],     # 依赖项
+  dependencies: [LIEF, capstone, LLVM],     # 依赖项
 )

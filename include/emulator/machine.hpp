@@ -6,6 +6,7 @@
 
 
 #include "emulator/interpreter.hpp"
+#include "emulator/syscall.hpp"
 
 
 class VM
@@ -25,6 +26,8 @@ public:
         this->it.init_inst_func();
     }
     ~VM() {}
+
+
 
     /// @brief 虚拟机加载文件
     /// @param img_path 文件路径
@@ -91,18 +94,46 @@ public:
     void VM_cpu_exec_once()
     {
         this->cpu.regs[CPU::zero] = 0;
+        this->cpu.exit_reason = CPU::none;
+
         if (this->cpu.pc == p_addr) {
             this->cpu.state = CPU::CPU_STOP; // 放置于停止状态
             printf("breakpoint at 0x%lx\n", (unsigned long)p_addr);
             p_addr = -1;
             return;
         }
-        u32 data = this->cpu.cpu_fetch_inst();
-        printf("inst = 0x%08x\n", data);
 
+        u32 data = this->cpu.cpu_fetch_inst();
         static insn_t insn = {0};
         this->it.dc.insn_decode(&insn, data);
         funcs[insn.type](this->cpu, &insn);
+
+        // 处理跳转事件
+        if(this->cpu.exit_reason == CPU::indirect_branch || this->cpu.exit_reason == CPU::direct_branch)
+        {
+            this->cpu.pc = this->cpu.reenter_pc;
+            printf("inst = 0x%08x, pc = 0x%08llx, (branch) \n", data, this->cpu.pc);
+            return;
+        }
+
+        // 处理系统调用
+        if (this->cpu.exit_reason == CPU::ecall)
+        {
+            
+            this->cpu.pc = this->cpu.reenter_pc;
+            printf("inst = 0x%08x, pc = 0x%08llx, (syscall) \n", data, this->cpu.pc);
+            // 获取系统调用编号：存储在通用寄存器 a7 里
+            u64 syscall = this->cpu.cpu_get_gp_reg(a7);
+            // 执行系统调用
+            u64 ret = do_syscall(this->cpu, syscall);
+            // 保存系统调用返回值：返回到通用寄存器 a0 里
+            this->cpu.cpu_set_gp_reg(a0, ret);
+            return;
+        }
+        
+
+        printf("inst = 0x%08x, pc = 0x%08llx,\n", data, this->cpu.pc);
+
         this->cpu.regs[CPU::zero] = 0;  // zero寄存器清零             
         this->cpu.pc += insn.rvc ? 2 : 4;  // 如果为压缩指令步进2，否则步进4
     }

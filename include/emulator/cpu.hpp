@@ -1,4 +1,4 @@
-/// \file emulator/this->hpp
+/// \file emulator/cpu.hpp
 /// \brief RISC-V64 cpu 模拟
 
 #ifndef EMULATOR_CPU_HPP
@@ -67,6 +67,22 @@ public:
     CPU() {}
     ~CPU() {}
 
+    /// @brief 获取通用寄存器的值
+    /// @param reg 寄存器编号
+    /// @return 存储值
+    inline u64 cpu_get_gp_reg(i32 reg) {
+        assert(reg >= 0 && reg <= num_gp_regs);
+        return this->regs[reg];
+    }
+
+    /// @brief 设置通用寄存器的值
+    /// @param reg 寄存器编号
+    /// @param data 设置值
+    inline void cpu_set_gp_reg(i32 reg, u64 data) {
+        assert(reg >= 0 && reg <= num_gp_regs);
+        this->regs[reg] = data;
+    }
+
     void cpu_print_regs() {
         int clo = 4;
         cout << "[REG infomations]" << endl;
@@ -88,7 +104,7 @@ public:
     void cpu_print_info()
     {
         cout << "[CPU infomations]" << endl;
-        cout << "  pc      : " << "0x" << std::hex << this->pc << endl;
+        cout << "  pc      : " << "0x" << std::hex << std::setw(8) << std::setfill('0') << this->pc << endl;
         cout << "  regs    : " << this->regs << endl;
         cout << "  state   : " << this->state << endl;
         cout << "  priv    : " << this->pri_level << endl;
@@ -101,6 +117,7 @@ public:
     /// @brief 初始化CPU：计数器、寄存器、状态等
     void cpu_init()
     {
+        this->exit_reason = none;
         this->pc = RESET_VECTOR;
         this->regs[zero] = 0;
         size_t stack_size = 32 * 1024 * 1024; // 32MB 栈
