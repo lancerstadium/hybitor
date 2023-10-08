@@ -5,52 +5,439 @@
 #define EMULATOR_DECORDER_HPP
 
 
-#include "emulator/trap.hpp"
-
-// ==================================================================================== //
-// decord
-// ==================================================================================== //
+#include "emulator/reg.hpp"
+#include "tools/debug.hpp"
 
 
 
-u64 imm_u(u32 inst) {return SEXT(BITS(inst, 31, 12), 20);}
-u64 imm_j(u32 inst) {return (SEXT(BITS(inst, 31, 31), 1) << 20) | (BITS(inst, 30, 21) << 1) | (BITS(inst, 20, 20) << 11) | (BITS(inst, 19, 12) << 12);}
-u64 imm_i(u32 inst) {return SEXT(BITS(inst, 31, 20), 12);}
-u64 imm_s(u32 inst) {return SEXT((BITS(inst, 31, 25) << 5) | BITS(inst, 11, 7), 12); }
-u64 imm_b(u32 inst) {return (SEXT(BITS(inst, 31, 31), 1) << 12) | (BITS(inst, 30, 25) << 5) | (BITS(inst, 11, 8) << 1) | (BITS(inst, 7, 7) << 11);}
 
-enum INST_NAME {
-    //RV64I
-    LUI, AUIPC, JAL, JALR,
-    BEQ, BNE, BLT, BGE, BLTU, BGEU,
-    LB, LH, LW, LBU, LHU,
-    SB, SH, SW,
-    ADDI, SLTI, SLTIU, XORI, ORI, ANDI,
-    SLLI, SRLI, SRAI,
-    ADD, SUB, SLL, SLT, SLTU,
-    XOR, SRL, SRA, OR,
-    AND, FENCE, ECALL, EBREAK,
-    LWU, LD, SD,
-    ADDIW, SLLIW, SRLIW, SRAIW,
-    ADDW, SUBW, SLLW, SRLW, SRAW,
-    //Zicsr
-    CSRRW, CSRRS, CSRRC, CSRRWI, CSRRSI, CSRRCI,
-    //trap return
-    MRET, SRET,
-    //end
-    INST_NUM,
+
+// ============================================================================== //
+// 指令 insn
+// ============================================================================== //
+
+#define QUADRANT(data) (((data) >> 0) & 0x3) // 象限：取最低两位，判断是否压缩指令
+#define OPCODE(data) (((data) >> 2) & 0x1f)  // 操作码：取2-6位
+#define RD(data) (((data) >> 7) & 0x1f)      // RD：取7-11位
+#define RS1(data) (((data) >> 15) & 0x1f)    // 操作数1：取15-19位
+#define RS2(data) (((data) >> 20) & 0x1f)    // 操作数2：取20-24位
+#define RS3(data) (((data) >> 27) & 0x1f)    // 操作数3：取27-31位
+#define FUNCT2(data) (((data) >> 25) & 0x3)
+#define FUNCT3(data) (((data) >> 12) & 0x7)
+#define FUNCT7(data) (((data) >> 25) & 0x7f)
+#define IMM116(data) (((data) >> 26) & 0x3f) // 立即数
+
+/// @brief 指令类型
+enum insn_type_t {
+    insn_lb, insn_lh, insn_lw, insn_ld, insn_lbu, insn_lhu, insn_lwu,
+    insn_fence, insn_fence_i,
+    insn_addi, insn_slli, insn_slti, insn_sltiu, insn_xori, insn_srli, insn_srai, insn_ori, insn_andi, insn_auipc, insn_addiw, insn_slliw, insn_srliw, insn_sraiw,
+    insn_sb, insn_sh, insn_sw, insn_sd,
+    insn_add, insn_sll, insn_slt, insn_sltu, insn_xor, insn_srl, insn_or, insn_and,
+    insn_mul, insn_mulh, insn_mulhsu, insn_mulhu, insn_div, insn_divu, insn_rem, insn_remu,
+    insn_sub, insn_sra, insn_lui,
+    insn_addw, insn_sllw, insn_srlw, insn_mulw, insn_divw, insn_divuw, insn_remw, insn_remuw, insn_subw, insn_sraw,
+    insn_beq, insn_bne, insn_blt, insn_bge, insn_bltu, insn_bgeu,
+    insn_jalr, insn_jal, insn_ecall,
+    insn_csrrc, insn_csrrci, insn_csrrs, insn_csrrsi, insn_csrrw, insn_csrrwi,
+    insn_flw, insn_fsw,
+    insn_fmadd_s, insn_fmsub_s, insn_fnmsub_s, insn_fnmadd_s, insn_fadd_s, insn_fsub_s, insn_fmul_s, insn_fdiv_s, insn_fsqrt_s,
+    insn_fsgnj_s, insn_fsgnjn_s, insn_fsgnjx_s,
+    insn_fmin_s, insn_fmax_s,
+    insn_fcvt_w_s, insn_fcvt_wu_s, insn_fmv_x_w,
+    insn_feq_s, insn_flt_s, insn_fle_s, insn_fclass_s,
+    insn_fcvt_s_w, insn_fcvt_s_wu, insn_fmv_w_x, insn_fcvt_l_s, insn_fcvt_lu_s,
+    insn_fcvt_s_l, insn_fcvt_s_lu,
+    insn_fld, insn_fsd,
+    insn_fmadd_d, insn_fmsub_d, insn_fnmsub_d, insn_fnmadd_d,
+    insn_fadd_d, insn_fsub_d, insn_fmul_d, insn_fdiv_d, insn_fsqrt_d,
+    insn_fsgnj_d, insn_fsgnjn_d, insn_fsgnjx_d,
+    insn_fmin_d, insn_fmax_d,
+    insn_fcvt_s_d, insn_fcvt_d_s,
+    insn_feq_d, insn_flt_d, insn_fle_d, insn_fclass_d,
+    insn_fcvt_w_d, insn_fcvt_wu_d, insn_fcvt_d_w, insn_fcvt_d_wu,
+    insn_fcvt_l_d, insn_fcvt_lu_d,
+    insn_fmv_x_d, insn_fcvt_d_l, insn_fcvt_d_lu, insn_fmv_d_x,
+    num_insns,
 };
 
+/// @brief 指令结构体
+typedef struct {
+    i8 rd;      // 操作码
+    i8 rs1;     // 寄存器1
+    i8 rs2;     // 寄存器2
+    i8 rs3;     // 寄存器3
+    i16 csr;    // csr数
+    i32 imm;    // 立即数
+    enum insn_type_t type;  // 指令类型
+    bool rvc;   // 是否 rvc 压缩指令
+    bool cont;  // 是否继续执行
+} insn_t;
+
+static inline insn_t insn_utype_read(u32 data)
+{
+    return (insn_t){
+        .imm = static_cast<i32>(data & 0xfffff000),
+        .rd = static_cast<i8>(RD(data)),
+    };
+}
+
+static inline insn_t insn_itype_read(u32 data)
+{
+    return (insn_t){
+        .imm = (i32)data >> 20,
+        .rs1 = static_cast<i8>(RS1(data)),
+        .rd = static_cast<i8>(RD(data)),
+    };
+}
+
+static inline insn_t insn_jtype_read(u32 data)
+{
+    u32 imm20 = (data >> 31) & 0x1;
+    u32 imm101 = (data >> 21) & 0x3ff;
+    u32 imm11 = (data >> 20) & 0x1;
+    u32 imm1912 = (data >> 12) & 0xff;
+
+    i32 imm = (imm20 << 20) | (imm1912 << 12) | (imm11 << 11) | (imm101 << 1);
+    imm = (imm << 11) >> 11;
+
+    return (insn_t){
+        .imm = imm,
+        .rd = static_cast<i8>(RD(data)),
+    };
+}
+
+static inline insn_t insn_btype_read(u32 data)
+{
+    u32 imm12 = (data >> 31) & 0x1;
+    u32 imm105 = (data >> 25) & 0x3f;
+    u32 imm41 = (data >> 8) & 0xf;
+    u32 imm11 = (data >> 7) & 0x1;
+
+    i32 imm = (imm12 << 12) | (imm11 << 11) | (imm105 << 5) | (imm41 << 1);
+    imm = (imm << 19) >> 19;
+
+    return (insn_t){
+        .imm = imm,
+        .rs1 = static_cast<i8>(RS1(data)),
+        .rs2 = static_cast<i8>(RS2(data)),
+    };
+}
+
+static inline insn_t insn_rtype_read(u32 data)
+{
+    return (insn_t){
+        .rs1 = static_cast<i8>(RS1(data)),
+        .rs2 = static_cast<i8>(RS2(data)),
+        .rd = static_cast<i8>(RD(data)),
+    };
+}
+
+static inline insn_t insn_stype_read(u32 data)
+{
+    u32 imm115 = (data >> 25) & 0x7f;
+    u32 imm40 = (data >> 7) & 0x1f;
+
+    i32 imm = (imm115 << 5) | imm40;
+    imm = (imm << 20) >> 20;
+    return (insn_t){
+        .imm = imm,
+        .rs1 = static_cast<i8>(RS1(data)),
+        .rs2 = static_cast<i8>(RS2(data)),
+    };
+}
+
+static inline insn_t insn_csrtype_read(u32 data)
+{
+    return (insn_t){
+        .csr = static_cast<i16>(data >> 20),
+        .rs1 = static_cast<i8>(RS1(data)),
+        .rd = static_cast<i8>(RD(data)),
+    };
+}
+
+static inline insn_t insn_fprtype_read(u32 data)
+{
+    return (insn_t){
+        .rs1 = static_cast<i8>(RS1(data)),
+        .rs2 = static_cast<i8>(RS2(data)),
+        .rs3 = static_cast<i8>(RS3(data)),
+        .rd = static_cast<i8>(RD(data)),
+    };
+}
+
+/**
+ * compressed types
+ */
+#define COPCODE(data) (((data) >> 13) & 0x7)
+#define CFUNCT1(data) (((data) >> 12) & 0x1)
+#define CFUNCT2LOW(data) (((data) >> 5) & 0x3)
+#define CFUNCT2HIGH(data) (((data) >> 10) & 0x3)
+#define RP1(data) (((data) >> 7) & 0x7)
+#define RP2(data) (((data) >> 2) & 0x7)
+#define RC1(data) (((data) >> 7) & 0x1f)
+#define RC2(data) (((data) >> 2) & 0x1f)
+
+static inline insn_t insn_catype_read(u16 data)
+{
+    return (insn_t){
+        .rd = static_cast<i8>(RP1(data) + 8),
+        .rs2 = static_cast<i8>(RP2(data) + 8),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_crtype_read(u16 data)
+{
+    return (insn_t){
+        .rs1 = static_cast<i8>(RC1(data)),
+        .rs2 = static_cast<i8>(RC2(data)),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_citype_read(u16 data)
+{
+    u32 imm40 = (data >> 2) & 0x1f;
+    u32 imm5 = (data >> 12) & 0x1;
+    i32 imm = (imm5 << 5) | imm40;
+    imm = (imm << 26) >> 26;
+
+    return (insn_t){
+        .imm = imm,
+        .rd = static_cast<i8>(RC1(data)),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_citype_read2(u16 data)
+{
+    u32 imm86 = (data >> 2) & 0x7;
+    u32 imm43 = (data >> 5) & 0x3;
+    u32 imm5 = (data >> 12) & 0x1;
+
+    i32 imm = (imm86 << 6) | (imm43 << 3) | (imm5 << 5);
+
+    return (insn_t){
+        .imm = imm,
+        .rd = static_cast<i8>(RC1(data)),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_citype_read3(u16 data)
+{
+    u32 imm5 = (data >> 2) & 0x1;
+    u32 imm87 = (data >> 3) & 0x3;
+    u32 imm6 = (data >> 5) & 0x1;
+    u32 imm4 = (data >> 6) & 0x1;
+    u32 imm9 = (data >> 12) & 0x1;
+
+    i32 imm = (imm5 << 5) | (imm87 << 7) | (imm6 << 6) | (imm4 << 4) | (imm9 << 9);
+    imm = (imm << 22) >> 22;
+
+    return (insn_t){
+        .imm = imm,
+        .rd = static_cast<i8>(RC1(data)),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_citype_read4(u16 data)
+{
+    u32 imm5 = (data >> 12) & 0x1;
+    u32 imm42 = (data >> 4) & 0x7;
+    u32 imm76 = (data >> 2) & 0x3;
+
+    i32 imm = (imm5 << 5) | (imm42 << 2) | (imm76 << 6);
+
+    return (insn_t){
+        .imm = imm,
+        .rd = static_cast<i8>(RC1(data)),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_citype_read5(u16 data)
+{
+    u32 imm1612 = (data >> 2) & 0x1f;
+    u32 imm17 = (data >> 12) & 0x1;
+
+    i32 imm = (imm1612 << 12) | (imm17 << 17);
+    imm = (imm << 14) >> 14;
+    return (insn_t){
+        .imm = imm,
+        .rd = static_cast<i8>(RC1(data)),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_cbtype_read(u16 data)
+{
+    u32 imm5 = (data >> 2) & 0x1;
+    u32 imm21 = (data >> 3) & 0x3;
+    u32 imm76 = (data >> 5) & 0x3;
+    u32 imm43 = (data >> 10) & 0x3;
+    u32 imm8 = (data >> 12) & 0x1;
+
+    i32 imm = (imm8 << 8) | (imm76 << 6) | (imm5 << 5) | (imm43 << 3) | (imm21 << 1);
+    imm = (imm << 23) >> 23;
+
+    return (insn_t){
+        .imm = imm,
+        .rs1 = static_cast<i8>(RP1(data) + 8),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_cbtype_read2(u16 data)
+{
+    u32 imm40 = (data >> 2) & 0x1f;
+    u32 imm5 = (data >> 12) & 0x1;
+    i32 imm = (imm5 << 5) | imm40;
+    imm = (imm << 26) >> 26;
+
+    return (insn_t){
+        .imm = imm,
+        .rd = static_cast<i8>(RP1(data) + 8),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_cstype_read(u16 data)
+{
+    u32 imm76 = (data >> 5) & 0x3;
+    u32 imm53 = (data >> 10) & 0x7;
+
+    i32 imm = ((imm76 << 6) | (imm53 << 3));
+
+    return (insn_t){
+        .imm = imm,
+        .rs1 = static_cast<i8>(RP1(data) + 8),
+        .rs2 = static_cast<i8>(RP2(data) + 8),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_cstype_read2(u16 data)
+{
+    u32 imm6 = (data >> 5) & 0x1;
+    u32 imm2 = (data >> 6) & 0x1;
+    u32 imm53 = (data >> 10) & 0x7;
+
+    i32 imm = ((imm6 << 6) | (imm2 << 2) | (imm53 << 3));
+
+    return (insn_t){
+        .imm = imm,
+        .rs1 = static_cast<i8>(RP1(data) + 8),
+        .rs2 = static_cast<i8>(RP2(data) + 8),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_cjtype_read(u16 data)
+{
+    u32 imm5 = (data >> 2) & 0x1;
+    u32 imm31 = (data >> 3) & 0x7;
+    u32 imm7 = (data >> 6) & 0x1;
+    u32 imm6 = (data >> 7) & 0x1;
+    u32 imm10 = (data >> 8) & 0x1;
+    u32 imm98 = (data >> 9) & 0x3;
+    u32 imm4 = (data >> 11) & 0x1;
+    u32 imm11 = (data >> 12) & 0x1;
+
+    i32 imm = ((imm5 << 5) | (imm31 << 1) | (imm7 << 7) | (imm6 << 6) |
+               (imm10 << 10) | (imm98 << 8) | (imm4 << 4) | (imm11 << 11));
+    imm = (imm << 20) >> 20;
+    return (insn_t){
+        .imm = imm,
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_cltype_read(u16 data)
+{
+    u32 imm6 = (data >> 5) & 0x1;
+    u32 imm2 = (data >> 6) & 0x1;
+    u32 imm53 = (data >> 10) & 0x7;
+
+    i32 imm = (imm6 << 6) | (imm2 << 2) | (imm53 << 3);
+
+    return (insn_t){
+        .imm = imm,
+        .rs1 = static_cast<i8>(RP1(data) + 8),
+        .rd = static_cast<i8>(RP2(data) + 8),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_cltype_read2(u16 data)
+{
+    u32 imm76 = (data >> 5) & 0x3;
+    u32 imm53 = (data >> 10) & 0x7;
+
+    i32 imm = (imm76 << 6) | (imm53 << 3);
+
+    return (insn_t){
+        .imm = imm,
+        .rs1 = static_cast<i8>(RP1(data) + 8),
+        .rd = static_cast<i8>(RP2(data) + 8),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_csstype_read(u16 data)
+{
+    u32 imm86 = (data >> 7) & 0x7;
+    u32 imm53 = (data >> 10) & 0x7;
+
+    i32 imm = (imm86 << 6) | (imm53 << 3);
+
+    return (insn_t){
+        .imm = imm,
+        .rs2 = static_cast<i8>(RC2(data)),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_csstype_read2(u16 data)
+{
+    u32 imm76 = (data >> 7) & 0x3;
+    u32 imm52 = (data >> 9) & 0xf;
+
+    i32 imm = (imm76 << 6) | (imm52 << 2);
+
+    return (insn_t){
+        .imm = imm,
+        .rs2 = static_cast<i8>(RC2(data)),
+        .rvc = true,
+    };
+}
+
+static inline insn_t insn_ciwtype_read(u16 data)
+{
+    u32 imm3 = (data >> 5) & 0x1;
+    u32 imm2 = (data >> 6) & 0x1;
+    u32 imm96 = (data >> 7) & 0xf;
+    u32 imm54 = (data >> 11) & 0x3;
+
+    i32 imm = (imm3 << 3) | (imm2 << 2) | (imm96 << 6) | (imm54 << 4);
+
+    return (insn_t){
+        .imm = imm,
+        .rd = static_cast<i8>(RP2(data) + 8),
+        .rvc = true,
+    };
+}
+
+
+// ==================================================================================== //
+// decoder
+// ==================================================================================== //
 
 
 
-class decoder {
-public:
-
-    bool riscv_tests;
-    u32 inst_val;
-
-    enum INST_NAME {
+enum INST_NAME {
         //RV64I
         LUI, AUIPC, JAL, JALR,
         BEQ, BNE, BLT, BGE, BLTU, BGEU,
@@ -70,7 +457,15 @@ public:
         MRET, SRET,
         //end
         INST_NUM,
-    } inst_name;
+};
+
+class decoder {
+public:
+
+    bool riscv_tests;
+    u32 inst_val;
+
+    enum INST_NAME inst_name;
 
     u64 dest;
     u64 src1;
@@ -83,7 +478,6 @@ public:
     int shamt;
     u64 snpc;
     u64 dnpc;
-    CPU cpu;
 
 
     decoder() {}
@@ -395,511 +789,1160 @@ public:
 
     ~decoder() {}
 
-    void (decoder::*inst_handle[INST_NUM])(CPU &host_cpu);
-
-    void set_inst_func(enum INST_NAME inst_name, void (decoder::*fp)(CPU &host_cpu))
+    /// @brief 解码指令
+    /// @param insn 指令
+    /// @param data 数据
+    void insn_decode(insn_t *insn, u32 data)
     {
-        inst_handle[inst_name] = fp;
-    }
-
-    void lui(CPU &host_cpu)
-    {
-        printf("lui this->imm = %llx\n", this->imm);
-        this->cpu.regs[this->rd] = this->imm << 12;
-        printf("lui this->imm << 12 = %llx\n", this->cpu.regs[this->rd]);
-    }
-
-    void auipc(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.pc + (this->imm << 12);
-    }
-
-    void jal(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->snpc;
-        this->dnpc = this->imm + this->cpu.pc;
-    }
-
-    void jalr(CPU &host_cpu)
-    {
-        this->dnpc = (this->cpu.regs[this->rs1] + this->imm) & ~1;
-        this->cpu.regs[this->rd] = this->snpc;
-    }
-
-    void beq(CPU &host_cpu)
-    {
-        if (this->cpu.regs[this->rs1] == this->cpu.regs[this->rs2])
+        u32 quadrant = QUADRANT(data);
+        switch (quadrant)
         {
-            printf("beq offset = 0x%lx\n", (unsigned long)this->imm);
-            this->dnpc = this->cpu.pc + this->imm;
-        }
-    }
-
-    void bne(CPU &host_cpu)
-    {
-        if (this->cpu.regs[this->rs1] != this->cpu.regs[this->rs2])
+        case 0x0:
         {
-            printf("bne offset = 0x%lx, rs1 = 0x%lx, rs2 = 0x%lx\n", (unsigned long)this->imm, (unsigned long)this->cpu.regs[this->rs1], (unsigned long)this->cpu.regs[this->rs2]);
-            this->dnpc = this->cpu.pc + this->imm;
-        }
-    }
+            u32 copcode = COPCODE(data);
 
-    void blt(CPU &host_cpu)
-    {
-        if ((long long)this->cpu.regs[this->rs1] < (long long)this->cpu.regs[this->rs2])
-        {
-            this->dnpc = this->cpu.pc + this->imm;
-        }
-    }
-
-    void bge(CPU &host_cpu)
-    {
-        if ((long long)this->cpu.regs[this->rs1] >= (long long)this->cpu.regs[this->rs2])
-        {
-            this->dnpc = this->cpu.pc + this->imm;
-        }
-    }
-
-    void bltu(CPU &host_cpu)
-    {
-        if (this->cpu.regs[this->rs1] < this->cpu.regs[this->rs2])
-        {
-            this->dnpc = this->cpu.pc + this->imm;
-        }
-    }
-
-    void bgeu(CPU &host_cpu)
-    {
-        if (this->cpu.regs[this->rs1] >= this->cpu.regs[this->rs2])
-        {
-            this->dnpc = this->cpu.pc + this->imm;
-        }
-    }
-
-    void lb(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = SEXT(this->cpu.cpu_load(this->cpu.regs[this->rs1] + this->imm, 1), 8);
-    }
-
-    void lh(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = SEXT(this->cpu.cpu_load(this->cpu.regs[this->rs1] + this->imm, 2), 16);
-    }
-
-    void lw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = SEXT(this->cpu.cpu_load(this->cpu.regs[this->rs1] + this->imm, 4), 32);
-    }
-
-    void lbu(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.cpu_load(this->cpu.regs[this->rs1] + this->imm, 1);
-    }
-
-    void lhu(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.cpu_load(this->cpu.regs[this->rs1] + this->imm, 2);
-    }
-
-    void lwu(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.cpu_load(this->cpu.regs[this->rs1] + this->imm, 4);
-    }
-
-    void ld(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.cpu_load(this->cpu.regs[this->rs1] + this->imm, 8);
-    }
-
-    void sb(CPU &host_cpu)
-    {
-        this->cpu.cpu_store(this->cpu.regs[this->rs1] + this->imm, 1, this->cpu.regs[this->rs2]);
-    }
-
-    void sh(CPU &host_cpu)
-    {
-        this->cpu.cpu_store(this->cpu.regs[this->rs1] + this->imm, 2, this->cpu.regs[this->rs2]);
-    }
-
-    void sw(CPU &host_cpu)
-    {
-        this->cpu.cpu_store(this->cpu.regs[this->rs1] + this->imm, 4, this->cpu.regs[this->rs2]);
-    }
-
-    void sd(CPU &host_cpu)
-    {
-        printf("sd addr = 0x%llx\n", this->cpu.regs[this->rs1] + this->imm);
-        this->cpu.cpu_store(this->cpu.regs[this->rs1] + this->imm, 8, this->cpu.regs[this->rs2]);
-    }
-
-    void addi(CPU &host_cpu)
-    {
-        printf("addi rd = %d x[rs1 = %d] = 0x%lx imm = 0x%lx\n", this->rd, this->rs1, (unsigned long)this->cpu.regs[this->rs1], (unsigned long)this->imm);
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] + this->imm;
-    }
-
-    void slti(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = (long long)this->cpu.regs[this->rs1] < (long long)this->imm ? 1 : 0;
-    }
-
-    void sltiu(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] < this->imm ? 1 : 0;
-    }
-
-    void xori(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] ^ this->imm;
-    }
-
-    void ori(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] | this->imm;
-    }
-
-    void andi(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] & this->imm;
-    }
-
-    void slli(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] << this->shamt;
-    }
-
-    void srli(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] >> this->shamt;
-    }
-
-    void srai(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = ((long long)this->cpu.regs[this->rs1]) >> this->shamt;
-    }
-
-    void add(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] + this->cpu.regs[this->rs2];
-    }
-
-    void sub(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] - this->cpu.regs[this->rs2];
-    }
-
-    void sll(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] << BITS(this->cpu.regs[this->rs2], 5, 0);
-    }
-
-    void slt(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = (long long)this->cpu.regs[this->rs1] < (long long)this->cpu.regs[this->rs2] ? 1 : 0;
-    }
-
-    void sltu(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] < this->cpu.regs[this->rs2] ? 1 : 0;
-    }
-
-    void xor_f(CPU &host_cpu) 
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] ^ this->cpu.regs[this->rs2];
-    }
-
-    void srl(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] >> BITS(this->cpu.regs[this->rs2], 5, 0);
-    }
-
-    void sra(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = ((long long)this->cpu.regs[this->rs1]) >> BITS(this->cpu.regs[this->rs2], 5, 0);
-    }
-
-    void or_f(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] | this->cpu.regs[this->rs2];
-    }
-
-    void and_f(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = this->cpu.regs[this->rs1] & this->cpu.regs[this->rs2];
-    }
-
-    void fence(CPU &host_cpu)
-    {
-        // todo
-        return;
-    }
-
-    void trap_handler(CPU host_cpu, enum TRAP traptype, bool isException, u64 cause, u64 tval)
-    {
-        if (traptype == Fatal)
-        {
-            this->cpu.state = CPU::CPU_STOP;
-            return;
-        }
-        enum CPU::CPU_PRI_LEVEL nxt_level = CPU::M;
-        if (this->cpu.pri_level <= CPU::S)
-        {
-            if ((isException && (host_cpu.get_csr(medeleg) & (1 << cause))) || (!isException && (host_cpu.get_csr(mideleg) & (1 << cause))))
+            switch (copcode)
             {
-                nxt_level = CPU::S;
+            case 0x0: /* C.ADDI4SPN */
+                *insn = insn_ciwtype_read(data);
+                insn->rs1 = sp;
+                insn->type = insn_addi;
+                assert(insn->imm != 0);
+                return;
+            case 0x1: /* C.FLD */
+                *insn = insn_cltype_read2(data);
+                insn->type = insn_fld;
+                return;
+            case 0x2: /* C.LW */
+                *insn = insn_cltype_read(data);
+                insn->type = insn_lw;
+                return;
+            case 0x3: /* C.LD */
+                *insn = insn_cltype_read2(data);
+                insn->type = insn_ld;
+                return;
+            case 0x5: /* C.FSD */
+                *insn = insn_cstype_read(data);
+                insn->type = insn_fsd;
+                return;
+            case 0x6: /* C.SW */
+                *insn = insn_cstype_read2(data);
+                insn->type = insn_sw;
+                return;
+            case 0x7: /* C.SD */
+                *insn = insn_cstype_read(data);
+                insn->type = insn_sd;
+                return;
+            default:
+                printf("data: %x\n", data);
+                fatal("unimplemented");
             }
         }
-        if (nxt_level == CPU::S)
+            unreachable();
+        case 0x1:
         {
-            host_cpu.set_xpp(CPU::S, cpu.pri_level);
-            host_cpu.set_xpie(CPU::S, host_cpu.get_xie(CPU::S));
-            host_cpu.set_xie(CPU::S, 0);
-            host_cpu.set_csr(sepc, cpu.pc);
-            host_cpu.set_csr(stval, tval);
-            host_cpu.set_csr(scause, ((isException ? 0ull : 1ull) << 63) | cause);
-            u64 tvec = host_cpu.get_csr(stvec);
-            this->dnpc = (BITS(tvec, 63, 2) << 2) + (BITS(tvec, 1, 0) == 1 ? cause * 4 : 0);
-        }
-        else
-        {
-            host_cpu.set_xpp(CPU::M, cpu.pri_level);
-            host_cpu.set_xpie(CPU::M, host_cpu.get_xie(CPU::M));
-            host_cpu.set_xie(CPU::M, 0);
-            host_cpu.set_csr(mepc, cpu.pc);
-            host_cpu.set_csr(mtval, tval);
-            host_cpu.set_csr(mcause, ((isException ? 0ull : 1ull) << 63) | cause);
-            u64 tvec = host_cpu.get_csr(mtvec);
-            this->dnpc = (BITS(tvec, 63, 2) << 2) + (BITS(tvec, 1, 0) == 1 ? cause * 4 : 0);
-        }
-        cpu.pri_level = nxt_level;
-    }
+            u32 copcode = COPCODE(data);
 
-    void ecall(CPU &host_cpu)
-    {
-        if (riscv_tests && this->cpu.regs[CPU::a7] == 93)
-        {
-            if (this->cpu.regs[CPU::a0] == 0)
+            switch (copcode)
             {
-                printf("Test Pass\n");
-                this->cpu.state = CPU::CPU_STOP;
-            }
-            else
+            case 0x0: /* C.ADDI */
+                *insn = insn_citype_read(data);
+                insn->rs1 = insn->rd;
+                insn->type = insn_addi;
+                return;
+            case 0x1: /* C.ADDIW */
+                *insn = insn_citype_read(data);
+                assert(insn->rd != 0);
+                insn->rs1 = insn->rd;
+                insn->type = insn_addiw;
+                return;
+            case 0x2: /* C.LI */
+                *insn = insn_citype_read(data);
+                insn->rs1 = zero;
+                insn->type = insn_addi;
+                return;
+            case 0x3:
             {
-                printf("Test #%d Fail\n", (int)this->cpu.regs[CPU::a0] / 2);
-                this->cpu.state = CPU::CPU_STOP;
+                i32 rd = static_cast<i8>(RC1(data));
+                if (rd == 2)
+                { /* C.ADDI16SP */
+                    *insn = insn_citype_read3(data);
+                    assert(insn->imm != 0);
+                    insn->rs1 = insn->rd;
+                    insn->type = insn_addi;
+                    return;
+                }
+                else
+                { /* C.LUI */
+                    *insn = insn_citype_read5(data);
+                    assert(insn->imm != 0);
+                    insn->type = insn_lui;
+                    return;
+                }
+            }
+                unreachable();
+            case 0x4:
+            {
+                u32 cfunct2high = CFUNCT2HIGH(data);
+
+                switch (cfunct2high)
+                {
+                case 0x0: /* C.SRLI */
+                case 0x1: /* C.SRAI */
+                case 0x2:
+                { /* C.ANDI */
+                    *insn = insn_cbtype_read2(data);
+                    insn->rs1 = insn->rd;
+
+                    if (cfunct2high == 0x0)
+                    {
+                        insn->type = insn_srli;
+                    }
+                    else if (cfunct2high == 0x1)
+                    {
+                        insn->type = insn_srai;
+                    }
+                    else
+                    {
+                        insn->type = insn_andi;
+                    }
+                    return;
+                }
+                    unreachable();
+                case 0x3:
+                {
+                    u32 cfunct1 = CFUNCT1(data);
+
+                    switch (cfunct1)
+                    {
+                    case 0x0:
+                    {
+                        u32 cfunct2low = CFUNCT2LOW(data);
+
+                        *insn = insn_catype_read(data);
+                        insn->rs1 = insn->rd;
+
+                        switch (cfunct2low)
+                        {
+                        case 0x0: /* C.SUB */
+                            insn->type = insn_sub;
+                            break;
+                        case 0x1: /* C.XOR */
+                            insn->type = insn_xor;
+                            break;
+                        case 0x2: /* C.OR */
+                            insn->type = insn_or;
+                            break;
+                        case 0x3: /* C.AND */
+                            insn->type = insn_and;
+                            break;
+                        default:
+                            unreachable();
+                        }
+                        return;
+                    }
+                        unreachable();
+                    case 0x1:
+                    {
+                        u32 cfunct2low = CFUNCT2LOW(data);
+
+                        *insn = insn_catype_read(data);
+                        insn->rs1 = insn->rd;
+
+                        switch (cfunct2low)
+                        {
+                        case 0x0: /* C.SUBW */
+                            insn->type = insn_subw;
+                            break;
+                        case 0x1: /* C.ADDW */
+                            insn->type = insn_addw;
+                            break;
+                        default:
+                            unreachable();
+                        }
+                        return;
+                    }
+                        unreachable();
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x5: /* C.J */
+                *insn = insn_cjtype_read(data);
+                insn->rd = zero;
+                insn->type = insn_jal;
+                insn->cont = true;
+                return;
+            case 0x6: /* C.BEQZ */
+            case 0x7: /* C.BNEZ */
+                *insn = insn_cbtype_read(data);
+                insn->rs2 = zero;
+                insn->type = copcode == 0x6 ? insn_beq : insn_bne;
+                return;
+            default:
+                fatal("unrecognized copcode");
             }
         }
-        todo("trap_handler");
-        trap_handler(host_cpu, Requested, false, this->cpu.pri_level + 8, 0);
-        return;
-    }
+            unreachable();
+        case 0x2:
+        {
+            u32 copcode = COPCODE(data);
+            switch (copcode)
+            {
+            case 0x0: /* C.SLLI */
+                *insn = insn_citype_read(data);
+                insn->rs1 = insn->rd;
+                insn->type = insn_slli;
+                return;
+            case 0x1: /* C.FLDSP */
+                *insn = insn_citype_read2(data);
+                insn->rs1 = sp;
+                insn->type = insn_fld;
+                return;
+            case 0x2: /* C.LWSP */
+                *insn = insn_citype_read4(data);
+                assert(insn->rd != 0);
+                insn->rs1 = sp;
+                insn->type = insn_lw;
+                return;
+            case 0x3: /* C.LDSP */
+                *insn = insn_citype_read2(data);
+                assert(insn->rd != 0);
+                insn->rs1 = sp;
+                insn->type = insn_ld;
+                return;
+            case 0x4:
+            {
+                u32 cfunct1 = CFUNCT1(data);
 
-    void ebreak(CPU &host_cpu)
-    {
-        // todo
-        exit(0);
-        return;
-    }
+                switch (cfunct1)
+                {
+                case 0x0:
+                {
+                    *insn = insn_crtype_read(data);
 
-    void addiw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = SEXT(BITS(this->cpu.regs[this->rs1] + this->imm, 31, 0), 32);
-    }
+                    if (insn->rs2 == 0)
+                    { /* C.JR */
+                        assert(insn->rs1 != 0);
+                        insn->rd = zero;
+                        insn->type = insn_jalr;
+                        insn->cont = true;
+                    }
+                    else
+                    { /* C.MV */
+                        insn->rd = insn->rs1;
+                        insn->rs1 = zero;
+                        insn->type = insn_add;
+                    }
+                    return;
+                }
+                    unreachable();
+                case 0x1:
+                {
+                    *insn = insn_crtype_read(data);
+                    if (insn->rs1 == 0 && insn->rs2 == 0)
+                    { /* C.EBREAK */
+                        fatal("unimplmented");
+                    }
+                    else if (insn->rs2 == 0)
+                    { /* C.JALR */
+                        insn->rd = ra;
+                        insn->type = insn_jalr;
+                        insn->cont = true;
+                    }
+                    else
+                    { /* C.ADD */
+                        insn->rd = insn->rs1;
+                        insn->type = insn_add;
+                    }
+                    return;
+                }
+                    unreachable();
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x5: /* C.FSDSP */
+                *insn = insn_csstype_read(data);
+                insn->rs1 = sp;
+                insn->type = insn_fsd;
+                return;
+            case 0x6: /* C.SWSP */
+                *insn = insn_csstype_read2(data);
+                insn->rs1 = sp;
+                insn->type = insn_sw;
+                return;
+            case 0x7: /* C.SDSP */
+                *insn = insn_csstype_read(data);
+                insn->rs1 = sp;
+                insn->type = insn_sd;
+                return;
+            default:
+                fatal("unrecognized copcode");
+            }
+        }
+            unreachable();
+        case 0x3:
+        {
+            u32 opcode = OPCODE(data);
+            switch (opcode)
+            {
+            case 0x0:
+            {
+                u32 funct3 = FUNCT3(data);
 
-    void slliw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = SEXT(BITS(this->cpu.regs[this->rs1] << this->shamt, 31, 0), 32);
-    }
+                *insn = insn_itype_read(data);
+                switch (funct3)
+                {
+                case 0x0: /* LB */
+                    insn->type = insn_lb;
+                    return;
+                case 0x1: /* LH */
+                    insn->type = insn_lh;
+                    return;
+                case 0x2: /* LW */
+                    insn->type = insn_lw;
+                    return;
+                case 0x3: /* LD */
+                    insn->type = insn_ld;
+                    return;
+                case 0x4: /* LBU */
+                    insn->type = insn_lbu;
+                    return;
+                case 0x5: /* LHU */
+                    insn->type = insn_lhu;
+                    return;
+                case 0x6: /* LWU */
+                    insn->type = insn_lwu;
+                    return;
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x1:
+            {
+                u32 funct3 = FUNCT3(data);
 
-    void srliw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = SEXT(BITS(this->cpu.regs[this->rs1], 31, 0) >> this->shamt, 32);
-    }
+                *insn = insn_itype_read(data);
+                switch (funct3)
+                {
+                case 0x2: /* FLW */
+                    insn->type = insn_flw;
+                    return;
+                case 0x3: /* FLD */
+                    insn->type = insn_fld;
+                    return;
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x3:
+            {
+                u32 funct3 = FUNCT3(data);
 
-    void sraiw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = SEXT(((int)BITS(this->cpu.regs[this->rs1], 31, 0)) >> this->shamt, 32);
-    }
+                switch (funct3)
+                {
+                case 0x0:
+                { /* FENCE */
+                    insn_t _insn = {0};
+                    *insn = _insn;
+                    insn->type = insn_fence;
+                    return;
+                }
+                case 0x1:
+                { /* FENCE.I */
+                    insn_t _insn = {0};
+                    *insn = _insn;
+                    insn->type = insn_fence_i;
+                    return;
+                }
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x4:
+            {
+                u32 funct3 = FUNCT3(data);
 
-    void addw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = SEXT(BITS(this->cpu.regs[this->rs1] + this->cpu.regs[this->rs2], 31, 0), 32);
-    }
+                *insn = insn_itype_read(data);
+                switch (funct3)
+                {
+                case 0x0: /* ADDI */
+                    insn->type = insn_addi;
+                    return;
+                case 0x1:
+                {
+                    u32 imm116 = IMM116(data);
+                    if (imm116 == 0)
+                    { /* SLLI */
+                        insn->type = insn_slli;
+                    }
+                    else
+                    {
+                        unreachable();
+                    }
+                    return;
+                }
+                    unreachable();
+                case 0x2: /* SLTI */
+                    insn->type = insn_slti;
+                    return;
+                case 0x3: /* SLTIU */
+                    insn->type = insn_sltiu;
+                    return;
+                case 0x4: /* XORI */
+                    insn->type = insn_xori;
+                    return;
+                case 0x5:
+                {
+                    u32 imm116 = IMM116(data);
 
-    void subw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = SEXT(this->cpu.regs[this->rs1] - this->cpu.regs[this->rs2], 32);
-    }
+                    if (imm116 == 0x0)
+                    { /* SRLI */
+                        insn->type = insn_srli;
+                    }
+                    else if (imm116 == 0x10)
+                    { /* SRAI */
+                        insn->type = insn_srai;
+                    }
+                    else
+                    {
+                        unreachable();
+                    }
+                    return;
+                }
+                    unreachable();
+                case 0x6: /* ORI */
+                    insn->type = insn_ori;
+                    return;
+                case 0x7: /* ANDI */
+                    insn->type = insn_andi;
+                    return;
+                default:
+                    fatal("unrecognized funct3");
+                }
+            }
+                unreachable();
+            case 0x5: /* AUIPC */
+                *insn = insn_utype_read(data);
+                insn->type = insn_auipc;
+                return;
+            case 0x6:
+            {
+                u32 funct3 = FUNCT3(data);
+                u32 funct7 = FUNCT7(data);
 
-    void sllw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = SEXT(BITS(this->cpu.regs[this->rs1] << BITS(this->cpu.regs[this->rs2], 4, 0), 31, 0), 32);
-    }
+                *insn = insn_itype_read(data);
 
-    void srlw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = SEXT(BITS(this->cpu.regs[this->rs1], 31, 0) >> BITS(this->cpu.regs[this->rs2], 4, 0), 32);
-    }
+                switch (funct3)
+                {
+                case 0x0: /* ADDIW */
+                    insn->type = insn_addiw;
+                    return;
+                case 0x1: /* SLLIW */
+                    assert(funct7 == 0);
+                    insn->type = insn_slliw;
+                    return;
+                case 0x5:
+                {
+                    switch (funct7)
+                    {
+                    case 0x0: /* SRLIW */
+                        insn->type = insn_srliw;
+                        return;
+                    case 0x20: /* SRAIW */
+                        insn->type = insn_sraiw;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                default:
+                    fatal("unimplemented");
+                }
+            }
+                unreachable();
+            case 0x8:
+            {
+                u32 funct3 = FUNCT3(data);
 
-    void sraw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->rd] = SEXT((int)BITS(this->cpu.regs[this->rs1], 31, 0) >> BITS(this->cpu.regs[this->rs2], 4, 0), 32);
-    }
+                *insn = insn_stype_read(data);
+                switch (funct3)
+                {
+                case 0x0: /* SB */
+                    insn->type = insn_sb;
+                    return;
+                case 0x1: /* SH */
+                    insn->type = insn_sh;
+                    return;
+                case 0x2: /* SW */
+                    insn->type = insn_sw;
+                    return;
+                case 0x3: /* SD */
+                    insn->type = insn_sd;
+                    return;
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x9:
+            {
+                u32 funct3 = FUNCT3(data);
 
-    // Zicsr
-    void csrrw(CPU &host_cpu)
-    {
-        u64 csrval;
-        if (this->rd != 0)
-            csrval = this->cpu.csr.csr[this->csr_addr];
-        else
-            csrval = 0;
-        u64 rs1val = this->cpu.regs[this->rs1];
-        printf("csrval = 0x%08lx, rs1val = 0x%08lx\n", (unsigned long)csrval, (unsigned long)rs1val);
-        this->cpu.regs[this->rd] = csrval;
-        this->cpu.csr.csr[this->csr_addr] = rs1val;
-    }
+                *insn = insn_stype_read(data);
+                switch (funct3)
+                {
+                case 0x2: /* FSW */
+                    insn->type = insn_fsw;
+                    return;
+                case 0x3: /* FSD */
+                    insn->type = insn_fsd;
+                    return;
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0xc:
+            {
+                *insn = insn_rtype_read(data);
 
-    void csrrs(CPU &host_cpu)
-    {
-        u64 csrval = this->cpu.csr.csr[this->csr_addr];
-        u64 rs1val = this->rs1 == 0 ? 0 : this->cpu.regs[this->rs1];
-        printf("before csrval = 0x%08lx, rs1val = 0x%08lx\n", (unsigned long)csrval, (unsigned long)rs1val);
-        this->cpu.regs[this->rd] = csrval;
-        if (this->rs1 != 0)
-            this->cpu.csr.csr[this->csr_addr] = csrval | rs1val;
-        printf("after csrval = 0x%08lx, rs1val = 0x%08lx\n", (unsigned long)this->cpu.csr.csr[this->csr_addr], (unsigned long)rs1val);
-    }
+                u32 funct3 = FUNCT3(data);
+                u32 funct7 = FUNCT7(data);
 
-    void csrrc(CPU &host_cpu)
-    {
-        u64 csrval = this->cpu.csr.csr[this->csr_addr];
-        u64 rs1val = this->rs1 == 0 ? 0 : this->cpu.regs[this->rs1];
-        this->cpu.regs[this->rd] = csrval;
-        rs1val = ~rs1val;
-        if (this->rs1 != 0)
-            this->cpu.csr.csr[this->csr_addr] = csrval & rs1val;
-    }
+                switch (funct7)
+                {
+                case 0x0:
+                {
+                    switch (funct3)
+                    {
+                    case 0x0: /* ADD */
+                        insn->type = insn_add;
+                        return;
+                    case 0x1: /* SLL */
+                        insn->type = insn_sll;
+                        return;
+                    case 0x2: /* SLT */
+                        insn->type = insn_slt;
+                        return;
+                    case 0x3: /* SLTU */
+                        insn->type = insn_sltu;
+                        return;
+                    case 0x4: /* XOR */
+                        insn->type = insn_xor;
+                        return;
+                    case 0x5: /* SRL */
+                        insn->type = insn_srl;
+                        return;
+                    case 0x6: /* OR */
+                        insn->type = insn_or;
+                        return;
+                    case 0x7: /* AND */
+                        insn->type = insn_and;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x1:
+                {
+                    switch (funct3)
+                    {
+                    case 0x0: /* MUL */
+                        insn->type = insn_mul;
+                        return;
+                    case 0x1: /* MULH */
+                        insn->type = insn_mulh;
+                        return;
+                    case 0x2: /* MULHSU */
+                        insn->type = insn_mulhsu;
+                        return;
+                    case 0x3: /* MULHU */
+                        insn->type = insn_mulhu;
+                        return;
+                    case 0x4: /* DIV */
+                        insn->type = insn_div;
+                        return;
+                    case 0x5: /* DIVU */
+                        insn->type = insn_divu;
+                        return;
+                    case 0x6: /* REM */
+                        insn->type = insn_rem;
+                        return;
+                    case 0x7: /* REMU */
+                        insn->type = insn_remu;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x20:
+                {
+                    switch (funct3)
+                    {
+                    case 0x0: /* SUB */
+                        insn->type = insn_sub;
+                        return;
+                    case 0x5: /* SRA */
+                        insn->type = insn_sra;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0xd: /* LUI */
+                *insn = insn_utype_read(data);
+                insn->type = insn_lui;
+                return;
+            case 0xe:
+            {
+                *insn = insn_rtype_read(data);
 
-    void csrrwi(CPU &host_cpu)
-    {
-        u64 uimm = this->rs1;
-        u64 csrval = this->rd == 0 ? 0 : this->cpu.csr.csr[this->csr_addr];
-        this->cpu.regs[this->rd] = csrval;
-        this->cpu.csr.csr[this->csr_addr] = uimm;
-    }
+                u32 funct3 = FUNCT3(data);
+                u32 funct7 = FUNCT7(data);
 
-    void csrrsi(CPU &host_cpu)
-    {
-        u64 uimm = this->rs1;
-        u64 csrval = this->cpu.csr.csr[this->csr_addr];
-        this->cpu.regs[this->rd] = csrval;
-        this->cpu.csr.csr[this->csr_addr] = csrval | uimm;
-    }
+                switch (funct7)
+                {
+                case 0x0:
+                {
+                    switch (funct3)
+                    {
+                    case 0x0: /* ADDW */
+                        insn->type = insn_addw;
+                        return;
+                    case 0x1: /* SLLW */
+                        insn->type = insn_sllw;
+                        return;
+                    case 0x5: /* SRLW */
+                        insn->type = insn_srlw;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x1:
+                {
+                    switch (funct3)
+                    {
+                    case 0x0: /* MULW */
+                        insn->type = insn_mulw;
+                        return;
+                    case 0x4: /* DIVW */
+                        insn->type = insn_divw;
+                        return;
+                    case 0x5: /* DIVUW */
+                        insn->type = insn_divuw;
+                        return;
+                    case 0x6: /* REMW */
+                        insn->type = insn_remw;
+                        return;
+                    case 0x7: /* REMUW */
+                        insn->type = insn_remuw;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x20:
+                {
+                    switch (funct3)
+                    {
+                    case 0x0: /* SUBW */
+                        insn->type = insn_subw;
+                        return;
+                    case 0x5: /* SRAW */
+                        insn->type = insn_sraw;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x10:
+            {
+                u32 funct2 = FUNCT2(data);
 
-    void csrrci(CPU &host_cpu)
-    {
-        u64 uimm = this->rs1;
-        u64 csrval = this->cpu.csr.csr[this->csr_addr];
-        this->cpu.regs[this->rd] = csrval;
-        uimm = ~uimm;
-        this->cpu.csr.csr[this->csr_addr] = csrval & uimm;
-    }
+                *insn = insn_fprtype_read(data);
+                switch (funct2)
+                {
+                case 0x0: /* FMADD.S */
+                    insn->type = insn_fmadd_s;
+                    return;
+                case 0x1: /* FMADD.D */
+                    insn->type = insn_fmadd_d;
+                    return;
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x11:
+            {
+                u32 funct2 = FUNCT2(data);
 
-    // trap return inst
-    void mret(CPU &host_cpu)
-    {
-        int pre_level = host_cpu.get_xpp(CPU::M);
-        host_cpu.set_xie(CPU::M, host_cpu.get_xpie(CPU::M));
-        host_cpu.set_xpie(CPU::M, 1);
-        host_cpu.set_xpp(CPU::M, CPU::U);
-        host_cpu.set_csr(mstatus, host_cpu.get_csr(mstatus) & (~(1 << 17)));
-        this->dnpc = host_cpu.get_csr(mepc);
-        this->cpu.pri_level = CPU::cast_to_pre_level(pre_level);
-    }
+                *insn = insn_fprtype_read(data);
+                switch (funct2)
+                {
+                case 0x0: /* FMSUB.S */
+                    insn->type = insn_fmsub_s;
+                    return;
+                case 0x1: /* FMSUB.D */
+                    insn->type = insn_fmsub_d;
+                    return;
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x12:
+            {
+                u32 funct2 = FUNCT2(data);
 
-    void sret(CPU &host_cpu)
-    {
-        int pre_level = host_cpu.get_xpp(CPU::S);
-        host_cpu.set_xie(CPU::S, host_cpu.get_xpie(CPU::S));
-        host_cpu.set_xpie(CPU::S, 1);
-        host_cpu.set_xpp(CPU::S, CPU::U);
-        host_cpu.set_csr(sstatus, host_cpu.get_csr(sstatus) & (~(1 << 17)));
-        this->dnpc = host_cpu.get_csr(sepc);
-        this->cpu.pri_level = CPU::cast_to_pre_level(pre_level);
-    }
+                *insn = insn_fprtype_read(data);
+                switch (funct2)
+                {
+                case 0x0: /* FNMSUB.S */
+                    insn->type = insn_fnmsub_s;
+                    return;
+                case 0x1: /* FNMSUB.D */
+                    insn->type = insn_fnmsub_d;
+                    return;
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x13:
+            {
+                u32 funct2 = FUNCT2(data);
 
-    void init_inst_func()
-    {
-        set_inst_func(LUI, &decoder::lui);
-        set_inst_func(AUIPC, &decoder::auipc);
-        set_inst_func(JAL, &decoder::jal);
-        set_inst_func(JALR, &decoder::jalr);
-        set_inst_func(BEQ, &decoder::beq);
-        set_inst_func(BNE, &decoder::bne);
-        set_inst_func(BLT, &decoder::blt);
-        set_inst_func(BGE, &decoder::bge);
-        set_inst_func(BLTU, &decoder::bltu);
-        set_inst_func(BGEU, &decoder::bgeu);
-        set_inst_func(LB, &decoder::lb);
-        set_inst_func(LH, &decoder::lh);
-        set_inst_func(LW, &decoder::lw);
-        set_inst_func(LBU, &decoder::lbu);
-        set_inst_func(LHU, &decoder::lhu);
-        set_inst_func(SB, &decoder::sb);
-        set_inst_func(SH, &decoder::sh);
-        set_inst_func(SW, &decoder::sw);
-        set_inst_func(ADDI, &decoder::addi);
-        set_inst_func(SLTI, &decoder::slti);
-        set_inst_func(SLTIU, &decoder::sltiu);
-        set_inst_func(XORI, &decoder::xori);
-        set_inst_func(ORI, &decoder::ori);
-        set_inst_func(ANDI, &decoder::andi);
-        set_inst_func(SLLI, &decoder::slli);
-        set_inst_func(SRLI, &decoder::srli);
-        set_inst_func(SRAI, &decoder::srai);
-        set_inst_func(ADD, &decoder::add);
-        set_inst_func(SUB, &decoder::sub);
-        set_inst_func(SLL, &decoder::sll);
-        set_inst_func(SLT, &decoder::slt);
-        set_inst_func(SLTU, &decoder::sltu);
-        set_inst_func(XOR, &decoder::xor_f);
-        set_inst_func(SRL, &decoder::srl);
-        set_inst_func(SRA, &decoder::sra);
-        set_inst_func(OR, &decoder::or_f);
-        set_inst_func(AND, &decoder::and_f);
-        set_inst_func(FENCE, &decoder::fence);
-        set_inst_func(ECALL, &decoder::ecall);
-        set_inst_func(EBREAK, &decoder::ebreak);
-        set_inst_func(LWU, &decoder::lwu);
-        set_inst_func(LD, &decoder::ld);
-        set_inst_func(SD, &decoder::sd);
-        set_inst_func(ADDIW, &decoder::addiw);
-        set_inst_func(SLLIW, &decoder::slliw);
-        set_inst_func(SRLIW, &decoder::srliw);
-        set_inst_func(SRAIW, &decoder::sraiw);
-        set_inst_func(ADDW, &decoder::addw);
-        set_inst_func(SUBW, &decoder::subw);
-        set_inst_func(SLLW, &decoder::sllw);
-        set_inst_func(SRLW, &decoder::srlw);
-        set_inst_func(SRAW, &decoder::sraw);
+                *insn = insn_fprtype_read(data);
+                switch (funct2)
+                {
+                case 0x0: /* FNMADD.S */
+                    insn->type = insn_fnmadd_s;
+                    return;
+                case 0x1: /* FNMADD.D */
+                    insn->type = insn_fnmadd_d;
+                    return;
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x14:
+            {
+                u32 funct7 = FUNCT7(data);
 
-        // Zicsr
-        set_inst_func(CSRRW, &decoder::csrrw);
-        set_inst_func(CSRRS, &decoder::csrrs);
-        set_inst_func(CSRRC, &decoder::csrrc);
-        set_inst_func(CSRRWI, &decoder::csrrwi);
-        set_inst_func(CSRRSI, &decoder::csrrsi);
-        set_inst_func(CSRRCI, &decoder::csrrci);
+                *insn = insn_rtype_read(data);
+                switch (funct7)
+                {
+                case 0x0: /* FADD.S */
+                    insn->type = insn_fadd_s;
+                    return;
+                case 0x1: /* FADD.D */
+                    insn->type = insn_fadd_d;
+                    return;
+                case 0x4: /* FSUB.S */
+                    insn->type = insn_fsub_s;
+                    return;
+                case 0x5: /* FSUB.D */
+                    insn->type = insn_fsub_d;
+                    return;
+                case 0x8: /* FMUL.S */
+                    insn->type = insn_fmul_s;
+                    return;
+                case 0x9: /* FMUL.D */
+                    insn->type = insn_fmul_d;
+                    return;
+                case 0xc: /* FDIV.S */
+                    insn->type = insn_fdiv_s;
+                    return;
+                case 0xd: /* FDIV.D */
+                    insn->type = insn_fdiv_d;
+                    return;
+                case 0x10:
+                {
+                    u32 funct3 = FUNCT3(data);
 
-        // mret & sret
-        set_inst_func(MRET, &decoder::mret);
-        set_inst_func(SRET, &decoder::sret);
-    }
+                    switch (funct3)
+                    {
+                    case 0x0: /* FSGNJ.S */
+                        insn->type = insn_fsgnj_s;
+                        return;
+                    case 0x1: /* FSGNJN.S */
+                        insn->type = insn_fsgnjn_s;
+                        return;
+                    case 0x2: /* FSGNJX.S */
+                        insn->type = insn_fsgnjx_s;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x11:
+                {
+                    u32 funct3 = FUNCT3(data);
 
-    void exec_inst(CPU &host_cpu)
-    {
-        (this->*inst_handle[this->inst_name])(host_cpu);
+                    switch (funct3)
+                    {
+                    case 0x0: /* FSGNJ.D */
+                        insn->type = insn_fsgnj_d;
+                        return;
+                    case 0x1: /* FSGNJN.D */
+                        insn->type = insn_fsgnjn_d;
+                        return;
+                    case 0x2: /* FSGNJX.D */
+                        insn->type = insn_fsgnjx_d;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x14:
+                {
+                    u32 funct3 = FUNCT3(data);
+
+                    switch (funct3)
+                    {
+                    case 0x0: /* FMIN.S */
+                        insn->type = insn_fmin_s;
+                        return;
+                    case 0x1: /* FMAX.S */
+                        insn->type = insn_fmax_s;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x15:
+                {
+                    u32 funct3 = FUNCT3(data);
+
+                    switch (funct3)
+                    {
+                    case 0x0: /* FMIN.D */
+                        insn->type = insn_fmin_d;
+                        return;
+                    case 0x1: /* FMAX.D */
+                        insn->type = insn_fmax_d;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x20: /* FCVT.S.D */
+                    assert(static_cast<i8>(RS2(data)) == 1);
+                    insn->type = insn_fcvt_s_d;
+                    return;
+                case 0x21: /* FCVT.D.S */
+                    assert(static_cast<i8>(RS2(data)) == 0);
+                    insn->type = insn_fcvt_d_s;
+                    return;
+                case 0x2c: /* FSQRT.S */
+                    assert(insn->rs2 == 0);
+                    insn->type = insn_fsqrt_s;
+                    return;
+                case 0x2d: /* FSQRT.D */
+                    assert(insn->rs2 == 0);
+                    insn->type = insn_fsqrt_d;
+                    return;
+                case 0x50:
+                {
+                    u32 funct3 = FUNCT3(data);
+
+                    switch (funct3)
+                    {
+                    case 0x0: /* FLE.S */
+                        insn->type = insn_fle_s;
+                        return;
+                    case 0x1: /* FLT.S */
+                        insn->type = insn_flt_s;
+                        return;
+                    case 0x2: /* FEQ.S */
+                        insn->type = insn_feq_s;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x51:
+                {
+                    u32 funct3 = FUNCT3(data);
+
+                    switch (funct3)
+                    {
+                    case 0x0: /* FLE.D */
+                        insn->type = insn_fle_d;
+                        return;
+                    case 0x1: /* FLT.D */
+                        insn->type = insn_flt_d;
+                        return;
+                    case 0x2: /* FEQ.D */
+                        insn->type = insn_feq_d;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x60:
+                {
+                    u32 rs2 = static_cast<i8>(RS2(data));
+
+                    switch (rs2)
+                    {
+                    case 0x0: /* FCVT.W.S */
+                        insn->type = insn_fcvt_w_s;
+                        return;
+                    case 0x1: /* FCVT.WU.S */
+                        insn->type = insn_fcvt_wu_s;
+                        return;
+                    case 0x2: /* FCVT.L.S */
+                        insn->type = insn_fcvt_l_s;
+                        return;
+                    case 0x3: /* FCVT.LU.S */
+                        insn->type = insn_fcvt_lu_s;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x61:
+                {
+                    u32 rs2 = static_cast<i8>(RS2(data));
+
+                    switch (rs2)
+                    {
+                    case 0x0: /* FCVT.W.D */
+                        insn->type = insn_fcvt_w_d;
+                        return;
+                    case 0x1: /* FCVT.WU.D */
+                        insn->type = insn_fcvt_wu_d;
+                        return;
+                    case 0x2: /* FCVT.L.D */
+                        insn->type = insn_fcvt_l_d;
+                        return;
+                    case 0x3: /* FCVT.LU.D */
+                        insn->type = insn_fcvt_lu_d;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x68:
+                {
+                    u32 rs2 = static_cast<i8>(RS2(data));
+
+                    switch (rs2)
+                    {
+                    case 0x0: /* FCVT.S.W */
+                        insn->type = insn_fcvt_s_w;
+                        return;
+                    case 0x1: /* FCVT.S.WU */
+                        insn->type = insn_fcvt_s_wu;
+                        return;
+                    case 0x2: /* FCVT.S.L */
+                        insn->type = insn_fcvt_s_l;
+                        return;
+                    case 0x3: /* FCVT.S.LU */
+                        insn->type = insn_fcvt_s_lu;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x69:
+                {
+                    u32 rs2 = static_cast<i8>(RS2(data));
+
+                    switch (rs2)
+                    {
+                    case 0x0: /* FCVT.D.W */
+                        insn->type = insn_fcvt_d_w;
+                        return;
+                    case 0x1: /* FCVT.D.WU */
+                        insn->type = insn_fcvt_d_wu;
+                        return;
+                    case 0x2: /* FCVT.D.L */
+                        insn->type = insn_fcvt_d_l;
+                        return;
+                    case 0x3: /* FCVT.D.LU */
+                        insn->type = insn_fcvt_d_lu;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x70:
+                {
+                    assert(static_cast<i8>(RS2(data)) == 0);
+                    u32 funct3 = FUNCT3(data);
+
+                    switch (funct3)
+                    {
+                    case 0x0: /* FMV.X.W */
+                        insn->type = insn_fmv_x_w;
+                        return;
+                    case 0x1: /* FCLASS.S */
+                        insn->type = insn_fclass_s;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x71:
+                {
+                    assert(static_cast<i8>(RS2(data)) == 0);
+                    u32 funct3 = FUNCT3(data);
+
+                    switch (funct3)
+                    {
+                    case 0x0: /* FMV.X.D */
+                        insn->type = insn_fmv_x_d;
+                        return;
+                    case 0x1: /* FCLASS.D */
+                        insn->type = insn_fclass_d;
+                        return;
+                    default:
+                        unreachable();
+                    }
+                }
+                    unreachable();
+                case 0x78: /* FMV_W_X */
+                    assert(static_cast<i8>(RS2(data)) == 0 && FUNCT3(data) == 0);
+                    insn->type = insn_fmv_w_x;
+                    return;
+                case 0x79: /* FMV_D_X */
+                    assert(static_cast<i8>(RS2(data)) == 0 && FUNCT3(data) == 0);
+                    insn->type = insn_fmv_d_x;
+                    return;
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x18:
+            {
+                *insn = insn_btype_read(data);
+
+                u32 funct3 = FUNCT3(data);
+                switch (funct3)
+                {
+                case 0x0: /* BEQ */
+                    insn->type = insn_beq;
+                    return;
+                case 0x1: /* BNE */
+                    insn->type = insn_bne;
+                    return;
+                case 0x4: /* BLT */
+                    insn->type = insn_blt;
+                    return;
+                case 0x5: /* BGE */
+                    insn->type = insn_bge;
+                    return;
+                case 0x6: /* BLTU */
+                    insn->type = insn_bltu;
+                    return;
+                case 0x7: /* BGEU */
+                    insn->type = insn_bgeu;
+                    return;
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            case 0x19: /* JALR */
+                *insn = insn_itype_read(data);
+                insn->type = insn_jalr;
+                insn->cont = true;
+                return;
+            case 0x1b: /* JAL */
+                *insn = insn_jtype_read(data);
+                insn->type = insn_jal;
+                insn->cont = true;
+                return;
+            case 0x1c:
+            {
+                if (data == 0x73)
+                { /* ECALL */
+                    insn->type = insn_ecall;
+                    insn->cont = true;
+                    return;
+                }
+
+                u32 funct3 = FUNCT3(data);
+                *insn = insn_csrtype_read(data);
+                switch (funct3)
+                {
+                case 0x1: /* CSRRW */
+                    insn->type = insn_csrrw;
+                    return;
+                case 0x2: /* CSRRS */
+                    insn->type = insn_csrrs;
+                    return;
+                case 0x3: /* CSRRC */
+                    insn->type = insn_csrrc;
+                    return;
+                case 0x5: /* CSRRWI */
+                    insn->type = insn_csrrwi;
+                    return;
+                case 0x6: /* CSRRSI */
+                    insn->type = insn_csrrsi;
+                    return;
+                case 0x7: /* CSRRCI */
+                    insn->type = insn_csrrci;
+                    return;
+                default:
+                    unreachable();
+                }
+            }
+                unreachable();
+            default:
+                unreachable();
+            }
+        }
+            unreachable();
+        default:
+            unreachable();
+        }
     }
 };
 

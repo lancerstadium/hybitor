@@ -4,8 +4,10 @@
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
+#include <iostream>
+#include <iomanip>
 
-
+/// fatalf 宏：格式化输出错误信息
 #define fatalf(fmt, ...) (fprintf(stderr, "fatal: %s:%d " fmt "\n", __FILE__, __LINE__, __VA_ARGS__), exit(1))
 /// fatal 宏：输出错误信息
 #define fatal(msg) fatalf("%s", msg)

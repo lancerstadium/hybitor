@@ -6,6 +6,14 @@
 
 #include "tools/types.hpp"
 
+/// @brief csr寄存器
+enum csr_t {
+    fflags = 0x001,
+    frm    = 0x002,
+    fcsr   = 0x003,
+};
+
+
 typedef struct CSR {
     u64 csr[4096];
 } CSR;

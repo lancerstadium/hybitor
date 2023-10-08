@@ -5,7 +5,6 @@
 #define REPLER_HPP
 
 #include "emulator/machine.hpp"
-#include "core/lifter.hpp"
 
 
 /// @brief REPL 类
@@ -18,7 +17,7 @@ public:
     string repl_command; // 命令字符串
     std::vector<string> hist_commands; // 历史命令
     VM vm;  // 虚拟机
-    char img_path[500];        // 文件名
+    string img_path;        // 文件名
 
     repler() {
         
@@ -39,6 +38,7 @@ public:
         cout << "   r [path]: read .bin file from path to memory" << endl;
         cout << "   s: exec once" << endl;
         cout << "   p [addr]: set breakpoint at addr" << endl;
+        cout << "   i: print info" << endl;
         cout << "   t: riscv-tests" << endl;
         cout << "   h: help" << endl;
     }
@@ -50,15 +50,8 @@ public:
 
     void cmd_r()
     {
-        scanf("%s", img_path);
-        FILE *fp = fopen(img_path, "rb");
-        assert(fp);
-        fseek(fp, 0, SEEK_END);
-        long size = ftell(fp);
-        printf("Read %ld byte from file.\n", size);
-        fseek(fp, 0, SEEK_SET);
-        fread(this->vm.cpu.bus.dram.dram + RESET_VECTOR_OFFSET, size, 1, fp);
-        fclose(fp);
+        std::cin >> img_path;
+        this->vm.VM_load_file(img_path);
     }
 
     void cmd_si()
@@ -74,6 +67,12 @@ public:
     void cmd_p()
     {
         todo("cmd_p");
+    }
+
+    /// @brief command i: 打印 CPU 信息
+    void cmd_i()
+    {
+        this->vm.cpu.cpu_print_info();
     }
 
     void cmd_t()
@@ -110,6 +109,9 @@ public:
                     break;
                 case 'p':
                     cmd_p();
+                    break;
+                case 'i':
+                    cmd_i();
                     break;
                 case 't':
                     cmd_t();

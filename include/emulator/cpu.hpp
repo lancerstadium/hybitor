@@ -4,33 +4,29 @@
 #ifndef EMULATOR_CPU_HPP
 #define EMULATOR_CPU_HPP
 
+
+
 #include "emulator/bus.hpp"
 #include "emulator/csr.hpp"
+#include "emulator/reg.hpp"
 #include "tools/debug.hpp"
 
 
-u64 MASK(u64 n) {
-    if (n == 64) return ~0ull;
-    return (1ull << n) - 1ull;
-}
-u64 BITS(u64 imm, u64 hi, u64 lo) {
-    return (imm >> lo) & MASK(hi - lo + 1ull);
-}
-u64 SEXT(u64 imm, u64 n) {
-    if ((imm >> (n-1)) & 1) {
-        printf("the src and res of sext are 0x%llx 0x%llx\n", imm, ((~0ull) << n) | imm);
-        return ((~0ull) << n) | imm;
-    } else return imm & MASK(n);
-}
+
+
 
 
 // ==================================================================================== //
 // CPU
 // ==================================================================================== //
 
-
+#define MAX_REGS_SIZE 32
 
 class CPU {
+
+private:
+
+    char reg_abinames[MAX_REGS_SIZE][5] = {"$0","ra","sp","gp","tp","t0","t1","t2","s0","s1","a0","a1","a2","a3","a4","a5","a6","a7","s2","s3","s4","s5","s6","s7","s8","s9","s10","s11","t3","t4","t5","t6"};
 
 public:
     enum REG_ABINAME
@@ -44,9 +40,17 @@ public:
         t3,t4,t5,t6
     };
 
-    u64 regs[32];       // 寄存器
-    u64 pc;             // 指令计数器
-    BUS bus;            // 总线
+    u64 regs[MAX_REGS_SIZE];        // 寄存器
+    u64 pc;                         // 指令计数器
+    u64 reenter_pc;                 // 
+    enum exit_reason_t {
+        none,               // 无
+        direct_branch,      // 直接跳转
+        indirect_branch,    // 间接跳转
+        ecall,              // 
+        interp,             // 需要解释执行：复杂指令，频率低
+    } exit_reason;
+    BUS bus;                        // 总线
     enum CPU_STATE {
         CPU_STOP,   // CPU 停止
         CPU_RUN,    // CPU 运行
@@ -57,26 +61,68 @@ public:
         M = 0b11,
     } pri_level;    // CPU pri 等级
     CSR csr;        // csr 特权指令
+    fp_reg_t fp_regs[num_fp_regs];  // 浮点型寄存器
 
     /// @brief CPU 构造函数
     CPU() {}
     ~CPU() {}
 
+    void cpu_print_regs() {
+        int clo = 4;
+        cout << "[REG infomations]" << endl;
+        for(int i = 0; i< MAX_REGS_SIZE/clo; i++) {
+            for (int j = 0; j < clo; j++)
+            {
+                int index = clo * i + j;
+                if(index >= MAX_REGS_SIZE)
+                    return;
+                cout << " " << std::setw(2) << std::setfill(' ') << std::right << std::dec << index+1 << " ";
+                cout << std::setw(3) << std::right << reg_abinames[index] << ": 0x";
+                cout << std::setw(8) << std::setfill('0') << std::left << std::hex << this->regs[index] << " ";
+            }
+            cout << endl;
+        }
+        cout << endl;
+    }
+
+    void cpu_print_info()
+    {
+        cout << "[CPU infomations]" << endl;
+        cout << "  pc      : " << "0x" << std::hex << this->pc << endl;
+        cout << "  regs    : " << this->regs << endl;
+        cout << "  state   : " << this->state << endl;
+        cout << "  priv    : " << this->pri_level << endl;
+        cpu_print_regs();
+        cout << "[BUS infomations]" << endl;
+        this->bus.dram.mem_print_info();
+        cout << endl;
+    }
+
     /// @brief 初始化CPU：计数器、寄存器、状态等
     void cpu_init()
     {
         this->pc = RESET_VECTOR;
-        this->regs[0] = 0;
-        this->regs[2] = DRAM_BASE + DRAM_SIZE;
+        this->regs[zero] = 0;
+        size_t stack_size = 32 * 1024 * 1024; // 32MB 栈
+        u64 mem_stack = this->bus.dram.mem_alloc(stack_size);
+        this->regs[CPU::sp] = mem_stack + stack_size; // 栈指针寄存器
         this->state = CPU_RUN;
         this->pri_level = M;
     }
 
+    /// @brief CPU 加载
+    /// @param addr 地址
+    /// @param length 长度
+    /// @return 加载地址
     u64 cpu_load(u64 addr, int length)
     {
         return this->bus.dram.mem_load(addr, length);
     }
 
+    /// @brief CPU 存储数据
+    /// @param addr 地址
+    /// @param length 长度
+    /// @param val 值
     void cpu_store(u64 addr, int length, u64 val)
     {
         this->bus.dram.mem_store(addr, length, val);
@@ -84,9 +130,10 @@ public:
 
     /// @brief CPU 取指令
     /// @return 指令地址
-    u64 cpu_fetch_inst()
+    u32 cpu_fetch_inst()
     {
-        return this->cpu_load(this->pc, 4);
+        return *(u32 *)TO_HOST(this->pc);
+        // return this->cpu_load(this->pc, 4);
     }
 
     static const enum CPU_PRI_LEVEL cast_to_pre_level(int p)
