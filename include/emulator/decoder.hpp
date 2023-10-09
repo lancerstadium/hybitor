@@ -83,23 +83,21 @@ static inline insn_t insn_utype_read(u32 data)
     insn_t insn;
     insn.imm = static_cast<i32>(data & 0xfffff000);
     insn.rd = static_cast<i8>(RD(data));
-    printf("utype_read imm:%d rd:");
     return insn;
 }
 
 static inline insn_t insn_itype_read(u32 data)
 {
     insn_t insn;
-    insn.imm = 
-    return (insn_t){
-        .imm = (i32)data >> 20,
-        .rs1 = static_cast<i8>(RS1(data)),
-        .rd = static_cast<i8>(RD(data)),
-    };
+    insn.imm = (i32)data >> 20;
+    insn.rs1 = static_cast<i8>(RS1(data));
+    insn.rd = static_cast<i8>(RD(data));
+    return insn;
 }
 
 static inline insn_t insn_jtype_read(u32 data)
 {
+    insn_t insn;
     u32 imm20 = (data >> 31) & 0x1;
     u32 imm101 = (data >> 21) & 0x3ff;
     u32 imm11 = (data >> 20) & 0x1;
@@ -108,14 +106,15 @@ static inline insn_t insn_jtype_read(u32 data)
     i32 imm = (imm20 << 20) | (imm1912 << 12) | (imm11 << 11) | (imm101 << 1);
     imm = (imm << 11) >> 11;
 
-    return (insn_t){
-        .imm = imm,
-        .rd = static_cast<i8>(RD(data)),
-    };
+    insn.imm = imm;
+    insn.rd = static_cast<i8>(RD(data));
+
+    return insn;
 }
 
 static inline insn_t insn_btype_read(u32 data)
 {
+    insn_t insn;
     u32 imm12 = (data >> 31) & 0x1;
     u32 imm105 = (data >> 25) & 0x3f;
     u32 imm41 = (data >> 8) & 0xf;
@@ -124,53 +123,57 @@ static inline insn_t insn_btype_read(u32 data)
     i32 imm = (imm12 << 12) | (imm11 << 11) | (imm105 << 5) | (imm41 << 1);
     imm = (imm << 19) >> 19;
 
-    return (insn_t){
-        .imm = imm,
-        .rs1 = static_cast<i8>(RS1(data)),
-        .rs2 = static_cast<i8>(RS2(data)),
-    };
+    insn.imm = imm;
+    insn.rs1 = static_cast<i8>(RS1(data));
+    insn.rs2 = static_cast<i8>(RS2(data));
+
+    return insn;
 }
 
 static inline insn_t insn_rtype_read(u32 data)
 {
-    return (insn_t){
-        .rs1 = static_cast<i8>(RS1(data)),
-        .rs2 = static_cast<i8>(RS2(data)),
-        .rd = static_cast<i8>(RD(data)),
-    };
+    insn_t insn;
+    insn.rs1 = static_cast<i8>(RS1(data));
+    insn.rs2 = static_cast<i8>(RS2(data));
+    insn.rd = static_cast<i8>(RD(data));
+    return insn;
 }
 
 static inline insn_t insn_stype_read(u32 data)
 {
+    insn_t insn;
     u32 imm115 = (data >> 25) & 0x7f;
     u32 imm40 = (data >> 7) & 0x1f;
 
     i32 imm = (imm115 << 5) | imm40;
     imm = (imm << 20) >> 20;
-    return (insn_t){
-        .imm = imm,
-        .rs1 = static_cast<i8>(RS1(data)),
-        .rs2 = static_cast<i8>(RS2(data)),
-    };
+
+    insn.imm = imm;
+    insn.rs1 = static_cast<i8>(RS1(data));
+    insn.rs2 = static_cast<i8>(RS2(data));
+
+    return insn;
 }
 
 static inline insn_t insn_csrtype_read(u32 data)
 {
-    return (insn_t){
-        .csr = static_cast<i16>(data >> 20),
-        .rs1 = static_cast<i8>(RS1(data)),
-        .rd = static_cast<i8>(RD(data)),
-    };
+    insn_t insn;
+    insn.csr = static_cast<i16>(data >> 20);
+    insn.rs1 = static_cast<i8>(RS1(data));
+    insn.rd = static_cast<i8>(RD(data));
+
+    return insn;
 }
 
 static inline insn_t insn_fprtype_read(u32 data)
 {
-    return (insn_t){
-        .rs1 = static_cast<i8>(RS1(data)),
-        .rs2 = static_cast<i8>(RS2(data)),
-        .rs3 = static_cast<i8>(RS3(data)),
-        .rd = static_cast<i8>(RD(data)),
-    };
+    insn_t insn;
+    insn.rs1 = static_cast<i8>(RS1(data));
+    insn.rs2 = static_cast<i8>(RS2(data));
+    insn.rs3 = static_cast<i8>(RS3(data));
+    insn.rd = static_cast<i8>(RD(data));
+
+    return insn;
 }
 
 /**
@@ -187,53 +190,56 @@ static inline insn_t insn_fprtype_read(u32 data)
 
 static inline insn_t insn_catype_read(u16 data)
 {
-    return (insn_t){
-        .rd = static_cast<i8>(RP1(data) + 8),
-        .rs2 = static_cast<i8>(RP2(data) + 8),
-        .rvc = true,
-    };
+    insn_t insn;
+    insn.rd = static_cast<i8>(RP1(data) + 8);
+    insn.rs2 = static_cast<i8>(RP2(data) + 8);
+    insn.rvc = true;
+    return insn;
 }
 
 static inline insn_t insn_crtype_read(u16 data)
 {
-    return (insn_t){
-        .rs1 = static_cast<i8>(RC1(data)),
-        .rs2 = static_cast<i8>(RC2(data)),
-        .rvc = true,
-    };
+    insn_t insn;
+    insn.rs1 = static_cast<i8>(RC1(data));
+    insn.rs2 = static_cast<i8>(RC2(data));
+    insn.rvc = true;
+    return insn;
 }
 
 static inline insn_t insn_citype_read(u16 data)
 {
+    insn_t insn;
     u32 imm40 = (data >> 2) & 0x1f;
     u32 imm5 = (data >> 12) & 0x1;
     i32 imm = (imm5 << 5) | imm40;
     imm = (imm << 26) >> 26;
 
-    return (insn_t){
-        .imm = imm,
-        .rd = static_cast<i8>(RC1(data)),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rd = static_cast<i8>(RC1(data));
+    insn.rvc = true;
+
+    return insn;
 }
 
 static inline insn_t insn_citype_read2(u16 data)
 {
+    insn_t insn;
     u32 imm86 = (data >> 2) & 0x7;
     u32 imm43 = (data >> 5) & 0x3;
     u32 imm5 = (data >> 12) & 0x1;
 
     i32 imm = (imm86 << 6) | (imm43 << 3) | (imm5 << 5);
 
-    return (insn_t){
-        .imm = imm,
-        .rd = static_cast<i8>(RC1(data)),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rd = static_cast<i8>(RC1(data));
+    insn.rvc = true;
+
+    return insn;
 }
 
 static inline insn_t insn_citype_read3(u16 data)
 {
+    insn_t insn;
     u32 imm5 = (data >> 2) & 0x1;
     u32 imm87 = (data >> 3) & 0x3;
     u32 imm6 = (data >> 5) & 0x1;
@@ -243,44 +249,48 @@ static inline insn_t insn_citype_read3(u16 data)
     i32 imm = (imm5 << 5) | (imm87 << 7) | (imm6 << 6) | (imm4 << 4) | (imm9 << 9);
     imm = (imm << 22) >> 22;
 
-    return (insn_t){
-        .imm = imm,
-        .rd = static_cast<i8>(RC1(data)),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rd = static_cast<i8>(RC1(data));
+    insn.rvc = true;
+
+    return insn;
 }
 
 static inline insn_t insn_citype_read4(u16 data)
 {
+    insn_t insn;
     u32 imm5 = (data >> 12) & 0x1;
     u32 imm42 = (data >> 4) & 0x7;
     u32 imm76 = (data >> 2) & 0x3;
 
     i32 imm = (imm5 << 5) | (imm42 << 2) | (imm76 << 6);
 
-    return (insn_t){
-        .imm = imm,
-        .rd = static_cast<i8>(RC1(data)),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rd = static_cast<i8>(RC1(data));
+    insn.rvc = true;
+
+    return insn;
 }
 
 static inline insn_t insn_citype_read5(u16 data)
 {
+    insn_t insn;
     u32 imm1612 = (data >> 2) & 0x1f;
     u32 imm17 = (data >> 12) & 0x1;
 
     i32 imm = (imm1612 << 12) | (imm17 << 17);
     imm = (imm << 14) >> 14;
-    return (insn_t){
-        .imm = imm,
-        .rd = static_cast<i8>(RC1(data)),
-        .rvc = true,
-    };
+
+    insn.imm = imm;
+    insn.rd = static_cast<i8>(RC1(data));
+    insn.rvc = true;
+
+    return insn;
 }
 
 static inline insn_t insn_cbtype_read(u16 data)
 {
+    insn_t insn;
     u32 imm5 = (data >> 2) & 0x1;
     u32 imm21 = (data >> 3) & 0x3;
     u32 imm76 = (data >> 5) & 0x3;
@@ -290,60 +300,64 @@ static inline insn_t insn_cbtype_read(u16 data)
     i32 imm = (imm8 << 8) | (imm76 << 6) | (imm5 << 5) | (imm43 << 3) | (imm21 << 1);
     imm = (imm << 23) >> 23;
 
-    return (insn_t){
-        .imm = imm,
-        .rs1 = static_cast<i8>(RP1(data) + 8),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rs1 = static_cast<i8>(RP1(data) + 8);
+    insn.rvc = true;
+
+    return insn;
 }
 
 static inline insn_t insn_cbtype_read2(u16 data)
 {
+    insn_t insn;
     u32 imm40 = (data >> 2) & 0x1f;
     u32 imm5 = (data >> 12) & 0x1;
     i32 imm = (imm5 << 5) | imm40;
     imm = (imm << 26) >> 26;
 
-    return (insn_t){
-        .imm = imm,
-        .rd = static_cast<i8>(RP1(data) + 8),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rd = static_cast<i8>(RP1(data) + 8);
+    insn.rvc = true;
+    return insn;
 }
 
 static inline insn_t insn_cstype_read(u16 data)
 {
+    insn_t insn;
     u32 imm76 = (data >> 5) & 0x3;
     u32 imm53 = (data >> 10) & 0x7;
 
     i32 imm = ((imm76 << 6) | (imm53 << 3));
 
-    return (insn_t){
-        .imm = imm,
-        .rs1 = static_cast<i8>(RP1(data) + 8),
-        .rs2 = static_cast<i8>(RP2(data) + 8),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rs1 = static_cast<i8>(RP1(data) + 8);
+    insn.rs2 = static_cast<i8>(RP2(data) + 8);
+    insn.rvc = true;
+
+    return insn;
 }
 
 static inline insn_t insn_cstype_read2(u16 data)
 {
+    insn_t insn;
     u32 imm6 = (data >> 5) & 0x1;
     u32 imm2 = (data >> 6) & 0x1;
     u32 imm53 = (data >> 10) & 0x7;
 
     i32 imm = ((imm6 << 6) | (imm2 << 2) | (imm53 << 3));
 
-    return (insn_t){
-        .imm = imm,
-        .rs1 = static_cast<i8>(RP1(data) + 8),
-        .rs2 = static_cast<i8>(RP2(data) + 8),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rs1 = static_cast<i8>(RP1(data) + 8);
+    insn.rs2 = static_cast<i8>(RP2(data) + 8);
+    insn.rvc = true;
+
+
+    return insn;
 }
 
 static inline insn_t insn_cjtype_read(u16 data)
 {
+    insn_t insn;
     u32 imm5 = (data >> 2) & 0x1;
     u32 imm31 = (data >> 3) & 0x7;
     u32 imm7 = (data >> 6) & 0x1;
@@ -356,73 +370,78 @@ static inline insn_t insn_cjtype_read(u16 data)
     i32 imm = ((imm5 << 5) | (imm31 << 1) | (imm7 << 7) | (imm6 << 6) |
                (imm10 << 10) | (imm98 << 8) | (imm4 << 4) | (imm11 << 11));
     imm = (imm << 20) >> 20;
-    return (insn_t){
-        .imm = imm,
-        .rvc = true,
-    };
+
+    insn.imm = imm;
+    insn.rvc = true;
+    return insn;
 }
 
 static inline insn_t insn_cltype_read(u16 data)
 {
+    insn_t insn;
     u32 imm6 = (data >> 5) & 0x1;
     u32 imm2 = (data >> 6) & 0x1;
     u32 imm53 = (data >> 10) & 0x7;
 
     i32 imm = (imm6 << 6) | (imm2 << 2) | (imm53 << 3);
 
-    return (insn_t){
-        .imm = imm,
-        .rs1 = static_cast<i8>(RP1(data) + 8),
-        .rd = static_cast<i8>(RP2(data) + 8),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rs1 = static_cast<i8>(RP1(data) + 8);
+    insn.rd = static_cast<i8>(RP2(data) + 8);
+    insn.rvc = true;
+
+    return insn;
 }
 
 static inline insn_t insn_cltype_read2(u16 data)
 {
+    insn_t insn;
     u32 imm76 = (data >> 5) & 0x3;
     u32 imm53 = (data >> 10) & 0x7;
 
     i32 imm = (imm76 << 6) | (imm53 << 3);
 
-    return (insn_t){
-        .imm = imm,
-        .rs1 = static_cast<i8>(RP1(data) + 8),
-        .rd = static_cast<i8>(RP2(data) + 8),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rs1 = static_cast<i8>(RP1(data) + 8);
+    insn.rd = static_cast<i8>(RP2(data) + 8);
+    insn.rvc = true;
+
+    return insn;
 }
 
 static inline insn_t insn_csstype_read(u16 data)
 {
+    insn_t insn;
     u32 imm86 = (data >> 7) & 0x7;
     u32 imm53 = (data >> 10) & 0x7;
 
     i32 imm = (imm86 << 6) | (imm53 << 3);
 
-    return (insn_t){
-        .imm = imm,
-        .rs2 = static_cast<i8>(RC2(data)),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rs2 = static_cast<i8>(RC2(data));
+    insn.rvc = true;
+
+    return insn;
 }
 
 static inline insn_t insn_csstype_read2(u16 data)
 {
+    insn_t insn;
     u32 imm76 = (data >> 7) & 0x3;
     u32 imm52 = (data >> 9) & 0xf;
 
     i32 imm = (imm76 << 6) | (imm52 << 2);
 
-    return (insn_t){
-        .imm = imm,
-        .rs2 = static_cast<i8>(RC2(data)),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rs2 = static_cast<i8>(RC2(data));
+    insn.rvc = true;
+
+    return insn;
 }
 
 static inline insn_t insn_ciwtype_read(u16 data)
 {
+    insn_t insn;
     u32 imm3 = (data >> 5) & 0x1;
     u32 imm2 = (data >> 6) & 0x1;
     u32 imm96 = (data >> 7) & 0xf;
@@ -430,11 +449,11 @@ static inline insn_t insn_ciwtype_read(u16 data)
 
     i32 imm = (imm3 << 3) | (imm2 << 2) | (imm96 << 6) | (imm54 << 4);
 
-    return (insn_t){
-        .imm = imm,
-        .rd = static_cast<i8>(RP2(data) + 8),
-        .rvc = true,
-    };
+    insn.imm = imm;
+    insn.rd = static_cast<i8>(RP2(data) + 8);
+    insn.rvc = true;
+    
+    return insn;
 }
 
 #ifdef _cplusplus
