@@ -1,6 +1,6 @@
 # -------- 配置项目信息 -------- #
-project('hybitor', 'cpp',
-    version: '2.0.0',
+project('hybitor-effect', 'cpp',
+    version: '1.0.0',
     default_options: [
         'default_library=static',
         'cpp_std=c++17',
@@ -21,20 +21,6 @@ if host_machine.endian() != 'little'
 endif
 
 # -------- 配置链接库文件 -------- #
-# 配置LIEF库
-LIEF = cpp.find_library(
-    'LIEF', 
-    static: true, required: true, 
-    dirs : join_paths(meson.source_root(), 'lib', host_arch + '-' + os_type)
-)
-
-# 配置capstone库
-capstone = cpp.find_library(
-    'capstone', 
-    static: true, required: true, 
-    dirs : join_paths(meson.source_root(), 'lib', host_arch + '-' + os_type)
-)
-
 
 # 配置LLVM库
 # 设置LLVM版本
@@ -61,5 +47,5 @@ endif
 executable('hybitor',
   sources: ['src/main.cpp'],                # 源文件列表
   include_directories: ['include'],         # 头文件目录
-  dependencies: [LIEF, capstone, LLVM],     # 依赖项
+  dependencies: [LLVM],     # 依赖项
 )
