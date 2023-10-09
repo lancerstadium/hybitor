@@ -15,6 +15,9 @@
 // ============================================================================== //
 // 指令 insn
 // ============================================================================== //
+#ifdef _cplusplus
+extern "C" {
+#endif // _cplusplus
 
 #define QUADRANT(data) (((data) >> 0) & 0x3) // 象限：取最低两位，判断是否压缩指令
 #define OPCODE(data) (((data) >> 2) & 0x1f)  // 操作码：取2-6位
@@ -74,16 +77,20 @@ typedef struct {
     bool cont;  // 是否继续执行
 } insn_t;
 
+
 static inline insn_t insn_utype_read(u32 data)
 {
-    return (insn_t){
-        .imm = static_cast<i32>(data & 0xfffff000),
-        .rd = static_cast<i8>(RD(data)),
-    };
+    insn_t insn;
+    insn.imm = static_cast<i32>(data & 0xfffff000);
+    insn.rd = static_cast<i8>(RD(data));
+    printf("utype_read imm:%d rd:");
+    return insn;
 }
 
 static inline insn_t insn_itype_read(u32 data)
 {
+    insn_t insn;
+    insn.imm = 
     return (insn_t){
         .imm = (i32)data >> 20,
         .rs1 = static_cast<i8>(RS1(data)),
@@ -430,6 +437,9 @@ static inline insn_t insn_ciwtype_read(u16 data)
     };
 }
 
+#ifdef _cplusplus
+} // extern "C"
+#endif // _cplusplus
 
 // ==================================================================================== //
 // decoder
@@ -567,7 +577,7 @@ public:
             break;
         case 0b0100011:
             this->imm = imm_s(inst);
-            printf("imm_s == 0x%llx\n", this->imm);
+            printf("imm_s == 0x%llx\n", (long long unsigned)this->imm);
             switch (funct3)
             {
             case 0b000:

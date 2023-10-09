@@ -183,6 +183,11 @@ git commmit -m 'your_commit_context'
 git push
 git tag -a [tag_version] -m 'your_tag_comtext'
 git push origin [tag_version]
+
+git fetch --all # 更新远程仓库的代码为最新的
+git reset --hard origin/main  # 让本地代码与origin / main 完全相同
+git pull origin main # 拉取远程代码
+git merge main  # 将暂存区代码更新到本地工作区
 ```
 
 ---

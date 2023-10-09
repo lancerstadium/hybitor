@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <stdio.h>
 
 
 
@@ -32,7 +33,7 @@ u64 BITS(u64 imm, u64 hi, u64 lo) {
 }
 u64 SEXT(u64 imm, u64 n) {
     if ((imm >> (n-1)) & 1) {
-        printf("the src and res of sext are 0x%llx 0x%llx\n", imm, ((~0ull) << n) | imm);
+        printf("the src and res of sext are 0x%llx 0x%llx\n", (long long unsigned)imm, ((~0ull) << n) | imm);
         return ((~0ull) << n) | imm;
     } else return imm & MASK(n);
 }

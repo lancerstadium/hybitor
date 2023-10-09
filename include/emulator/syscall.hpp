@@ -9,7 +9,7 @@
 
 #include "emulator/cpu.hpp"
 
-
+extern "C" {
 
 // Copied from https://github.com/riscv-software-src/riscv-pk
 #define SYS_exit 93
@@ -263,5 +263,7 @@ u64 do_syscall(CPU &cpu, u64 n) {
 
     return f(cpu);
 }
+
+} // extern "C"
 
 #endif

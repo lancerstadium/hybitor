@@ -307,7 +307,7 @@ static void func_rem(CPU &host_cpu, insn_t *insn) {
     u64 rd = 0;
     if (rs2 == 0) {
         rd = rs1;
-    } else if (rs1 == INT64_MIN && rs2 == UINT64_MAX) {
+    } else if (rs1 == (u64)INT64_MIN && rs2 == (u64)UINT64_MAX) {
         rd = 0;
     } else {
         rd = (i64)rs1 % (i64)rs2;

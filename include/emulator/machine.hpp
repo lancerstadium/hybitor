@@ -36,7 +36,7 @@ public:
         int fd = open(img_path.c_str(), O_RDONLY); // 只读打开文件
         if (fd == -1)
         { // 文件名错误：输出错误信息
-            fatal(strerror(errno));
+            fatalf("file name fault: %s ", img_path.c_str());
         }
         this->cpu.bus.dram.mem_load_elf(fd);
         close(fd);
@@ -55,7 +55,7 @@ public:
     /// @param n CPU 执行次数：-1代表无穷
     void VM_cpu_exec(u32 n)
     {
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < (int)n; i++) {
             if (this->cpu.state == CPU::CPU_RUN)
                 VM_cpu_exec_once();
             else break;
@@ -112,7 +112,7 @@ public:
         if(this->cpu.exit_reason == CPU::indirect_branch || this->cpu.exit_reason == CPU::direct_branch)
         {
             this->cpu.pc = this->cpu.reenter_pc;
-            printf("inst = 0x%08x, pc = 0x%08llx, (branch) \n", data, this->cpu.pc);
+            printf("inst = 0x%08x, pc = 0x%08llx, (branch) \n", data, (long long unsigned)this->cpu.pc);
             return;
         }
 
@@ -121,7 +121,7 @@ public:
         {
             
             this->cpu.pc = this->cpu.reenter_pc;
-            printf("inst = 0x%08x, pc = 0x%08llx, (syscall) \n", data, this->cpu.pc);
+            printf("inst = 0x%08x, pc = 0x%08llx, (syscall) \n", data, (long long unsigned)this->cpu.pc);
             // 获取系统调用编号：存储在通用寄存器 a7 里
             u64 syscall = this->cpu.cpu_get_gp_reg(a7);
             // 执行系统调用
@@ -132,7 +132,7 @@ public:
         }
         
 
-        printf("inst = 0x%08x, pc = 0x%08llx,\n", data, this->cpu.pc);
+        printf("inst = 0x%08x, pc = 0x%08llx,\n", data, (long long unsigned)this->cpu.pc);
 
         this->cpu.regs[CPU::zero] = 0;  // zero寄存器清零             
         this->cpu.pc += insn.rvc ? 2 : 4;  // 如果为压缩指令步进2，否则步进4
