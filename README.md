@@ -20,6 +20,7 @@
 | 14 | 自动化并行 Parallel |  | `` | LLVM Polly |  |
 | 15 | 机器学习指导优化 Machine Learning |  | `` | MLGO / CompilerGym |  |
 
+### 子命令 subcommand
 - 帮助：
 ![Alt text](imgs/image.png)
 - 反汇编：
@@ -30,6 +31,26 @@
 ![Alt text](imgs/image-3.png)
 - `.ll`文件：基本块划分、控制流重构
 ![Alt text](imgs/image-4.png)
+
+### REPL 监测调试
+
+- `REPL`演示：
+![Alt text](imgs/image-5.png)
+  - 加载 ELF 文件：
+  ![Alt text](imgs/image-6.png)
+  - 查看模拟的 CPU 和 IO 设备信息：
+  ![Alt text](imgs/image-7.png)
+  - 单步执行调试：
+  ![Alt text](imgs/image-8.png)
+  - 查看寄存器信息：
+  ![Alt text](imgs/image-9.png)
+  - 执行程序：
+  ![Alt text](imgs/image-10.png)
+  ![Alt text](imgs/image-11.png)
+
+
+
+
 
 ## 0 项目说明
 

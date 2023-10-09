@@ -876,512 +876,512 @@ public:
     ~interpreter() {}
 
 
-    void (interpreter::*inst_handle[INST_NUM])(CPU &host_cpu);
-
-    void set_inst_func(enum INST_NAME inst_name, void (interpreter::*fp)(CPU &host_cpu))
-    {
-        inst_handle[inst_name] = fp;
-    }
-
-    void lui(CPU &host_cpu)
-    {
-        printf("lui this->dc.imm= %llx\n", this->dc.imm);
-        this->cpu.regs[this->dc.rd] = this->dc.imm<< 12;
-        printf("lui this->dc.imm<< 12 = %llx\n", this->cpu.regs[this->dc.rd]);
-    }
-
-    void auipc(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.pc + (this->dc.imm<< 12);
-    }
-
-    void jal(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->dc.snpc;
-        this->dc.dnpc = this->dc.imm+ this->cpu.pc;
-    }
-
-    void jalr(CPU &host_cpu)
-    {
-        this->dc.dnpc = (this->cpu.regs[this->dc.rs1] + this->dc.imm) & ~1;
-        this->cpu.regs[this->dc.rd] = this->dc.snpc;
-    }
-
-    void beq(CPU &host_cpu)
-    {
-        if (this->cpu.regs[this->dc.rs1] == this->cpu.regs[this->dc.rs2])
-        {
-            printf("beq offset = 0x%lx\n", (unsigned long)this->dc.imm);
-            this->dc.dnpc = this->cpu.pc + this->dc.imm;
-        }
-    }
-
-    void bne(CPU &host_cpu)
-    {
-        if (this->cpu.regs[this->dc.rs1] != this->cpu.regs[this->dc.rs2])
-        {
-            printf("bne offset = 0x%lx, rs1 = 0x%lx, rs2 = 0x%lx\n", (unsigned long)this->dc.imm, (unsigned long)this->cpu.regs[this->dc.rs1], (unsigned long)this->cpu.regs[this->dc.rs2]);
-            this->dc.dnpc = this->cpu.pc + this->dc.imm;
-        }
-    }
-
-    void blt(CPU &host_cpu)
-    {
-        if ((long long)this->cpu.regs[this->dc.rs1] < (long long)this->cpu.regs[this->dc.rs2])
-        {
-            this->dc.dnpc = this->cpu.pc + this->dc.imm;
-        }
-    }
-
-    void bge(CPU &host_cpu)
-    {
-        if ((long long)this->cpu.regs[this->dc.rs1] >= (long long)this->cpu.regs[this->dc.rs2])
-        {
-            this->dc.dnpc = this->cpu.pc + this->dc.imm;
-        }
-    }
-
-    void bltu(CPU &host_cpu)
-    {
-        if (this->cpu.regs[this->dc.rs1] < this->cpu.regs[this->dc.rs2])
-        {
-            this->dc.dnpc = this->cpu.pc + this->dc.imm;
-        }
-    }
-
-    void bgeu(CPU &host_cpu)
-    {
-        if (this->cpu.regs[this->dc.rs1] >= this->cpu.regs[this->dc.rs2])
-        {
-            this->dc.dnpc = this->cpu.pc + this->dc.imm;
-        }
-    }
-
-    void lb(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = SEXT(this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 1), 8);
-    }
-
-    void lh(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = SEXT(this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 2), 16);
-    }
-
-    void lw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = SEXT(this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 4), 32);
-    }
-
-    void lbu(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 1);
-    }
-
-    void lhu(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 2);
-    }
-
-    void lwu(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 4);
-    }
-
-    void ld(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 8);
-    }
-
-    void sb(CPU &host_cpu)
-    {
-        this->cpu.cpu_store(this->cpu.regs[this->dc.rs1] + this->dc.imm, 1, this->cpu.regs[this->dc.rs2]);
-    }
-
-    void sh(CPU &host_cpu)
-    {
-        this->cpu.cpu_store(this->cpu.regs[this->dc.rs1] + this->dc.imm, 2, this->cpu.regs[this->dc.rs2]);
-    }
-
-    void sw(CPU &host_cpu)
-    {
-        this->cpu.cpu_store(this->cpu.regs[this->dc.rs1] + this->dc.imm, 4, this->cpu.regs[this->dc.rs2]);
-    }
-
-    void sd(CPU &host_cpu)
-    {
-        printf("sd addr = 0x%llx\n", this->cpu.regs[this->dc.rs1] + this->dc.imm);
-        this->cpu.cpu_store(this->cpu.regs[this->dc.rs1] + this->dc.imm, 8, this->cpu.regs[this->dc.rs2]);
-    }
-
-    void addi(CPU &host_cpu)
-    {
-        printf("addi rd = %d x[rs1 = %d] = 0x%lx imm = 0x%lx\n", this->dc.rd, this->dc.rs1, (unsigned long)this->cpu.regs[this->dc.rs1], (unsigned long)this->dc.imm);
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] + this->dc.imm;
-    }
-
-    void slti(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = (long long)this->cpu.regs[this->dc.rs1] < (long long)this->dc.imm? 1 : 0;
-    }
-
-    void sltiu(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] < this->dc.imm? 1 : 0;
-    }
-
-    void xori(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] ^ this->dc.imm;
-    }
-
-    void ori(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] | this->dc.imm;
-    }
-
-    void andi(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] & this->dc.imm;
-    }
-
-    void slli(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] << this->dc.shamt;
-    }
-
-    void srli(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] >> this->dc.shamt;
-    }
-
-    void srai(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = ((long long)this->cpu.regs[this->dc.rs1]) >> this->dc.shamt;
-    }
-
-    void add(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] + this->cpu.regs[this->dc.rs2];
-    }
-
-    void sub(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] - this->cpu.regs[this->dc.rs2];
-    }
-
-    void sll(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] << BITS(this->cpu.regs[this->dc.rs2], 5, 0);
-    }
-
-    void slt(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = (long long)this->cpu.regs[this->dc.rs1] < (long long)this->cpu.regs[this->dc.rs2] ? 1 : 0;
-    }
-
-    void sltu(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] < this->cpu.regs[this->dc.rs2] ? 1 : 0;
-    }
-
-    void xor_f(CPU &host_cpu) 
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] ^ this->cpu.regs[this->dc.rs2];
-    }
-
-    void srl(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] >> BITS(this->cpu.regs[this->dc.rs2], 5, 0);
-    }
-
-    void sra(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = ((long long)this->cpu.regs[this->dc.rs1]) >> BITS(this->cpu.regs[this->dc.rs2], 5, 0);
-    }
-
-    void or_f(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] | this->cpu.regs[this->dc.rs2];
-    }
-
-    void and_f(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] & this->cpu.regs[this->dc.rs2];
-    }
-
-    void fence(CPU &host_cpu)
-    {
-        // todo
-        return;
-    }
-
-    void trap_handler(CPU host_cpu, enum TRAP traptype, bool isException, u64 cause, u64 tval)
-    {
-        if (traptype == Fatal)
-        {
-            this->cpu.state = CPU::CPU_STOP;
-            return;
-        }
-        enum CPU::CPU_PRI_LEVEL nxt_level = CPU::M;
-        if (this->cpu.pri_level <= CPU::S)
-        {
-            if ((isException && (host_cpu.get_csr(medeleg) & (1 << cause))) || (!isException && (host_cpu.get_csr(mideleg) & (1 << cause))))
-            {
-                nxt_level = CPU::S;
-            }
-        }
-        if (nxt_level == CPU::S)
-        {
-            host_cpu.set_xpp(CPU::S, cpu.pri_level);
-            host_cpu.set_xpie(CPU::S, host_cpu.get_xie(CPU::S));
-            host_cpu.set_xie(CPU::S, 0);
-            host_cpu.set_csr(sepc, cpu.pc);
-            host_cpu.set_csr(stval, tval);
-            host_cpu.set_csr(scause, ((isException ? 0ull : 1ull) << 63) | cause);
-            u64 tvec = host_cpu.get_csr(stvec);
-            this->dc.dnpc = (BITS(tvec, 63, 2) << 2) + (BITS(tvec, 1, 0) == 1 ? cause * 4 : 0);
-        }
-        else
-        {
-            host_cpu.set_xpp(CPU::M, cpu.pri_level);
-            host_cpu.set_xpie(CPU::M, host_cpu.get_xie(CPU::M));
-            host_cpu.set_xie(CPU::M, 0);
-            host_cpu.set_csr(mepc, cpu.pc);
-            host_cpu.set_csr(mtval, tval);
-            host_cpu.set_csr(mcause, ((isException ? 0ull : 1ull) << 63) | cause);
-            u64 tvec = host_cpu.get_csr(mtvec);
-            this->dc.dnpc = (BITS(tvec, 63, 2) << 2) + (BITS(tvec, 1, 0) == 1 ? cause * 4 : 0);
-        }
-        cpu.pri_level = nxt_level;
-    }
-
-    void ecall(CPU &host_cpu)
-    {
-        if (this->dc.riscv_tests && this->cpu.regs[CPU::a7] == 93)
-        {
-            if (this->cpu.regs[CPU::a0] == 0)
-            {
-                printf("Test Pass\n");
-                this->cpu.state = CPU::CPU_STOP;
-            }
-            else
-            {
-                printf("Test #%d Fail\n", (int)this->cpu.regs[CPU::a0] / 2);
-                this->cpu.state = CPU::CPU_STOP;
-            }
-        }
-        todo("trap_handler");
-        trap_handler(host_cpu, Requested, false, this->cpu.pri_level + 8, 0);
-        return;
-    }
-
-    void ebreak(CPU &host_cpu)
-    {
-        // todo
-        exit(0);
-        return;
-    }
-
-    void addiw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = SEXT(BITS(this->cpu.regs[this->dc.rs1] + this->dc.imm, 31, 0), 32);
-    }
-
-    void slliw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = SEXT(BITS(this->cpu.regs[this->dc.rs1] << this->dc.shamt, 31, 0), 32);
-    }
-
-    void srliw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = SEXT(BITS(this->cpu.regs[this->dc.rs1], 31, 0) >> this->dc.shamt, 32);
-    }
-
-    void sraiw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = SEXT(((int)BITS(this->cpu.regs[this->dc.rs1], 31, 0)) >> this->dc.shamt, 32);
-    }
-
-    void addw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = SEXT(BITS(this->cpu.regs[this->dc.rs1] + this->cpu.regs[this->dc.rs2], 31, 0), 32);
-    }
-
-    void subw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = SEXT(this->cpu.regs[this->dc.rs1] - this->cpu.regs[this->dc.rs2], 32);
-    }
-
-    void sllw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = SEXT(BITS(this->cpu.regs[this->dc.rs1] << BITS(this->cpu.regs[this->dc.rs2], 4, 0), 31, 0), 32);
-    }
-
-    void srlw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = SEXT(BITS(this->cpu.regs[this->dc.rs1], 31, 0) >> BITS(this->cpu.regs[this->dc.rs2], 4, 0), 32);
-    }
-
-    void sraw(CPU &host_cpu)
-    {
-        this->cpu.regs[this->dc.rd] = SEXT((int)BITS(this->cpu.regs[this->dc.rs1], 31, 0) >> BITS(this->cpu.regs[this->dc.rs2], 4, 0), 32);
-    }
-
-    // Zicsr
-    void csrrw(CPU &host_cpu)
-    {
-        u64 csrval;
-        if (this->dc.rd != 0)
-            csrval = this->cpu.csr.csr[this->dc.csr_addr];
-        else
-            csrval = 0;
-        u64 rs1val = this->cpu.regs[this->dc.rs1];
-        printf("csrval = 0x%08lx, rs1val = 0x%08lx\n", (unsigned long)csrval, (unsigned long)rs1val);
-        this->cpu.regs[this->dc.rd] = csrval;
-        this->cpu.csr.csr[this->dc.csr_addr] = rs1val;
-    }
-
-    void csrrs(CPU &host_cpu)
-    {
-        u64 csrval = this->cpu.csr.csr[this->dc.csr_addr];
-        u64 rs1val = this->dc.rs1 == 0 ? 0 : this->cpu.regs[this->dc.rs1];
-        printf("before csrval = 0x%08lx, rs1val = 0x%08lx\n", (unsigned long)csrval, (unsigned long)rs1val);
-        this->cpu.regs[this->dc.rd] = csrval;
-        if (this->dc.rs1 != 0)
-            this->cpu.csr.csr[this->dc.csr_addr] = csrval | rs1val;
-        printf("after csrval = 0x%08lx, rs1val = 0x%08lx\n", (unsigned long)this->cpu.csr.csr[this->dc.csr_addr], (unsigned long)rs1val);
-    }
-
-    void csrrc(CPU &host_cpu)
-    {
-        u64 csrval = this->cpu.csr.csr[this->dc.csr_addr];
-        u64 rs1val = this->dc.rs1 == 0 ? 0 : this->cpu.regs[this->dc.rs1];
-        this->cpu.regs[this->dc.rd] = csrval;
-        rs1val = ~rs1val;
-        if (this->dc.rs1 != 0)
-            this->cpu.csr.csr[this->dc.csr_addr] = csrval & rs1val;
-    }
-
-    void csrrwi(CPU &host_cpu)
-    {
-        u64 uimm = this->dc.rs1;
-        u64 csrval = this->dc.rd == 0 ? 0 : this->cpu.csr.csr[this->dc.csr_addr];
-        this->cpu.regs[this->dc.rd] = csrval;
-        this->cpu.csr.csr[this->dc.csr_addr] = uimm;
-    }
-
-    void csrrsi(CPU &host_cpu)
-    {
-        u64 uimm = this->dc.rs1;
-        u64 csrval = this->cpu.csr.csr[this->dc.csr_addr];
-        this->cpu.regs[this->dc.rd] = csrval;
-        this->cpu.csr.csr[this->dc.csr_addr] = csrval | uimm;
-    }
-
-    void csrrci(CPU &host_cpu)
-    {
-        u64 uimm = this->dc.rs1;
-        u64 csrval = this->cpu.csr.csr[this->dc.csr_addr];
-        this->cpu.regs[this->dc.rd] = csrval;
-        uimm = ~uimm;
-        this->cpu.csr.csr[this->dc.csr_addr] = csrval & uimm;
-    }
-
-    // trap return inst
-    void mret(CPU &host_cpu)
-    {
-        int pre_level = host_cpu.get_xpp(CPU::M);
-        host_cpu.set_xie(CPU::M, host_cpu.get_xpie(CPU::M));
-        host_cpu.set_xpie(CPU::M, 1);
-        host_cpu.set_xpp(CPU::M, CPU::U);
-        host_cpu.set_csr(mstatus, host_cpu.get_csr(mstatus) & (~(1 << 17)));
-        this->dc.dnpc = host_cpu.get_csr(mepc);
-        this->cpu.pri_level = CPU::cast_to_pre_level(pre_level);
-    }
-
-    void sret(CPU &host_cpu)
-    {
-        int pre_level = host_cpu.get_xpp(CPU::S);
-        host_cpu.set_xie(CPU::S, host_cpu.get_xpie(CPU::S));
-        host_cpu.set_xpie(CPU::S, 1);
-        host_cpu.set_xpp(CPU::S, CPU::U);
-        host_cpu.set_csr(sstatus, host_cpu.get_csr(sstatus) & (~(1 << 17)));
-        this->dc.dnpc = host_cpu.get_csr(sepc);
-        this->cpu.pri_level = CPU::cast_to_pre_level(pre_level);
-    }
-
-    void init_inst_func()
-    {
-        set_inst_func(LUI, &interpreter::lui);
-        set_inst_func(AUIPC, &interpreter::auipc);
-        set_inst_func(JAL, &interpreter::jal);
-        set_inst_func(JALR, &interpreter::jalr);
-        set_inst_func(BEQ, &interpreter::beq);
-        set_inst_func(BNE, &interpreter::bne);
-        set_inst_func(BLT, &interpreter::blt);
-        set_inst_func(BGE, &interpreter::bge);
-        set_inst_func(BLTU, &interpreter::bltu);
-        set_inst_func(BGEU, &interpreter::bgeu);
-        set_inst_func(LB, &interpreter::lb);
-        set_inst_func(LH, &interpreter::lh);
-        set_inst_func(LW, &interpreter::lw);
-        set_inst_func(LBU, &interpreter::lbu);
-        set_inst_func(LHU, &interpreter::lhu);
-        set_inst_func(SB, &interpreter::sb);
-        set_inst_func(SH, &interpreter::sh);
-        set_inst_func(SW, &interpreter::sw);
-        set_inst_func(ADDI, &interpreter::addi);
-        set_inst_func(SLTI, &interpreter::slti);
-        set_inst_func(SLTIU, &interpreter::sltiu);
-        set_inst_func(XORI, &interpreter::xori);
-        set_inst_func(ORI, &interpreter::ori);
-        set_inst_func(ANDI, &interpreter::andi);
-        set_inst_func(SLLI, &interpreter::slli);
-        set_inst_func(SRLI, &interpreter::srli);
-        set_inst_func(SRAI, &interpreter::srai);
-        set_inst_func(ADD, &interpreter::add);
-        set_inst_func(SUB, &interpreter::sub);
-        set_inst_func(SLL, &interpreter::sll);
-        set_inst_func(SLT, &interpreter::slt);
-        set_inst_func(SLTU, &interpreter::sltu);
-        set_inst_func(XOR, &interpreter::xor_f);
-        set_inst_func(SRL, &interpreter::srl);
-        set_inst_func(SRA, &interpreter::sra);
-        set_inst_func(OR, &interpreter::or_f);
-        set_inst_func(AND, &interpreter::and_f);
-        set_inst_func(FENCE, &interpreter::fence);
-        set_inst_func(ECALL, &interpreter::ecall);
-        set_inst_func(EBREAK, &interpreter::ebreak);
-        set_inst_func(LWU, &interpreter::lwu);
-        set_inst_func(LD, &interpreter::ld);
-        set_inst_func(SD, &interpreter::sd);
-        set_inst_func(ADDIW, &interpreter::addiw);
-        set_inst_func(SLLIW, &interpreter::slliw);
-        set_inst_func(SRLIW, &interpreter::srliw);
-        set_inst_func(SRAIW, &interpreter::sraiw);
-        set_inst_func(ADDW, &interpreter::addw);
-        set_inst_func(SUBW, &interpreter::subw);
-        set_inst_func(SLLW, &interpreter::sllw);
-        set_inst_func(SRLW, &interpreter::srlw);
-        set_inst_func(SRAW, &interpreter::sraw);
-
-        // Zicsr
-        set_inst_func(CSRRW, &interpreter::csrrw);
-        set_inst_func(CSRRS, &interpreter::csrrs);
-        set_inst_func(CSRRC, &interpreter::csrrc);
-        set_inst_func(CSRRWI, &interpreter::csrrwi);
-        set_inst_func(CSRRSI, &interpreter::csrrsi);
-        set_inst_func(CSRRCI, &interpreter::csrrci);
-
-        // mret & sret
-        set_inst_func(MRET, &interpreter::mret);
-        set_inst_func(SRET, &interpreter::sret);
-    }
-
-    void interp_exec_inst(CPU &host_cpu)
-    {
-        (this->*inst_handle[this->dc.inst_name])(host_cpu);
-    }
+    // void (interpreter::*inst_handle[INST_NUM])(CPU &host_cpu);
+
+    // void set_inst_func(enum INST_NAME inst_name, void (interpreter::*fp)(CPU &host_cpu))
+    // {
+    //     inst_handle[inst_name] = fp;
+    // }
+
+    // void lui(CPU &host_cpu)
+    // {
+    //     printf("lui this->dc.imm= %llx\n", this->dc.imm);
+    //     this->cpu.regs[this->dc.rd] = this->dc.imm<< 12;
+    //     printf("lui this->dc.imm<< 12 = %llx\n", this->cpu.regs[this->dc.rd]);
+    // }
+
+    // void auipc(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.pc + (this->dc.imm<< 12);
+    // }
+
+    // void jal(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->dc.snpc;
+    //     this->dc.dnpc = this->dc.imm+ this->cpu.pc;
+    // }
+
+    // void jalr(CPU &host_cpu)
+    // {
+    //     this->dc.dnpc = (this->cpu.regs[this->dc.rs1] + this->dc.imm) & ~1;
+    //     this->cpu.regs[this->dc.rd] = this->dc.snpc;
+    // }
+
+    // void beq(CPU &host_cpu)
+    // {
+    //     if (this->cpu.regs[this->dc.rs1] == this->cpu.regs[this->dc.rs2])
+    //     {
+    //         printf("beq offset = 0x%lx\n", (unsigned long)this->dc.imm);
+    //         this->dc.dnpc = this->cpu.pc + this->dc.imm;
+    //     }
+    // }
+
+    // void bne(CPU &host_cpu)
+    // {
+    //     if (this->cpu.regs[this->dc.rs1] != this->cpu.regs[this->dc.rs2])
+    //     {
+    //         printf("bne offset = 0x%lx, rs1 = 0x%lx, rs2 = 0x%lx\n", (unsigned long)this->dc.imm, (unsigned long)this->cpu.regs[this->dc.rs1], (unsigned long)this->cpu.regs[this->dc.rs2]);
+    //         this->dc.dnpc = this->cpu.pc + this->dc.imm;
+    //     }
+    // }
+
+    // void blt(CPU &host_cpu)
+    // {
+    //     if ((long long)this->cpu.regs[this->dc.rs1] < (long long)this->cpu.regs[this->dc.rs2])
+    //     {
+    //         this->dc.dnpc = this->cpu.pc + this->dc.imm;
+    //     }
+    // }
+
+    // void bge(CPU &host_cpu)
+    // {
+    //     if ((long long)this->cpu.regs[this->dc.rs1] >= (long long)this->cpu.regs[this->dc.rs2])
+    //     {
+    //         this->dc.dnpc = this->cpu.pc + this->dc.imm;
+    //     }
+    // }
+
+    // void bltu(CPU &host_cpu)
+    // {
+    //     if (this->cpu.regs[this->dc.rs1] < this->cpu.regs[this->dc.rs2])
+    //     {
+    //         this->dc.dnpc = this->cpu.pc + this->dc.imm;
+    //     }
+    // }
+
+    // void bgeu(CPU &host_cpu)
+    // {
+    //     if (this->cpu.regs[this->dc.rs1] >= this->cpu.regs[this->dc.rs2])
+    //     {
+    //         this->dc.dnpc = this->cpu.pc + this->dc.imm;
+    //     }
+    // }
+
+    // void lb(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = SEXT(this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 1), 8);
+    // }
+
+    // void lh(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = SEXT(this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 2), 16);
+    // }
+
+    // void lw(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = SEXT(this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 4), 32);
+    // }
+
+    // void lbu(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 1);
+    // }
+
+    // void lhu(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 2);
+    // }
+
+    // void lwu(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 4);
+    // }
+
+    // void ld(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.cpu_load(this->cpu.regs[this->dc.rs1] + this->dc.imm, 8);
+    // }
+
+    // void sb(CPU &host_cpu)
+    // {
+    //     this->cpu.cpu_store(this->cpu.regs[this->dc.rs1] + this->dc.imm, 1, this->cpu.regs[this->dc.rs2]);
+    // }
+
+    // void sh(CPU &host_cpu)
+    // {
+    //     this->cpu.cpu_store(this->cpu.regs[this->dc.rs1] + this->dc.imm, 2, this->cpu.regs[this->dc.rs2]);
+    // }
+
+    // void sw(CPU &host_cpu)
+    // {
+    //     this->cpu.cpu_store(this->cpu.regs[this->dc.rs1] + this->dc.imm, 4, this->cpu.regs[this->dc.rs2]);
+    // }
+
+    // void sd(CPU &host_cpu)
+    // {
+    //     printf("sd addr = 0x%llx\n", this->cpu.regs[this->dc.rs1] + this->dc.imm);
+    //     this->cpu.cpu_store(this->cpu.regs[this->dc.rs1] + this->dc.imm, 8, this->cpu.regs[this->dc.rs2]);
+    // }
+
+    // void addi(CPU &host_cpu)
+    // {
+    //     printf("addi rd = %d x[rs1 = %d] = 0x%lx imm = 0x%lx\n", this->dc.rd, this->dc.rs1, (unsigned long)this->cpu.regs[this->dc.rs1], (unsigned long)this->dc.imm);
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] + this->dc.imm;
+    // }
+
+    // void slti(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = (long long)this->cpu.regs[this->dc.rs1] < (long long)this->dc.imm? 1 : 0;
+    // }
+
+    // void sltiu(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] < this->dc.imm? 1 : 0;
+    // }
+
+    // void xori(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] ^ this->dc.imm;
+    // }
+
+    // void ori(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] | this->dc.imm;
+    // }
+
+    // void andi(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] & this->dc.imm;
+    // }
+
+    // void slli(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] << this->dc.shamt;
+    // }
+
+    // void srli(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] >> this->dc.shamt;
+    // }
+
+    // void srai(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = ((long long)this->cpu.regs[this->dc.rs1]) >> this->dc.shamt;
+    // }
+
+    // void add(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] + this->cpu.regs[this->dc.rs2];
+    // }
+
+    // void sub(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] - this->cpu.regs[this->dc.rs2];
+    // }
+
+    // void sll(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] << BITS(this->cpu.regs[this->dc.rs2], 5, 0);
+    // }
+
+    // void slt(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = (long long)this->cpu.regs[this->dc.rs1] < (long long)this->cpu.regs[this->dc.rs2] ? 1 : 0;
+    // }
+
+    // void sltu(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] < this->cpu.regs[this->dc.rs2] ? 1 : 0;
+    // }
+
+    // void xor_f(CPU &host_cpu) 
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] ^ this->cpu.regs[this->dc.rs2];
+    // }
+
+    // void srl(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] >> BITS(this->cpu.regs[this->dc.rs2], 5, 0);
+    // }
+
+    // void sra(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = ((long long)this->cpu.regs[this->dc.rs1]) >> BITS(this->cpu.regs[this->dc.rs2], 5, 0);
+    // }
+
+    // void or_f(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] | this->cpu.regs[this->dc.rs2];
+    // }
+
+    // void and_f(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = this->cpu.regs[this->dc.rs1] & this->cpu.regs[this->dc.rs2];
+    // }
+
+    // void fence(CPU &host_cpu)
+    // {
+    //     // todo
+    //     return;
+    // }
+
+    // void trap_handler(CPU host_cpu, enum TRAP traptype, bool isException, u64 cause, u64 tval)
+    // {
+    //     if (traptype == Fatal)
+    //     {
+    //         this->cpu.state = CPU::CPU_STOP;
+    //         return;
+    //     }
+    //     enum CPU::CPU_PRI_LEVEL nxt_level = CPU::M;
+    //     if (this->cpu.pri_level <= CPU::S)
+    //     {
+    //         if ((isException && (host_cpu.get_csr(medeleg) & (1 << cause))) || (!isException && (host_cpu.get_csr(mideleg) & (1 << cause))))
+    //         {
+    //             nxt_level = CPU::S;
+    //         }
+    //     }
+    //     if (nxt_level == CPU::S)
+    //     {
+    //         host_cpu.set_xpp(CPU::S, cpu.pri_level);
+    //         host_cpu.set_xpie(CPU::S, host_cpu.get_xie(CPU::S));
+    //         host_cpu.set_xie(CPU::S, 0);
+    //         host_cpu.set_csr(sepc, cpu.pc);
+    //         host_cpu.set_csr(stval, tval);
+    //         host_cpu.set_csr(scause, ((isException ? 0ull : 1ull) << 63) | cause);
+    //         u64 tvec = host_cpu.get_csr(stvec);
+    //         this->dc.dnpc = (BITS(tvec, 63, 2) << 2) + (BITS(tvec, 1, 0) == 1 ? cause * 4 : 0);
+    //     }
+    //     else
+    //     {
+    //         host_cpu.set_xpp(CPU::M, cpu.pri_level);
+    //         host_cpu.set_xpie(CPU::M, host_cpu.get_xie(CPU::M));
+    //         host_cpu.set_xie(CPU::M, 0);
+    //         host_cpu.set_csr(mepc, cpu.pc);
+    //         host_cpu.set_csr(mtval, tval);
+    //         host_cpu.set_csr(mcause, ((isException ? 0ull : 1ull) << 63) | cause);
+    //         u64 tvec = host_cpu.get_csr(mtvec);
+    //         this->dc.dnpc = (BITS(tvec, 63, 2) << 2) + (BITS(tvec, 1, 0) == 1 ? cause * 4 : 0);
+    //     }
+    //     cpu.pri_level = nxt_level;
+    // }
+
+    // void ecall(CPU &host_cpu)
+    // {
+    //     if (this->dc.riscv_tests && this->cpu.regs[CPU::a7] == 93)
+    //     {
+    //         if (this->cpu.regs[CPU::a0] == 0)
+    //         {
+    //             printf("Test Pass\n");
+    //             this->cpu.state = CPU::CPU_STOP;
+    //         }
+    //         else
+    //         {
+    //             printf("Test #%d Fail\n", (int)this->cpu.regs[CPU::a0] / 2);
+    //             this->cpu.state = CPU::CPU_STOP;
+    //         }
+    //     }
+    //     todo("trap_handler");
+    //     trap_handler(host_cpu, Requested, false, this->cpu.pri_level + 8, 0);
+    //     return;
+    // }
+
+    // void ebreak(CPU &host_cpu)
+    // {
+    //     // todo
+    //     exit(0);
+    //     return;
+    // }
+
+    // void addiw(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = SEXT(BITS(this->cpu.regs[this->dc.rs1] + this->dc.imm, 31, 0), 32);
+    // }
+
+    // void slliw(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = SEXT(BITS(this->cpu.regs[this->dc.rs1] << this->dc.shamt, 31, 0), 32);
+    // }
+
+    // void srliw(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = SEXT(BITS(this->cpu.regs[this->dc.rs1], 31, 0) >> this->dc.shamt, 32);
+    // }
+
+    // void sraiw(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = SEXT(((int)BITS(this->cpu.regs[this->dc.rs1], 31, 0)) >> this->dc.shamt, 32);
+    // }
+
+    // void addw(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = SEXT(BITS(this->cpu.regs[this->dc.rs1] + this->cpu.regs[this->dc.rs2], 31, 0), 32);
+    // }
+
+    // void subw(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = SEXT(this->cpu.regs[this->dc.rs1] - this->cpu.regs[this->dc.rs2], 32);
+    // }
+
+    // void sllw(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = SEXT(BITS(this->cpu.regs[this->dc.rs1] << BITS(this->cpu.regs[this->dc.rs2], 4, 0), 31, 0), 32);
+    // }
+
+    // void srlw(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = SEXT(BITS(this->cpu.regs[this->dc.rs1], 31, 0) >> BITS(this->cpu.regs[this->dc.rs2], 4, 0), 32);
+    // }
+
+    // void sraw(CPU &host_cpu)
+    // {
+    //     this->cpu.regs[this->dc.rd] = SEXT((int)BITS(this->cpu.regs[this->dc.rs1], 31, 0) >> BITS(this->cpu.regs[this->dc.rs2], 4, 0), 32);
+    // }
+
+    // // Zicsr
+    // void csrrw(CPU &host_cpu)
+    // {
+    //     u64 csrval;
+    //     if (this->dc.rd != 0)
+    //         csrval = this->cpu.csr.csr[this->dc.csr_addr];
+    //     else
+    //         csrval = 0;
+    //     u64 rs1val = this->cpu.regs[this->dc.rs1];
+    //     printf("csrval = 0x%08lx, rs1val = 0x%08lx\n", (unsigned long)csrval, (unsigned long)rs1val);
+    //     this->cpu.regs[this->dc.rd] = csrval;
+    //     this->cpu.csr.csr[this->dc.csr_addr] = rs1val;
+    // }
+
+    // void csrrs(CPU &host_cpu)
+    // {
+    //     u64 csrval = this->cpu.csr.csr[this->dc.csr_addr];
+    //     u64 rs1val = this->dc.rs1 == 0 ? 0 : this->cpu.regs[this->dc.rs1];
+    //     printf("before csrval = 0x%08lx, rs1val = 0x%08lx\n", (unsigned long)csrval, (unsigned long)rs1val);
+    //     this->cpu.regs[this->dc.rd] = csrval;
+    //     if (this->dc.rs1 != 0)
+    //         this->cpu.csr.csr[this->dc.csr_addr] = csrval | rs1val;
+    //     printf("after csrval = 0x%08lx, rs1val = 0x%08lx\n", (unsigned long)this->cpu.csr.csr[this->dc.csr_addr], (unsigned long)rs1val);
+    // }
+
+    // void csrrc(CPU &host_cpu)
+    // {
+    //     u64 csrval = this->cpu.csr.csr[this->dc.csr_addr];
+    //     u64 rs1val = this->dc.rs1 == 0 ? 0 : this->cpu.regs[this->dc.rs1];
+    //     this->cpu.regs[this->dc.rd] = csrval;
+    //     rs1val = ~rs1val;
+    //     if (this->dc.rs1 != 0)
+    //         this->cpu.csr.csr[this->dc.csr_addr] = csrval & rs1val;
+    // }
+
+    // void csrrwi(CPU &host_cpu)
+    // {
+    //     u64 uimm = this->dc.rs1;
+    //     u64 csrval = this->dc.rd == 0 ? 0 : this->cpu.csr.csr[this->dc.csr_addr];
+    //     this->cpu.regs[this->dc.rd] = csrval;
+    //     this->cpu.csr.csr[this->dc.csr_addr] = uimm;
+    // }
+
+    // void csrrsi(CPU &host_cpu)
+    // {
+    //     u64 uimm = this->dc.rs1;
+    //     u64 csrval = this->cpu.csr.csr[this->dc.csr_addr];
+    //     this->cpu.regs[this->dc.rd] = csrval;
+    //     this->cpu.csr.csr[this->dc.csr_addr] = csrval | uimm;
+    // }
+
+    // void csrrci(CPU &host_cpu)
+    // {
+    //     u64 uimm = this->dc.rs1;
+    //     u64 csrval = this->cpu.csr.csr[this->dc.csr_addr];
+    //     this->cpu.regs[this->dc.rd] = csrval;
+    //     uimm = ~uimm;
+    //     this->cpu.csr.csr[this->dc.csr_addr] = csrval & uimm;
+    // }
+
+    // // trap return inst
+    // void mret(CPU &host_cpu)
+    // {
+    //     int pre_level = host_cpu.get_xpp(CPU::M);
+    //     host_cpu.set_xie(CPU::M, host_cpu.get_xpie(CPU::M));
+    //     host_cpu.set_xpie(CPU::M, 1);
+    //     host_cpu.set_xpp(CPU::M, CPU::U);
+    //     host_cpu.set_csr(mstatus, host_cpu.get_csr(mstatus) & (~(1 << 17)));
+    //     this->dc.dnpc = host_cpu.get_csr(mepc);
+    //     this->cpu.pri_level = CPU::cast_to_pre_level(pre_level);
+    // }
+
+    // void sret(CPU &host_cpu)
+    // {
+    //     int pre_level = host_cpu.get_xpp(CPU::S);
+    //     host_cpu.set_xie(CPU::S, host_cpu.get_xpie(CPU::S));
+    //     host_cpu.set_xpie(CPU::S, 1);
+    //     host_cpu.set_xpp(CPU::S, CPU::U);
+    //     host_cpu.set_csr(sstatus, host_cpu.get_csr(sstatus) & (~(1 << 17)));
+    //     this->dc.dnpc = host_cpu.get_csr(sepc);
+    //     this->cpu.pri_level = CPU::cast_to_pre_level(pre_level);
+    // }
+
+    // void init_inst_func()
+    // {
+    //     set_inst_func(LUI, &interpreter::lui);
+    //     set_inst_func(AUIPC, &interpreter::auipc);
+    //     set_inst_func(JAL, &interpreter::jal);
+    //     set_inst_func(JALR, &interpreter::jalr);
+    //     set_inst_func(BEQ, &interpreter::beq);
+    //     set_inst_func(BNE, &interpreter::bne);
+    //     set_inst_func(BLT, &interpreter::blt);
+    //     set_inst_func(BGE, &interpreter::bge);
+    //     set_inst_func(BLTU, &interpreter::bltu);
+    //     set_inst_func(BGEU, &interpreter::bgeu);
+    //     set_inst_func(LB, &interpreter::lb);
+    //     set_inst_func(LH, &interpreter::lh);
+    //     set_inst_func(LW, &interpreter::lw);
+    //     set_inst_func(LBU, &interpreter::lbu);
+    //     set_inst_func(LHU, &interpreter::lhu);
+    //     set_inst_func(SB, &interpreter::sb);
+    //     set_inst_func(SH, &interpreter::sh);
+    //     set_inst_func(SW, &interpreter::sw);
+    //     set_inst_func(ADDI, &interpreter::addi);
+    //     set_inst_func(SLTI, &interpreter::slti);
+    //     set_inst_func(SLTIU, &interpreter::sltiu);
+    //     set_inst_func(XORI, &interpreter::xori);
+    //     set_inst_func(ORI, &interpreter::ori);
+    //     set_inst_func(ANDI, &interpreter::andi);
+    //     set_inst_func(SLLI, &interpreter::slli);
+    //     set_inst_func(SRLI, &interpreter::srli);
+    //     set_inst_func(SRAI, &interpreter::srai);
+    //     set_inst_func(ADD, &interpreter::add);
+    //     set_inst_func(SUB, &interpreter::sub);
+    //     set_inst_func(SLL, &interpreter::sll);
+    //     set_inst_func(SLT, &interpreter::slt);
+    //     set_inst_func(SLTU, &interpreter::sltu);
+    //     set_inst_func(XOR, &interpreter::xor_f);
+    //     set_inst_func(SRL, &interpreter::srl);
+    //     set_inst_func(SRA, &interpreter::sra);
+    //     set_inst_func(OR, &interpreter::or_f);
+    //     set_inst_func(AND, &interpreter::and_f);
+    //     set_inst_func(FENCE, &interpreter::fence);
+    //     set_inst_func(ECALL, &interpreter::ecall);
+    //     set_inst_func(EBREAK, &interpreter::ebreak);
+    //     set_inst_func(LWU, &interpreter::lwu);
+    //     set_inst_func(LD, &interpreter::ld);
+    //     set_inst_func(SD, &interpreter::sd);
+    //     set_inst_func(ADDIW, &interpreter::addiw);
+    //     set_inst_func(SLLIW, &interpreter::slliw);
+    //     set_inst_func(SRLIW, &interpreter::srliw);
+    //     set_inst_func(SRAIW, &interpreter::sraiw);
+    //     set_inst_func(ADDW, &interpreter::addw);
+    //     set_inst_func(SUBW, &interpreter::subw);
+    //     set_inst_func(SLLW, &interpreter::sllw);
+    //     set_inst_func(SRLW, &interpreter::srlw);
+    //     set_inst_func(SRAW, &interpreter::sraw);
+
+    //     // Zicsr
+    //     set_inst_func(CSRRW, &interpreter::csrrw);
+    //     set_inst_func(CSRRS, &interpreter::csrrs);
+    //     set_inst_func(CSRRC, &interpreter::csrrc);
+    //     set_inst_func(CSRRWI, &interpreter::csrrwi);
+    //     set_inst_func(CSRRSI, &interpreter::csrrsi);
+    //     set_inst_func(CSRRCI, &interpreter::csrrci);
+
+    //     // mret & sret
+    //     set_inst_func(MRET, &interpreter::mret);
+    //     set_inst_func(SRET, &interpreter::sret);
+    // }
+
+    // void interp_exec_inst(CPU &host_cpu)
+    // {
+    //     (this->*inst_handle[this->dc.inst_name])(host_cpu);
+    // }
 
 // ============================================================================== //
 // version 2.0

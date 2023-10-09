@@ -131,26 +131,25 @@ public:
     /// @param addr 地址
     /// @param length 长度
     /// @return 加载地址
-    u64 cpu_load(u64 addr, int length)
-    {
-        return this->bus.dram.mem_load(addr, length);
-    }
+    // u64 cpu_load(u64 addr, int length)
+    // {
+    //     return this->bus.dram.mem_load(addr, length);
+    // }
 
     /// @brief CPU 存储数据
     /// @param addr 地址
     /// @param length 长度
     /// @param val 值
-    void cpu_store(u64 addr, int length, u64 val)
-    {
-        this->bus.dram.mem_store(addr, length, val);
-    }
+    // void cpu_store(u64 addr, int length, u64 val)
+    // {
+    //     this->bus.dram.mem_store(addr, length, val);
+    // }
 
     /// @brief CPU 取指令
     /// @return 指令地址
     u32 cpu_fetch_inst()
     {
         return *(u32 *)TO_HOST(this->pc);
-        // return this->cpu_load(this->pc, 4);
     }
 
     static const enum CPU_PRI_LEVEL cast_to_pre_level(int p)
