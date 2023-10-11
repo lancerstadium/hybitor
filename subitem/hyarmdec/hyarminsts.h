@@ -1,3 +1,7 @@
+
+#ifndef HYARMINSTS_H
+#define HYARMINSTS_H
+
 char *arm64_insts[] = {
 	"unknown",
 	"error",
@@ -428,3 +432,6 @@ char *arm64_insts[] = {
 	"pmul",
 	"pmull",
 };
+
+
+#endif // HYARMDEC_H

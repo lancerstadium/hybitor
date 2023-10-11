@@ -2,7 +2,7 @@
  * @Author: lancerstadium lancerstadium@163.com
  * @Date: 2023-10-10 16:28:11
  * @LastEditors: lancerstadium lancerstadium@163.com
- * @LastEditTime: 2023-10-11 12:02:41
+ * @LastEditTime: 2023-10-11 20:32:23
  * @FilePath: /hybitor_effect/subitem/hyarmdec/hyarmdec.h
  * @Description: ARM64 指令相关定义
  */
@@ -942,7 +942,7 @@ struct Inst {
     };
 };
 
-
+/// ==== 函数接口 ==== ///
 #ifndef __cplusplus // C 版本
 	Cond arm64_get_cond(u8 flags);
 	AddrMode arm64_get_addrmode(u8 flags);

@@ -2,7 +2,7 @@
  * @Author: lancerstadium lancerstadium@163.com
  * @Date: 2023-10-11 14:32:26
  * @LastEditors: lancerstadium lancerstadium@163.com
- * @LastEditTime: 2023-10-11 15:24:57
+ * @LastEditTime: 2023-10-11 20:03:35
  * @FilePath: /hybitor_effect/subitem/hyarmdec/README.md
  * @Description: hyarmdec: Arm 解码器介绍
 -->
@@ -13,6 +13,22 @@
 - 使用方式：
   - 静态库链接：C/C++
   - 可执行工具：arm64dec-test
+
+
+## 目录 dir
+
+```
+hyarmdec
+ ├─ .gitignore              # 忽略 git 提交文件
+ ├─ README.md               # 自述文件
+ ├─ arm64dec-test.c         # 生成测试可执行程序入口：用于验证本项目正确性
+ ├─ decode.c                # 解码业务实现
+ ├─ example.cpp             # 生成示例可执行程序入口：用于示范其他项目如何使用本项目
+ ├─ hyarmdec.h              # 解码业务头文件
+ ├─ hyarminsts.h            # 解码指令名称头文件
+ └─ meson.build             # 项目构建描述文件
+
+```
 
 
 ## 构建 build
