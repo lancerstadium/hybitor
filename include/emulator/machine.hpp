@@ -55,10 +55,21 @@ public:
     /// @param n CPU 执行次数：-1代表无穷
     void VM_cpu_exec(u32 n)
     {
-        for (int i = 0; i < (int)n; i++) {
-            if (this->cpu.state == CPU::CPU_RUN)
-                VM_cpu_exec_once();
-            else break;
+        if ((int)n == -1)
+        {
+            while (this->cpu.state == CPU::CPU_RUN)
+            {
+                this->VM_cpu_exec_once();
+            }
+        } else {
+            for (int i = 0; i < (int)n; i++)
+            {
+                if (this->cpu.state == CPU::CPU_RUN){
+                    this->VM_cpu_exec_once();
+                } else {
+                    break;
+                }
+            }
         }
     }
 
