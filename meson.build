@@ -1,5 +1,5 @@
 # -------- 配置项目信息 -------- #
-project('hybitor-effect', 'cpp',
+project('hybitor-effect', ['c', 'cpp'],
     version: '1.0.0',
     default_options: [
         'default_library=static',
@@ -22,8 +22,13 @@ endif
 
 # -------- 配置链接库文件 -------- #
 
-# 配置LLVM库
-# 设置LLVM版本
+# 配置 readline 库
+readline = cpp.find_library(
+    'readline'
+)
+
+# 配置 LLVM 库
+# 设置 LLVM 版本
 llvm_version = ['>=12', '=<16']
 # llvm_lib_path = '/usr/lib/llvm-14/lib'  # 库地点 x86_64 for linux
 llvm_lib_path = '/opt/homebrew/opt/llvm/lib' # aarch64 for macbook
@@ -43,9 +48,23 @@ if not LLVM.found()
 endif
 
 
+src_files = [
+    'src/hybitor.c',
+    'src/monitor/monitor.c',
+    'src/monitor/hdb/hdb.c',
+    'src/server/server.c',
+    'src/utils/timer.c',
+    'src/utils/log.c'
+]
+
+inc_dirs = [
+    'include',
+    'src/monitor/hdb'
+]
+
 # -------- 配置可执行文件 -------- #
 executable('hybitor',
-  sources: ['src/main.cpp'],                # 源文件列表
-  include_directories: ['include'],         # 头文件目录
-  dependencies: [LLVM],     # 依赖项
+  sources: src_files,                # 源文件列表
+  include_directories: inc_dirs,         # 头文件目录
+  dependencies: [LLVM, readline],     # 依赖项
 )

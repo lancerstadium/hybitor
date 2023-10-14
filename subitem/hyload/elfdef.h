@@ -4,6 +4,7 @@
 #ifndef ELF_DEF_H
 #define ELF_DEF_H
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <fcntl.h>
@@ -71,6 +72,12 @@ namespace hyload {  // hyload 命名空间
 #define EM_RISCV        243     // RISC-V
 #define EM_LOONGARCH    258     // LoongArch
 
+/// 文件类型
+#define ET_NONE         0       // No file type
+#define ET_REL          1       // Relocatable file
+#define ET_EXEC         2       // Executable file
+#define ET_DYN          3       // Shared object file
+#define ET_CORE         4       // Core file
 
 /// e_ident 第四个字节 EI_CLASS 记录ELF文件类型
 #define ELFCLASSNONE    0
@@ -166,10 +173,9 @@ struct elf64_rela_t{
     void print_ehdr_info(elf64_ehdr_t *ehdr);
     void print_phdr_info(elf64_phdr_t *phdr);
     void print_sections_info(elf64_ehdr_t *ehdr);
-    void print_segments_info(elf64_ehdr_t *ehdr);
-    int load_elf_file(char *filename, elf64_ehdr_t *ehdr);
+    void print_segments_info(elf64_ehdr_t *ehdr, FILE *file);
+    int load_elf_file(int fd, elf64_ehdr_t *ehdr);
     void dump_elf_file(char *filename);
-    u64 mmap_segment_to_vaddr(int fd, u64 vaddr);
 #else // C++ 版本
 }   // hyload 命名空间
 extern "C" {
@@ -180,10 +186,9 @@ extern "C" {
     void print_ehdr_info(hyload::elf64_ehdr_t *ehdr);
     void print_phdr_info(hyload::elf64_phdr_t *phdr);
     void print_sections_info(hyload::elf64_ehdr_t *ehdr);
-    void print_segments_info(hyload::elf64_ehdr_t *ehdr);
-    int load_elf_file(char *filename, hyload::elf64_ehdr_t *ehdr);
+    void print_segments_info(hyload::elf64_ehdr_t *ehdr, FILE *file);
+    int load_elf_file(int fd, hyload::elf64_ehdr_t *ehdr);
     void dump_elf_file(char *filename);
-    u64 mmap_segment_to_vaddr(int fd, u64 vaddr);
 }
 #endif // __cplusplus
 
