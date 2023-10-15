@@ -6,7 +6,7 @@
 */
 
 #include <getopt.h>     // 参数解析库
-#include "common.h"
+#include "mmu.h"
 #include "hdb.h"
 
 // ============================================================================ //
@@ -36,6 +36,7 @@ void print_welcome() {
 /// @param argv 参数值
 void print_usage_help(int argc, char *argv[]) {
     printf("Usage: %s [OPTION...]\n", argv[0]);
+    printf("\t-d, --debug         Enable debug mode\n");
     printf("\t-h, --help          Print help info\n");
     printf("\t-t, --test          Print hello world!\n");
     printf("\t-l, --log=FILE      Output log to FILE\n");
@@ -51,20 +52,23 @@ static int parse_args(int argc, char *argv[]) {
     
     // 参数选项功能列表
     const struct option arg_table[] = {
-        {"help", no_argument      , NULL, 'h'},
-        {"test", no_argument      , NULL, 't'},
-        {"log" , required_argument, NULL, 'l'},
+        {"batch", no_argument      , NULL, 'd'},
+        {"help" , no_argument      , NULL, 'h'},
+        {"test" , no_argument      , NULL, 't'},
+        {"log"  , required_argument, NULL, 'l'},
         /// TODO: 添加更多的参数选项
     };
     int o;  // 接收参数选项
-    while ((o = getopt_long(argc, argv, "-hlt", arg_table, NULL)) != -1)
+    while ((o = getopt_long(argc, argv, "-dhl:t", arg_table, NULL)) != -1)
     {
         switch (o)
         {   
             /// TODO: 添加处理参数选项
+            case 'd':
+                hdb_set_debug_mode(); break;
             case 'l':
                 log_file = optarg; 
-                Assertf((log_file != NULL), "log_file is NULL : %s", log_file);
+                Assertf((log_file != NULL), "log_file gets NULL : %s", log_file);
                 break;
             case 't':
                 printf("hello world!\n"); break;
@@ -97,10 +101,13 @@ void init_monitor(int argc, char *argv[]) {
     // 3. 初始化日志
     init_log(log_file);
 
-    // 4. 初始化 hybitor debugger
+    // 4. 初始化内存
+    init_mem();
+
+    // 5. 初始化 hybitor debugger：不管是不是 debug mode 都要初始化
     init_hdb();
 
-    // 5. 打印欢迎信息
+    // 6. 打印欢迎信息
     print_welcome();
 }
 

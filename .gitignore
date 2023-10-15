@@ -57,7 +57,10 @@ dkms.conf
 # build
 build/
 
-# temu
+# log
+log.txt
+
+# hybitor
 hybitor
 out/
 obj/

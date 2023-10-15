@@ -14,7 +14,7 @@
 // hdb 静态变量
 // ============================================================================ //
 
-static int is_batch_mode = false;
+static int is_debug_mode = false;
 
 // ============================================================================ //
 // hdb 命令行读取工具
@@ -43,6 +43,7 @@ static int cmd_help(char *);
 static int cmd_time(char *);
 static int cmd_c(char *);
 static int cmd_q(char *);
+/// TODO: 实现其他命令
 
 /// @brief 命令列表
 static struct {
@@ -54,7 +55,7 @@ static struct {
     {"time", "Print the current time", cmd_time},
     {"c", "Continue the execution of the program", cmd_c},
     {"q", "Exit hbd", cmd_q},
-    /// TODO: 实现其他命令
+    /// TODO: 实现其他命令描述
 };
 
 // ------------- 命令列表长度 ------------
@@ -107,8 +108,8 @@ static int cmd_q(char *args) {
 // hdb API 实现 --> 定义 src/monitor/hdb/hdb.h
 // ============================================================================ //
 
-void hdb_set_batch_mode() {
-    is_batch_mode = true;
+void hdb_set_debug_mode() {
+    is_debug_mode = true;
 }
 
 void init_hdb() {
@@ -116,8 +117,8 @@ void init_hdb() {
 }
 
 void hdb_main_loop() {
-    // 1. 如果为批处理模式,则执行程序
-    if (is_batch_mode) {
+    // 1. 如果不为debug模式,则执行程序
+    if (!is_debug_mode) {
         cmd_c(NULL);
         return;
     }

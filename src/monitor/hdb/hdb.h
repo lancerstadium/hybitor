@@ -13,8 +13,8 @@
 // hdb API 定义 --> 实现 src/monitor/hdb/hdb.c
 // ============================================================================ //
 
-/// @brief 设置 hdb 为批处理模式
-void hdb_set_batch_mode();
+/// @brief 设置 hdb 为debug模式
+void hdb_set_debug_mode();
 
 /// @brief 初始化 hybitor debugger
 void init_hdb();

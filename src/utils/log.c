@@ -10,17 +10,28 @@
 
 
 // ============================================================================ //
-// log 静态变量
+// log 变量
 // ============================================================================ //
 
-
+FILE *log_fp = NULL;    // 文件指针
 
 // ============================================================================ //
 // log API 实现 --> 定义 include/utils.h
 // ============================================================================ //
 
+/// @brief 外部日志是否开启
+/// @return 布尔值
+bool output_log_enable() {
+    return (log_fp != stdout && log_fp != NULL);
+}
 
 void init_log(const char *log_file) {
-    TODOf("Init log: %s", log_file);
+    log_fp = stdout;
+    if (log_file != NULL) {
+        FILE *fp = fopen(log_file, "w");
+        Assertf(fp, "Can not open '%s'", log_file);
+        log_fp = fp;
+    }
+    Log("Log is written to %s", log_file ? log_file : "stdout");
 }
 

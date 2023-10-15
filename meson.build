@@ -54,12 +54,14 @@ src_files = [
     'src/monitor/hdb/hdb.c',
     'src/server/server.c',
     'src/utils/timer.c',
-    'src/utils/log.c'
+    'src/utils/log.c',
+    'src/memory/mmu.c'
 ]
 
 inc_dirs = [
     'include',
-    'src/monitor/hdb'
+    'src/monitor/hdb',
+    'include/memory'
 ]
 
 # -------- 配置可执行文件 -------- #
