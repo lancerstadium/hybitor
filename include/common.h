@@ -20,6 +20,7 @@
 #define CONFIG_RT_CHECK 1           // 开启 RT 检查
 #define CONFIG_MBASE 0x80000000     // 内存基址
 #define CONFIG_MSIZE 0x8000000      // 内存大小
+#define CONFIG_MEM_RANDOM 1         // 内存随机初始化
 
 // ============================================================================ //
 // 类型 宏定义

@@ -52,7 +52,7 @@ static int parse_args(int argc, char *argv[]) {
     
     // 参数选项功能列表
     const struct option arg_table[] = {
-        {"batch", no_argument      , NULL, 'd'},
+        {"debug", no_argument      , NULL, 'd'},
         {"help" , no_argument      , NULL, 'h'},
         {"test" , no_argument      , NULL, 't'},
         {"log"  , required_argument, NULL, 'l'},

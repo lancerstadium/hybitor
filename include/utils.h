@@ -84,7 +84,7 @@
 #define BOOL_TO_STR(bool_expr) (bool_expr) ? "true" : "false"
 
 // ============================================================================ //
-// Log 宏定义
+// ANSI Color 宏定义
 // ============================================================================ //
 
 // ----------- ANSI Color ----------- 
@@ -109,27 +109,52 @@
 // ----------- ANSI Fomate ----------- 
 #define ANSI_FMT(str, fmt) fmt str ANSI_NONE
 
-#define log_write(...)  \
+// ============================================================================ //
+// Log 宏定义
+// ============================================================================ //
+
+#define Stdout_fprintf(ANSI_COLOR, fmt, log_fp, ...) \
+    fprintf(stdout, "%s %s:%d" "[log info] " ANSI_FMT(fmt, ANSI_COLOR) "\n", \
+    ANSI_FMT("Log:", ANSI_COLOR), __FILE__, __LINE__, ## __VA_ARGS__); \
+
+#define Log_fprintf(fmt, log_fp, ...) \
+    fprintf(log_fp, "Log: %s:%d [log info] " fmt "\n", \
+    __FILE__, __LINE__, ## __VA_ARGS__); \
+
+#define Log_write(fmt, log_fp, ...) \
+  do { \
+    if (output_log_enable()) { \
+      Log_fprintf(fmt, log_fp, __VA_ARGS__); \
+      fflush(log_fp); \
+    } \
+  } while (0)
+  
+
+#define _Log(ANSI_COLOR, fmt, ...) \
   do { \
     extern FILE* log_fp; \
     extern bool output_log_enable(); \
-    if (output_log_enable()) { \
-      fprintf(log_fp, __VA_ARGS__); \
-      fflush(log_fp); \
-    } \
-  } while (0) \
-
-
-#define _Log(...) \
-  do { \
-    printf(__VA_ARGS__); \
-    log_write(__VA_ARGS__); \
+    Stdout_fprintf(ANSI_COLOR, fmt, log_fp, __VA_ARGS__); \
+    Log_write(fmt, log_fp, __VA_ARGS__); \
   } while (0)
 
 // ----------- Log Macro Define ----------- 
 #define Log(fmt, ...) \
-    _Log(ANSI_FMT("[%s:%d %s] " fmt, ANSI_FG_BLUE) "\n", \
-        __FILE__, __LINE__, __func__, ## __VA_ARGS__)
+    _Log(ANSI_FG_WHITE, fmt, __VA_ARGS__)
+
+#define Logr(fmt, ...) \
+    _Log(ANSI_FG_RED, fmt, __VA_ARGS__)
+
+#define Logb(fmt, ...) \
+    _Log(ANSI_FG_BLUE, fmt, __VA_ARGS__)
+
+#define Logg(fmt, ...) \
+    _Log(ANSI_FG_GREEN, fmt, __VA_ARGS__)
+
+#define Logy(fmt, ...) \
+    _Log(ANSI_FG_YELLOW, fmt, __VA_ARGS__)
+
+
 
 
 // ============================================================================ //
@@ -137,23 +162,24 @@
 // ============================================================================ //
 
 // ----------- Fatalf Macro Define：格式化输出错误信息 -----------
-#define Fatalf(fmt, ...) (fprintf(stderr, "%s: %s:%d [fatal message]" fmt "\n", ANSI_FMT("Fatal", ANSI_BG_RED ANSI_FG_WHITE), __FILE__, __LINE__, __VA_ARGS__), exit(1))
+#define Fatalf(fmt, ...) (fprintf(stderr, "%s: %s:%d [fatal message]" ANSI_FMT(fmt, ANSI_BG_RED ANSI_FG_BLACK) "\n", ANSI_FMT("Fatal", ANSI_BG_RED ANSI_FG_WHITE), __FILE__, __LINE__, __VA_ARGS__), exit(1))
 #define Fatal(msg) Fatalf("%s", msg)        // Fatal Macro Define：输出错误信息
 #define Unreachable() Fatal("unreachable")  // Unreachable Macro Define：输出不可达信息
 // ----------- Trap Macro Define：格式化输出陷入信息 -----------
-#define Trapf(fmt, ...) (fprintf(stderr, "%s: %s:%d [trap message] " fmt "\n", ANSI_FMT("Trap", ANSI_BG_YELLOW ANSI_FG_WHITE), __FILE__, __LINE__, __VA_ARGS__))
+#define Trapf(fmt, ...) (fprintf(stderr, "%s: %s:%d [trap message] " ANSI_FMT(fmt, ANSI_BG_YELLOW ANSI_FG_BLACK) "\n", ANSI_FMT("Trap", ANSI_BG_YELLOW ANSI_FG_WHITE), __FILE__, __LINE__, __VA_ARGS__))
 #define Trap(msg) Trapf("%s", msg)          // Trap Macro Define：输出待办信息
 // ----------- Safe Macro Define：格式化输出安全信息 -----------
-#define Safef(fmt, ...) (fprintf(stdout, "%s: %s:%d [safe message] " fmt "\n", ANSI_FMT("Safe", ANSI_BG_GREEN ANSI_FG_WHITE), __FILE__, __LINE__, __VA_ARGS__))
+#define Safef(fmt, ...) (fprintf(stdout, "%s: %s:%d [safe message] " ANSI_FMT(fmt, ANSI_BG_GREEN ANSI_FG_BLACK) "\n", ANSI_FMT("Safe", ANSI_BG_GREEN ANSI_FG_WHITE), __FILE__, __LINE__, __VA_ARGS__))
 #define Safe(msg) Safef("%s", msg)          // Safe Macro Define：输出安全信息
 // ----------- TODO Macro Define：格式化输出待办信息 -----------
-#define TODOf(fmt, ...) (fprintf(stderr, "%s: %s:%d [todo message] " fmt "\n", ANSI_FMT("TODO", ANSI_BG_BLUE ANSI_FG_WHITE), __FILE__, __LINE__, __VA_ARGS__))
+#define TODOf(fmt, ...) (fprintf(stderr, "%s: %s:%d [todo message] " ANSI_FMT(fmt, ANSI_BG_BLUE ANSI_FG_BLACK) "\n", ANSI_FMT("TODO", ANSI_BG_BLUE ANSI_FG_WHITE), __FILE__, __LINE__, __VA_ARGS__))
 #define TODO(msg) TODOf("%s", msg)          // TODO Macro Define：输出待办信息
 // ----------- Assert Macro Define：格式化输出断言信息 -----------
 #define Assertf(cond, fmt, ...) \
     do { \
         if (!(cond)) { \
-            fprintf(stderr, "%s: %s:%d \n[condition] %s \n[assert message] " fmt "\n",ANSI_FMT("Assert", ANSI_FG_BLACK ANSI_BG_RED), __FILE__, __LINE__, BOOL_TO_STR(cond), __VA_ARGS__); \
+            fprintf(stderr, "%s: %s:%d \n[condition] %s \n[assert message] " ANSI_FMT(fmt, ANSI_BG_RED ANSI_FG_BLACK) "\n", \
+            ANSI_FMT("Assert", ANSI_FG_BLACK ANSI_BG_RED), __FILE__, __LINE__, BOOL_TO_STR(cond), __VA_ARGS__); \
             abort(); \
         } \
     } while (0)
@@ -167,13 +193,13 @@
 // ============================================================================ //
 
 // ----------- Error Macro Define：格式化用户错误信息 -----------
-#define Errorf(fmt, ...) (fprintf(stderr, "%s: %s:%d [error type] " fmt "\n", ANSI_FMT("Error", ANSI_FG_RED), __FILE__, __LINE__, __VA_ARGS__))
+#define Errorf(fmt, ...) (fprintf(stderr, "%s: %s:%d [error info] " ANSI_FMT(fmt, ANSI_FG_RED) "\n", ANSI_FMT("Error", ANSI_FG_RED), __FILE__, __LINE__, __VA_ARGS__))
 #define Error(msg) Errorf("%s", msg)        // Error Macro Define：输出错误信息
 // ----------- Warning Macro Define：格式化用户警告信息 -----------
-#define Warningf(fmt, ...) (fprintf(stderr, "%s: %s:%d [warning type] " fmt "\n", ANSI_FMT("Warning", ANSI_FG_YELLOW), __FILE__, __LINE__, __VA_ARGS__))
+#define Warningf(fmt, ...) (fprintf(stderr, "%s: %s:%d [warning info] " ANSI_FMT(fmt, ANSI_FG_YELLOW) "\n", ANSI_FMT("Warning", ANSI_FG_YELLOW), __FILE__, __LINE__, __VA_ARGS__))
 #define Warning(msg) Warningf("%s", msg)    // Warning Macro Define：输出警告信息
 // ----------- Success Macro Define：格式化用户成功信息 -----------
-#define Successf(fmt, ...) (fprintf(stdout, "%s: %s:%d [success type] " fmt "\n", ANSI_FMT("Success", ANSI_FG_GREEN), __FILE__, __LINE__, __VA_ARGS__))
+#define Successf(fmt, ...) (fprintf(stdout, "%s: %s:%d [success info] " ANSI_FMT(fmt, ANSI_FG_GREEN) "\n", ANSI_FMT("Success", ANSI_FG_GREEN), __FILE__, __LINE__, __VA_ARGS__))
 #define Success(msg) Successf("%s", msg)    // Success Macro Define：输出成功信息
 
 
