@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 // ============================================================================ //
 // 通用工具 宏定义
@@ -113,14 +114,15 @@
 // Log 宏定义
 // ============================================================================ //
 
+// 标准控制台输出日志
 #define Stdout_fprintf(ANSI_COLOR, fmt, log_fp, ...) \
-    fprintf(stdout, "%s %s:%d" "[log info] " ANSI_FMT(fmt, ANSI_COLOR) "\n", \
+    fprintf(stdout, "%s %s:%d [log info] " ANSI_FMT(fmt, ANSI_COLOR) "\n", \
     ANSI_FMT("Log:", ANSI_COLOR), __FILE__, __LINE__, ## __VA_ARGS__); \
-
+// 文件输出日志
 #define Log_fprintf(fmt, log_fp, ...) \
     fprintf(log_fp, "Log: %s:%d [log info] " fmt "\n", \
     __FILE__, __LINE__, ## __VA_ARGS__); \
-
+// 文件写入日志
 #define Log_write(fmt, log_fp, ...) \
   do { \
     if (output_log_enable()) { \
@@ -128,8 +130,7 @@
       fflush(log_fp); \
     } \
   } while (0)
-  
-
+// 格式化输出日志：颜色控制
 #define _Log(ANSI_COLOR, fmt, ...) \
   do { \
     extern FILE* log_fp; \
@@ -138,22 +139,21 @@
     Log_write(fmt, log_fp, __VA_ARGS__); \
   } while (0)
 
-// ----------- Log Macro Define ----------- 
+// 格式化日志输出：白 --> 默认
 #define Log(fmt, ...) \
     _Log(ANSI_FG_WHITE, fmt, __VA_ARGS__)
-
+// 格式化日志输出：红 --> 错误
 #define Logr(fmt, ...) \
     _Log(ANSI_FG_RED, fmt, __VA_ARGS__)
-
+// 格式化日志输出：蓝 --> 事件
 #define Logb(fmt, ...) \
     _Log(ANSI_FG_BLUE, fmt, __VA_ARGS__)
-
+// 格式化日志输出：绿 --> 成功
 #define Logg(fmt, ...) \
     _Log(ANSI_FG_GREEN, fmt, __VA_ARGS__)
-
+// 格式化日志输出：黄 --> 警示
 #define Logy(fmt, ...) \
     _Log(ANSI_FG_YELLOW, fmt, __VA_ARGS__)
-
 
 
 

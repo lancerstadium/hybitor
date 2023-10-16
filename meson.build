@@ -55,7 +55,9 @@ src_files = [
     'src/server/server.c',
     'src/utils/timer.c',
     'src/utils/log.c',
-    'src/memory/mmu.c'
+    'src/memory/mmu.c',
+    'src/monitor/hdb/expr.c',
+    'src/monitor/hdb/watchpoint.c',
 ]
 
 inc_dirs = [

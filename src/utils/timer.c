@@ -26,4 +26,7 @@ void print_current_time() {
 void init_rand() {
     time(&current_time);
     srand((unsigned int)current_time);
+    char *time_buffer = ctime(&current_time);
+    time_buffer[strlen(time_buffer) - 1] = '\0';
+    Logg("Init rand, current time: %s", time_buffer);
 }

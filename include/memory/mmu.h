@@ -15,6 +15,10 @@
 // ============================================================================ //
 
 
+#define CONFIG_MBASE 0x80000000     // 内存基址
+#define CONFIG_MSIZE 0x8000000      // 内存大小
+#define CONFIG_MEM_RANDOM 1         // 内存随机初始化
+
 #define ROUNDUP(a, sz)   ((((uintptr_t)a) + (sz) - 1) & ~((sz) - 1))
 #define ROUNDDOWN(a, sz) ((((uintptr_t)a)) & ~((sz) - 1))
 

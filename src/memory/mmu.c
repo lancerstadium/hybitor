@@ -10,8 +10,7 @@
 
 
 
-// static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
-
+static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 
 
 // ============================================================================ //
@@ -19,7 +18,6 @@
 // ============================================================================ //
 
 void init_mem() {
-    TODO("init mem");
-    // IFDEF(CONFIG_MEM_RANDOM, memset(pmem, rand(), CONFIG_MSIZE));
-    // Log("physical memory area [" FMT_PADDR ", " FMT_PADDR "]", PMEM_LEFT, PMEM_RIGHT);
+    IFDEF(CONFIG_MEM_RANDOM, memset(pmem, rand(), CONFIG_MSIZE));
+    Logg("Init mem: physical memory area [" FMT_PADDR ", " FMT_PADDR "]", PMEM_LEFT, PMEM_RIGHT);
 }

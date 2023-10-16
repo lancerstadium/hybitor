@@ -113,7 +113,10 @@ void hdb_set_debug_mode() {
 }
 
 void init_hdb() {
-    TODO("Init hdb");
+    // 1. 初始化表达式解析器
+    init_regex();
+    // 2. 初始化观测点工具
+    init_wp_pool();
 }
 
 void hdb_main_loop() {
