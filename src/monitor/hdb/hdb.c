@@ -41,6 +41,7 @@ static char *readline_gets() {
 
 static int cmd_help(char *);
 static int cmd_time(char *);
+static int cmd_expr(char *);
 static int cmd_c(char *);
 static int cmd_q(char *);
 /// TODO: 实现其他命令
@@ -53,6 +54,7 @@ static struct {
 } cmd_table[] = { 
     {"help", "Display information about all supported commands", cmd_help},
     {"time", "Print the current time", cmd_time},
+    {"expr", "Print regex rules", cmd_expr},
     {"c", "Continue the execution of the program", cmd_c},
     {"q", "Exit hbd", cmd_q},
     /// TODO: 实现其他命令描述
@@ -86,6 +88,11 @@ static int cmd_help(char *args) {
 
 static int cmd_time(char *args) {
     print_current_time();
+    return SUCCESS_RETURN;
+}
+
+static int cmd_expr(char *args) {
+    print_regex_rules();
     return SUCCESS_RETURN;
 }
 

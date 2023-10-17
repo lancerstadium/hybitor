@@ -8,6 +8,7 @@
 #ifndef _HYBITOR_HDB_H_
 #define _HYBITOR_HDB_H_
 
+#include "common.h"
 
 // ============================================================================ //
 // watchpoint API 定义 --> 实现 src/monitor/hdb/watchpoint.c
@@ -23,7 +24,12 @@ void init_wp_pool();
 
 /// @brief 初始化表达式解析器
 void init_regex();
-    
+
+/// @brief 打印表达式规则
+void print_regex_rules();
+
+/// @brief 表达式解析
+word_t expr(char *e, bool *success);
 
 // ============================================================================ //
 // hdb API 定义 --> 实现 src/monitor/hdb/hdb.c
