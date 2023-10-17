@@ -6,7 +6,6 @@
 */
 
 #include <getopt.h>     // 参数解析库
-#include "mmu.h"
 #include "hdb.h"
 
 // ============================================================================ //
@@ -101,16 +100,7 @@ void init_monitor(int argc, char *argv[]) {
     // 3. 初始化日志
     init_log(log_file);
 
-    // 4. 初始化内存
-    init_mem();
-
-    // 5. 初始化 hybitor debugger：不管是不是 debug mode 都要初始化
+    // 4. 初始化 hybitor debugger：不管是不是 debug mode 都要初始化
     init_hdb();
 
-    // 6. 打印欢迎信息
-    print_welcome();
 }
-
-
-
-

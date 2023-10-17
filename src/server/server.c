@@ -5,9 +5,15 @@
  * @date 2023-10-14
 */
 
-#include "hdb.h"
+#include "common.h"
 
-/// @brief 启动服务器
+/// @brief 初始化服务器
+void init_server() {
+    TODO("init_server");
+}
+
+/// @brief 启动服务器：翻译、优化
 void start_server() {
-    hdb_main_loop();
+    TODO("start_server: translate");
+    TODO("start_server: optimization");
 }

@@ -58,6 +58,7 @@ src_files = [
     'src/memory/mmu.c',
     'src/monitor/hdb/expr.c',
     'src/monitor/hdb/watchpoint.c',
+    'src/controller/controller.c',
 ]
 
 inc_dirs = [

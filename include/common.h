@@ -46,9 +46,17 @@ typedef uint16_t ioaddr_t;
 void init_monitor(int, char *[]);
 
 // ============================================================================ //
+// controller API 定义 --> 实现 src/controller/controller.c
+// ============================================================================ //
+
+void init_controller();
+void start_controller_main();
+
+// ============================================================================ //
 // server API 定义 --> 实现 src/server/server.c
 // ============================================================================ //
 
+void init_server();
 void start_server();
 
 #endif // _HYBITOR_COMMON_H_

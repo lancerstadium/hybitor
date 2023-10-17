@@ -10,6 +10,10 @@
 int main(int argc, char *argv[]) {
     
     init_monitor(argc, argv);
-    start_server();
+    init_controller();
+    init_server();
+
+    start_controller_main();
+    
     return 0;
 }
