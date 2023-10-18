@@ -9,10 +9,7 @@
 
 int main(int argc, char *argv[]) {
     
-    init_monitor(argc, argv);
-    init_controller();
-    init_server();
-
+    init_controller_main(argc, argv);
     start_controller_main();
     
     return 0;

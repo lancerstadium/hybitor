@@ -7,7 +7,7 @@
 
 #include <readline/readline.h>
 #include <readline/history.h>
-#include "common.h"
+#include "cpu/cpu.h"
 #include "hdb.h"
 
 // ============================================================================ //
@@ -42,7 +42,10 @@ static char *readline_gets() {
 static int cmd_help(char *);
 static int cmd_time(char *);
 static int cmd_expr(char *);
+static int cmd_info(char *);
+static int cmd_state(char *);
 static int cmd_c(char *);
+static int cmd_si(char *);
 static int cmd_q(char *);
 /// TODO: 实现其他命令
 
@@ -52,11 +55,14 @@ static struct {
     const char *description; // 命令描述
     int (*handler)(char *);  // 命令处理函数
 } cmd_table[] = { 
-    {"help", "Display information about all supported commands", cmd_help},
-    {"time", "Print the current time", cmd_time},
-    {"expr", "Print regex rules", cmd_expr},
-    {"c", "Continue the execution of the program", cmd_c},
-    {"q", "Exit hbd", cmd_q},
+    {"help",  "Display information about all supported commands", cmd_help},
+    {"time",  "Print the current time", cmd_time},
+    {"expr",  "Print regex rules", cmd_expr},
+    {"info",  "Sub command `r` for reg info, `w` for watchpoint", cmd_info },
+    {"state", "Print hybitor statement", cmd_state},
+    {"c",     "Continue the execution of the program", cmd_c},
+    {"si",    "Execute [N] step", cmd_si },
+    {"q",     "Exit hbd", cmd_q},
     /// TODO: 实现其他命令描述
 };
 
@@ -96,8 +102,36 @@ static int cmd_expr(char *args) {
     return SUCCESS_RETURN;
 }
 
+static int cmd_info(char *args) {
+    TODO("Printing all information of registers");
+    return SUCCESS_RETURN;
+}
+
+static int cmd_state(char *args) {
+    print_hybitor_state();
+    return SUCCESS_RETURN;
+}
+
 static int cmd_c(char *args) {
-    TODO("Executing the program!");
+    cpu_exec(-1);
+    return SUCCESS_RETURN;
+}
+
+static int cmd_si(char *args) {
+    char *sencond_word = strtok(NULL," ");
+    uint64_t step = 0;
+    int i;
+	if (sencond_word == NULL){
+		cpu_exec(1);
+		return 0;	
+	}
+    sscanf(sencond_word, "%d", &step);
+    if (step <= (uint64_t)0 || 0 > (int)step) { /// TODO: 所以为啥要用u64呢?，判断真麻烦
+        Warningf("Enter a valid step(>0): %s", args);
+    } else {
+        printf("Execute step: %d\n", step);
+        cpu_exec(step);
+    }
     return SUCCESS_RETURN;
 }
 
@@ -105,6 +139,8 @@ static int cmd_c(char *args) {
 /// @param args 参数
 /// @return 
 static int cmd_q(char *args) {
+    hybitor_state.state = HY_QUIT;
+    check_hybitor_quit_state();
     printf("Bye!\n");
     exit(0);
     return SUCCESS_RETURN;    

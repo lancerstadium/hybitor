@@ -55,16 +55,21 @@ src_files = [
     'src/server/server.c',
     'src/utils/timer.c',
     'src/utils/log.c',
+    'src/utils/state.c',
     'src/memory/mmu.c',
     'src/monitor/hdb/expr.c',
     'src/monitor/hdb/watchpoint.c',
     'src/controller/controller.c',
+    'src/controller/loader/loader.c',
+    'src/cpu/cpu-exec.c'
 ]
 
 inc_dirs = [
     'include',
     'src/monitor/hdb',
-    'include/memory'
+    'include/memory',
+    'include/cpu',
+    'src/controller/loader',
 ]
 
 # -------- 配置可执行文件 -------- #

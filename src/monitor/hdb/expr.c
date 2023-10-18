@@ -74,7 +74,7 @@ static bool make_token(char *e) {
                 char *substr_start = e + position;  // 匹配起始位置
                 int substr_len = pmatch.rm_eo;     // 匹配长度
                 // 打印匹配结果
-                Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s",
+                Logw("match rules[%d] = \"%s\" at position %d with len %d: %.*s",
                     i, rules[i].regex, position, substr_len, substr_len, substr_start);
                 // 移动位置指针
                 position += substr_len;

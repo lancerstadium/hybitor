@@ -94,11 +94,11 @@ void init_monitor(int argc, char *argv[]) {
     // 1. 解析命令行参数
     parse_args(argc, argv);
 
-    // 2. 设置随机数种子
-    init_rand();
-
-    // 3. 初始化日志
+    // 2. 初始化日志
     init_log(log_file);
+
+    // 3. 设置随机数种子
+    init_rand();
 
     // 4. 初始化 hybitor debugger：不管是不是 debug mode 都要初始化
     init_hdb();

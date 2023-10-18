@@ -69,6 +69,25 @@
 #define IFZERO(macro, ...) MUXZERO(macro, __KEEP, __IGNORE)(__VA_ARGS__)
 
 
+// ============================================================================ //
+// 相关类型 宏定义
+// ============================================================================ //
+
+// -------- 64 位内存配置宏定义 --------
+#if CONFIG_MBASE + CONFIG_MSIZE > 0x100000000ul
+#define PMEM64 1    // 64 位内存
+#endif
+
+// -------- 根据配置文件决定是否使用 64 位字长 --------
+typedef MUXDEF(CONFIG_ISA64, uint64_t, uint32_t) word_t;    // 字长
+typedef MUXDEF(CONFIG_ISA64, int64_t, int32_t)  sword_t;    // 符号字长
+// -------- 字长格式化输出属性 --------
+#define FMT_WORD MUXDEF(CONFIG_ISA64, "0x%016" PRIx64, "0x%08" PRIx32)
+
+typedef word_t vaddr_t;                                      // 虚拟地址
+typedef MUXDEF(PMEM64, uint64_t, uint32_t) paddr_t;         // 物理地址
+#define FMT_PADDR MUXDEF(PMEM64, "0x%016" PRIx64, "0x%08" PRIx32)
+typedef uint16_t ioaddr_t;
 
 
 // ============================================================================ //
@@ -139,8 +158,10 @@
     Log_write(fmt, log_fp, __VA_ARGS__); \
   } while (0)
 
+
+
 // 格式化日志输出：白 --> 默认
-#define Log(fmt, ...) \
+#define Logw(fmt, ...) \
     _Log(ANSI_FG_WHITE, fmt, __VA_ARGS__)
 // 格式化日志输出：红 --> 错误
 #define Logr(fmt, ...) \
@@ -154,7 +175,9 @@
 // 格式化日志输出：黄 --> 警示
 #define Logy(fmt, ...) \
     _Log(ANSI_FG_YELLOW, fmt, __VA_ARGS__)
-
+// 日志输出：白 --> 默认
+#define Log(msg) \
+    Logw("%s", msg)
 
 
 // ============================================================================ //
@@ -205,8 +228,15 @@
 
 
 // ============================================================================ //
-// timer API 定义 --> 实现 src/utils/timer.c
+// timer API 定义：时间操作 --> 实现 src/utils/timer.c
 // ============================================================================ //
+
+
+/// @brief 获取当前时间戳 u64
+uint64_t get_internal_timeval();
+
+/// @brief 获取当前时间戳 u64（获取boot时间戳 / 获取从启动 hybitor开始的时间）
+uint64_t get_timeval();
 
 /// @brief 打印当前时间
 void print_current_time();
@@ -216,12 +246,44 @@ void init_rand();
 
 
 // ============================================================================ //
-// log API 定义 --> 实现 src/utils/log.c
+// log API 定义：日志记录 --> 实现 src/utils/log.c
 // ============================================================================ //
 
 
 /// @brief 初始化日志
 void init_log(const char *);
 
+
+// ============================================================================ //
+// state API 定义：hybitor状态控制 --> 实现 src/utils/log.c
+// ============================================================================ //
+
+/// @brief Hybitor 具体状态枚举类型
+enum Hy_Statement { 
+    HY_RUNNING,     // 运行
+    HY_STOP,        // 停止
+    HY_END,         // 结束
+    HY_ABORT,       // 中断 
+    HY_QUIT         // 退出
+};
+
+/// @brief Hybitor 状态结构体
+typedef struct {
+    enum Hy_Statement state;    // 状态
+    vaddr_t halt_pc;            // 跳转地址
+    uint32_t halt_ret;          // 返回值
+} HybitorState;
+
+extern HybitorState hybitor_state;
+
+/// @brief 打印 hybitor 状态
+void print_hybitor_state();
+
+/// @brief 检查hybitor退出循环的状态
+void check_hybitor_quit_state();
+
+/// @brief 退出程序，判断是否为正常退出
+/// @return 判断值
+int is_exit_status_bad();
 
 #endif // _HYBITOR_UTILS_H_

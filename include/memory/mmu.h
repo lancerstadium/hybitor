@@ -14,15 +14,14 @@
 // memory 宏定义
 // ============================================================================ //
 
-
-#define CONFIG_MBASE 0x80000000     // 内存基址
-#define CONFIG_MSIZE 0x8000000      // 内存大小
-#define CONFIG_MEM_RANDOM 1         // 内存随机初始化
-
 #define ROUNDUP(a, sz)   ((((uintptr_t)a) + (sz) - 1) & ~((sz) - 1))
 #define ROUNDDOWN(a, sz) ((((uintptr_t)a)) & ~((sz) - 1))
 
 #define PG_ALIGN __attribute((aligned(4096)))
+
+#define PMEM_LEFT  ((paddr_t)CONFIG_MBASE)
+#define PMEM_RIGHT ((paddr_t)CONFIG_MBASE + CONFIG_MSIZE - 1)
+#define RESET_VECTOR (PMEM_LEFT + CONFIG_PC_RESET_OFFSET)
 
 
 // ============================================================================ //
@@ -75,6 +74,7 @@ uint8_t* guest_to_host(paddr_t paddr);
 /// @param haddr 虚拟地址
 /// @return 物理地址
 paddr_t host_to_guest(uint8_t *haddr);
+
 
 /// @brief 判断物理地址是否在内存范围内
 /// @param addr 物理地址

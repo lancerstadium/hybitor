@@ -18,26 +18,11 @@
 
 #define CONFIG_ISA64 1              // 开启 64 位 ISA
 #define CONFIG_RT_CHECK 1           // 开启 RT 检查
+#define CONFIG_MBASE 0x80000000     // 内存基址
+#define CONFIG_MSIZE 0x8000000      // 内存大小
+#define CONFIG_MEM_RANDOM 1         // 内存随机初始化
+#define CONFIG_PC_RESET_OFFSET 0x0  // 取指令偏移
 
-// ============================================================================ //
-// 类型 宏定义
-// ============================================================================ //
-
-// -------- 64 位内存配置宏定义 --------
-#if CONFIG_MBASE + CONFIG_MSIZE > 0x100000000ul
-#define PMEM64 1    // 64 位内存
-#endif
-
-// -------- 根据配置文件决定是否使用 64 位字长 --------
-typedef MUXDEF(CONFIG_ISA64, uint64_t, uint32_t) word_t;    // 字长
-typedef MUXDEF(CONFIG_ISA64, int64_t, int32_t)  sword_t;    // 符号字长
-// -------- 字长格式化输出属性 --------
-#define FMT_WORD MUXDEF(CONFIG_ISA64, "0x%016" PRIx64, "0x%08" PRIx32)
-
-typedef word_t vaddr_t;                                      // 虚拟地址
-typedef MUXDEF(PMEM64, uint64_t, uint32_t) paddr_t;         // 物理地址
-#define FMT_PADDR MUXDEF(PMEM64, "0x%016" PRIx64, "0x%08" PRIx32)
-typedef uint16_t ioaddr_t;
 
 // ============================================================================ //
 // monitor API 定义 --> 实现 src/monitor/monitor.c
@@ -49,7 +34,7 @@ void init_monitor(int, char *[]);
 // controller API 定义 --> 实现 src/controller/controller.c
 // ============================================================================ //
 
-void init_controller();
+void init_controller_main(int, char *[]);
 void start_controller_main();
 
 // ============================================================================ //
