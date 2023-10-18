@@ -7,12 +7,14 @@
 
 #include <getopt.h>     // 参数解析库
 #include "hdb.h"
+#include "loader.h"
 
 // ============================================================================ //
 // monitor 静态变量
 // ============================================================================ //
 
 char *log_file = NULL;   // 日志文件名
+char *img_file = NULL;   // 镜像文件名
 
 
 // ============================================================================ //
@@ -71,6 +73,8 @@ static int parse_args(int argc, char *argv[]) {
                 break;
             case 't':
                 printf("hello world!\n"); break;
+            case 1: // 加载文件
+                img_file = optarg; break;
             case -1 :
                 Error("input no option"); 
                 return FAILURE_RETURN;

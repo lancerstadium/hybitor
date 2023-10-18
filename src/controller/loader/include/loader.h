@@ -12,7 +12,11 @@
 #include "memory/mmu.h"
 
 
-static char *img_file = NULL;
+// ============================================================================ //
+// loader 变量声明 --> 定义 src/monitor/monitor.c
+// ============================================================================ //
+
+extern char *img_file;
 
 // ============================================================================ //
 // loader API 定义 --> 实现 src/controller/loader/loader.c
@@ -31,7 +35,7 @@ static long load_img() {
     fseek(fp, 0, SEEK_END);
     long size = ftell(fp);
 
-    Logg("The image is %s, size = %ld", img_file, size);
+    Logg("Load image is %s, size = %ld", img_file, size);
 
     fseek(fp, 0, SEEK_SET);
     int ret = fread(guest_to_host(RESET_VECTOR), size, 1, fp);
