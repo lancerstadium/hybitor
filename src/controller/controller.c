@@ -6,7 +6,7 @@
 */
 
 #include "hdb.h"
-#include "mmu.h"
+#include "memory/mmu.h"
 #include "loader.h"
 
 // ============================================================================ //

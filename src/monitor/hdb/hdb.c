@@ -8,6 +8,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "cpu/cpu.h"
+#include "isa.h"
 #include "hdb.h"
 
 // ============================================================================ //
@@ -103,7 +104,18 @@ static int cmd_expr(char *args) {
 }
 
 static int cmd_info(char *args) {
-    TODO("Printing all information of registers");
+    char *sencond_word = strtok(NULL," ");
+    if (sencond_word == NULL){
+		Warning("Enter `r`: reg info, `w`: watchpoint info");
+		return SUCCESS_RETURN;	
+	}
+    if (strcmp(sencond_word, "r") == 0) {
+        print_isa_reg_info();
+    } else if (strcmp(sencond_word, "w") == 0) {
+        print_watchpoint_info();
+    } else {
+        Warningf("Unknown command '%s', enter `r`: reg, `w`: watchpoint", sencond_word);
+    }
     return SUCCESS_RETURN;
 }
 
@@ -123,7 +135,7 @@ static int cmd_si(char *args) {
     int i;
 	if (sencond_word == NULL){
 		cpu_exec(1);
-		return 0;	
+		return SUCCESS_RETURN;	
 	}
     sscanf(sencond_word, "%d", &step);
     if (step <= (uint64_t)0 || 0 > (int)step) { /// TODO: 所以为啥要用u64呢?，判断真麻烦

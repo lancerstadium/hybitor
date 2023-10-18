@@ -1,12 +1,12 @@
 /**
  * @brief hybitor debugger 调试器定义
- * @file src/monitor/hdb/hdb.h
+ * @file src/monitor/hdb/include/hdb.h
  * @author lancerstadium
  * @date 2023-10-14
 */
 
-#ifndef _HYBITOR_HDB_H_
-#define _HYBITOR_HDB_H_
+#ifndef _HYBITOR_MONITOR_HDB_INCLUDE_HDB_H_
+#define _HYBITOR_MONITOR_HDB_INCLUDE_HDB_H_
 
 #include "common.h"
 
@@ -16,6 +16,9 @@
 
 /// @brief 初始化观测点工具
 void init_wp_pool();
+
+/// @brief 打印观测点信息
+void print_watchpoint_info();
 
 
 // ============================================================================ //
@@ -44,4 +47,4 @@ void init_hdb();
 /// @brief hdb 执行主循环
 void hdb_main_loop();
 
-#endif // _HYBITOR_HDB_H_
+#endif // _HYBITOR_MONITOR_HDB_INCLUDE_HDB_H_

@@ -1,15 +1,15 @@
 /**
  * @brief hybitor loader 加载器器定义
- * @file src/controller/loader/loader.h
+ * @file src/controller/loader/include/loader.h
  * @author lancerstadium
  * @date 2023-10-18
 */
 
-#ifndef _HYBITOR_LOADER_H_
-#define _HYBITOR_LOADER_H_
+#ifndef _HYBITOR_CONTROLLER_LOADER_INCLUDE_LOADER_H_
+#define _HYBITOR_CONTROLLER_LOADER_INCLUDE_LOADER_H_
 
 #include "common.h"
-#include "mmu.h"
+#include "memory/mmu.h"
 
 
 static char *img_file = NULL;
@@ -42,4 +42,4 @@ static long load_img() {
 }
 
 
-#endif // _HYBITOR_LOADER_H_
+#endif // _HYBITOR_CONTROLLER_LOADER_INCLUDE_LOADER_H_

@@ -46,5 +46,10 @@ void init_wp_pool() {
     Logg("Init watchpoint: pool number: %d", NR_WP);
 }
 
+
+void print_watchpoint_info() {
+    TODO("print_watchpoint_info");
+}
+
 /// TODO: 实现监视点的功能
 

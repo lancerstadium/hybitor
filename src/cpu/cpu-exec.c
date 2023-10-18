@@ -5,7 +5,7 @@
  * @date 2023-10-18
 */
 
-#include "cpu.h"
+#include "cpu/cpu.h"
 
 // ============================================================================ //
 // cpu-exec 宏定义
@@ -36,6 +36,11 @@ static bool g_print_step = false;   // 是否打印执行指令
 /// @brief cpu执行指令
 /// @param n 指令数
 static void cpu_execute(uint64_t n) {
+    if(n == -1){
+        TODO("cpu_execute_-1_loop");
+        hybitor_state.state = HY_ABORT;
+        return;
+    }
     for (;n > (uint64_t)0; n --) {
         g_nr_guest_inst++;
         if (hybitor_state.state != HY_RUNNING)
@@ -50,6 +55,7 @@ static void cpu_execute(uint64_t n) {
 // ============================================================================ //
 
 void cpu_quit() {
+    print_hybitor_state();
     Logg("Host time spent = %0.8f us", g_timer);
     Logg("Guest executed instructions = %d", g_nr_guest_inst);
     if(g_timer > 0)
@@ -63,10 +69,10 @@ void cpu_exec(uint64_t n) {
     // 检查 hybitor 状态
     switch (hybitor_state.state) {
     case HY_END:
-        Success("Program execution has ended. To restart the program, exit `hdb` and run again.\n");
+        Success("Program execution has ended. To restart the program, exit `hdb` and run again.");
         return;
     case HY_ABORT:
-        Warning("Program execution is aborted. To restart the program, exit `hdb` and run again.\n");
+        Warning("Program execution is aborted. To restart the program, exit `hdb` and run again.");
         return;
     default:
         hybitor_state.state = HY_RUNNING;

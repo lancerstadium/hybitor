@@ -61,15 +61,15 @@ src_files = [
     'src/monitor/hdb/watchpoint.c',
     'src/controller/controller.c',
     'src/controller/loader/loader.c',
-    'src/cpu/cpu-exec.c'
+    'src/cpu/cpu-exec.c',
+    'src/isa/riscv32/reg.c',    # 体系结构相关
 ]
 
 inc_dirs = [
     'include',
-    'src/monitor/hdb',
-    'include/memory',
-    'include/cpu',
-    'src/controller/loader',
+    'src/monitor/hdb/include',
+    'src/controller/loader/include',
+    'src/isa/riscv32/include'   # 体系结构相关
 ]
 
 # -------- 配置可执行文件 -------- #
