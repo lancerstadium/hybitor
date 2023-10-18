@@ -151,8 +151,7 @@ static int cmd_si(char *args) {
 /// @param args 参数
 /// @return 
 static int cmd_q(char *args) {
-    hybitor_state.state = HY_QUIT;
-    check_hybitor_quit_state();
+    cpu_quit();
     printf("Bye!\n");
     exit(0);
     return SUCCESS_RETURN;    

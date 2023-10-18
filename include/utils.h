@@ -264,7 +264,8 @@ enum Hy_Statement {
     HY_STOP,        // 停止
     HY_END,         // 结束
     HY_ABORT,       // 中断 
-    HY_QUIT         // 退出
+    HY_QUIT,        // 退出
+    HY_UNKNOWN      // 未知
 };
 
 /// @brief Hybitor 状态结构体
@@ -276,8 +277,17 @@ typedef struct {
 
 extern HybitorState hybitor_state;
 
+
+
+
+
+
 /// @brief 打印 hybitor 状态
 void print_hybitor_state();
+
+/// @brief 改变 hybitor 状态为 state_type
+/// @param state_type 状态
+void change_hybitor_state(enum Hy_Statement state_type);
 
 /// @brief 检查hybitor退出循环的状态
 void check_hybitor_quit_state();

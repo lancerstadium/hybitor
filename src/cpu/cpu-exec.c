@@ -38,7 +38,7 @@ static bool g_print_step = false;   // 是否打印执行指令
 static void cpu_execute(uint64_t n) {
     if(n == -1){
         TODO("cpu_execute_-1_loop");
-        hybitor_state.state = HY_ABORT;
+        change_hybitor_state(HY_ABORT);
         return;
     }
     for (;n > (uint64_t)0; n --) {
@@ -55,7 +55,7 @@ static void cpu_execute(uint64_t n) {
 // ============================================================================ //
 
 void cpu_quit() {
-    print_hybitor_state();
+    change_hybitor_state(HY_QUIT);
     Logg("Host time spent = %0.8f us", g_timer);
     Logg("Guest executed instructions = %d", g_nr_guest_inst);
     if(g_timer > 0)
@@ -75,7 +75,7 @@ void cpu_exec(uint64_t n) {
         Warning("Program execution is aborted. To restart the program, exit `hdb` and run again.");
         return;
     default:
-        hybitor_state.state = HY_RUNNING;
+        change_hybitor_state(HY_RUNNING);
         break;
     }
 

@@ -27,7 +27,7 @@ void print_isa_reg_info() {
     printf("Reg Info: ");
     for (int i = 0; i < 32; i++) {
         if (i % 4 == 0) {
-            printf("\n   %-3s: , ", regs[i]);
+            printf("\n  %-3s: , ", regs[i]);
         } else {
             printf("%-3s: , ", regs[i]);
         }
