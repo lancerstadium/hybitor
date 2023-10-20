@@ -32,8 +32,7 @@ void init_controller_main(int argc, char *argv[]) {
     // 2. 初始化内存
     init_mem();
     // 3. 加载镜像文件：将镜像加载到内存中。这将覆盖内置镜像。
-    long img_size = load_img();
-    Logg("Init img: load img_size: %ld", img_size);
+    set_load_img();
     // 4. 初始化线程池
     TODO("start_controller: muti threads");
     // 5. 初始化服务器资源

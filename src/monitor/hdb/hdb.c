@@ -10,6 +10,7 @@
 #include "cpu/cpu.h"
 #include "isa.h"
 #include "hdb.h"
+#include "loader.h"
 
 // ============================================================================ //
 // hdb 静态变量
@@ -45,6 +46,7 @@ static int cmd_time(char *);
 static int cmd_expr(char *);
 static int cmd_info(char *);
 static int cmd_state(char *);
+static int cmd_load(char *);
 static int cmd_c(char *);
 static int cmd_si(char *);
 static int cmd_q(char *);
@@ -59,8 +61,9 @@ static struct {
     {"help",  "Display information about all supported commands", cmd_help},
     {"time",  "Print the current time", cmd_time},
     {"expr",  "Print regex rules", cmd_expr},
-    {"info",  "Sub command `r` for reg info, `w` for watchpoint", cmd_info },
+    {"info",  "Sub command [r] for reg info, [w] for watchpoint", cmd_info },
     {"state", "Print hybitor statement", cmd_state},
+    {"load",  "Reset load img [File]", cmd_load},
     {"c",     "Continue the execution of the program", cmd_c},
     {"si",    "Execute [N] step", cmd_si },
     {"q",     "Exit hbd", cmd_q},
@@ -106,7 +109,7 @@ static int cmd_expr(char *args) {
 static int cmd_info(char *args) {
     char *sencond_word = strtok(NULL," ");
     if (sencond_word == NULL){
-		Warning("Enter `r`: reg info, `w`: watchpoint info");
+		Warning("Enter [r]: reg info, [w]: watchpoint info");
 		return SUCCESS_RETURN;	
 	}
     if (strcmp(sencond_word, "r") == 0) {
@@ -124,6 +127,18 @@ static int cmd_state(char *args) {
     return SUCCESS_RETURN;
 }
 
+static int cmd_load(char *args) {
+    char *sencond_word = strtok(NULL," ");
+    if (sencond_word == NULL){
+		Warning("Enter a valid [File] path");
+		return SUCCESS_RETURN;	
+	}
+    change_load_img(sencond_word);
+    parse_file(img_file);
+    return SUCCESS_RETURN;
+}
+
+
 static int cmd_c(char *args) {
     cpu_exec(-1);
     return SUCCESS_RETURN;
@@ -132,7 +147,6 @@ static int cmd_c(char *args) {
 static int cmd_si(char *args) {
     char *sencond_word = strtok(NULL," ");
     uint64_t step = 0;
-    int i;
 	if (sencond_word == NULL){
 		cpu_exec(1);
 		return SUCCESS_RETURN;	
