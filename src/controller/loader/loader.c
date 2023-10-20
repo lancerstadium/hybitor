@@ -93,6 +93,7 @@ long parse_file(char *file_path) {
     GElf_Shdr shdr;
     char *shname, *shname_prog;
     Elf_Data *data;
+    size_t file_size = 0;
     if (elf_version(EV_CURRENT) == EV_NONE)
         return 0;
     fd = open(file_path, O_RDONLY, 0); // 打开elf文件
@@ -100,12 +101,14 @@ long parse_file(char *file_path) {
     elf = elf_begin(fd, ELF_C_READ, NULL); // 获取elf描述符,使用‘读取’的方式
     Assert(elf, "Can not get elf desc");
     Assert(gelf_getehdr(elf, &ehdr) == &ehdr, "Can not get elf ehdr");
+    printf("File Name: %s\n", file_path);
     print_elf_info(&ehdr);
     
     for (int i = 1; i < ehdr.e_shnum; i++) {
         if (get_section(elf, i, &ehdr, &shname, &shdr, &data))
             continue;
         printf("section %-3d:%-18s data %-12p size %-6zd link %-3d flags %-2d type %-d\n", i, shname, data->d_buf, data->d_size, shdr.sh_link, (int)shdr.sh_flags, (int)shdr.sh_type);
+        file_size += data->d_size;
         // if (strcmp(shname, ".text") == 0) {
         //     printf(".text data:\n");
         //     unsigned char *p = data->d_buf;
@@ -118,7 +121,8 @@ long parse_file(char *file_path) {
         //     printf("\n");
         // }
     }
-    return (long)data->d_size;
+    Logg("Success load file: %s, size: %ld", file_path, (long)file_size);
+    return (long)file_size;
 }
 
 // load and parse a ELF file, print ehdr infomation

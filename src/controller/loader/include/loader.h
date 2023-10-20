@@ -51,15 +51,16 @@ static void set_load_img() {
 
 /// @brief 修改加载镜像
 /// @param file_path 新镜像位置
-static void change_load_img(char *file_path) {
+static bool change_load_img(char *file_path) {
     FILE *fp = fopen(file_path, "rb");
     if(!fp) {
         Logy("Can not open file: %s", file_path);
-        return;
+        return false;
     }
     fclose(fp);
     img_file = file_path;
     Logg("Change img_file to: `%s`", img_file);
+    return true;
 }
 
 /// @brief 解析 ELF 文件

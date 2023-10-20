@@ -133,7 +133,9 @@ static int cmd_load(char *args) {
 		Warning("Enter a valid [File] path");
 		return SUCCESS_RETURN;	
 	}
-    change_load_img(sencond_word);
+    if(!change_load_img(sencond_word)) {
+        return SUCCESS_RETURN;
+    }
     parse_file(img_file);
     return SUCCESS_RETURN;
 }
