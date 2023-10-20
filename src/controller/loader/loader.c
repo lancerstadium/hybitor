@@ -5,3 +5,6 @@
  * @date 2023-10-18
 */
 
+#include <libelf.h>
+
+// load and parse a ELF file, print ehdr infomation

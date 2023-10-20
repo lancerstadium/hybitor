@@ -24,7 +24,14 @@ endif
 
 # 配置 readline 库
 readline = cpp.find_library(
-    'readline'
+    'readline',
+)
+
+# 配置 elf 库
+libelf = cpp.find_library(
+    'elf',
+    static: true, required: true, 
+    dirs : join_paths(meson.source_root(), 'lib', host_arch + '-' + os_type)
 )
 
 # 配置 LLVM 库
@@ -67,6 +74,7 @@ src_files = [
 
 inc_dirs = [
     'include',
+    'include/libelf',
     'src/monitor/hdb/include',
     'src/controller/loader/include',
     'src/isa/riscv32/include'   # 体系结构相关
@@ -76,5 +84,5 @@ inc_dirs = [
 executable('hybitor',
   sources: src_files,                # 源文件列表
   include_directories: inc_dirs,         # 头文件目录
-  dependencies: [LLVM, readline],     # 依赖项
+  dependencies: [LLVM, readline, libelf],     # 依赖项
 )
