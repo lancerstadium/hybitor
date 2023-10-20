@@ -52,8 +52,6 @@ Code Language:
 Workflow:
 
 loader -> decorder -> lifter -> | interpreter -> complier
-           riscv       riscv    | LLVM JIT
-           x86_64      x86_64   | 
 
 
 
