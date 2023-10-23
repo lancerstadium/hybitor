@@ -10,6 +10,8 @@
 
 #include "common.h"
 #include "memory/mmu.h"
+#include <libelf.h>
+#include <gelf.h>
 
 
 // ============================================================================ //
@@ -18,6 +20,16 @@
 
 extern char *img_file;
 extern char* default_img_file;
+
+typedef struct ELF_IMG {
+    void *addr;
+    Elf *elf;
+    GElf_Ehdr ehdr;     // ELF头
+    GElf_Shdr *shdr;    // 段表
+    GElf_Off shstrtab_offset;
+} ELF_IMG;
+
+extern ELF_IMG elf_img;     // ELF文件镜像声明 --> 定义 include.h
 
 // ============================================================================ //
 // loader API 定义 --> 实现 src/controller/loader/loader.c
@@ -32,21 +44,6 @@ static void set_load_img() {
     } else {
         Logg("Set img_file: `%s`", img_file);
     }
-
-
-    // FILE *fp = fopen(img_file, "rb");
-    // Assertf(fp, "Can not open '%s'", img_file);
-
-    // fseek(fp, 0, SEEK_END);
-    // long size = ftell(fp);
-
-    // Logg("Load image is %s, size = %ld", img_file, size);
-
-    // fseek(fp, 0, SEEK_SET);
-    // int ret = fread(guest_to_host(RESET_VECTOR), size, 1, fp);
-    // assert(ret == 1);
-
-    // fclose(fp);
 }
 
 /// @brief 修改加载镜像
