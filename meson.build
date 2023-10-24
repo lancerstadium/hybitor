@@ -73,12 +73,28 @@ src_files = [
 ]
 
 inc_dirs = [
+    '.',
     'include',
     'include/libelf',
     'src/monitor/hdb/include',
     'src/controller/loader/include',
     'src/isa/riscv32/include'   # 体系结构相关
 ]
+
+# -------- 配置文件 -------- #
+
+conf_data = configuration_data()
+
+conf_data.set('CONFIGURE_VERSION','1.1.2')
+conf_data.set('CONFIGURE_TARGET_ARCHITECTURE','x86_64')
+conf_data.set('CONFIG_ISA64',1)
+configure_file(
+    install: true,
+    install_dir: 'include/config',
+    output: 'config.h',
+    configuration: conf_data,
+)
+
 
 # -------- 配置可执行文件 -------- #
 executable('hybitor',

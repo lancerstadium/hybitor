@@ -7,6 +7,7 @@
 
 #include "loader.h"
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/mman.h>
 
 // ============================================================================ //
@@ -29,6 +30,54 @@
 #define PT_GNU_MBIND_HI (PT_GNU_MBIND_LO + PT_GNU_MBIND_NUM - 1)
 #define PT_GNU_SFRAME (PT_LOOS + 0x474e554) /* SFrame stack trace information */
 
+#define PT_GNU_STACK 8
+#define PT_GNU_RELRO 0x80000000
+#define PT_GNU_EH_FRAME 0x8fffffff
+#define PT_GNU_PROPERTY 0x90000000
+
+#define ELF_TBSS_SPECIAL(sec_hdr, segment) \
+    (((sec_hdr)->sh_flags & SHF_TLS) != 0 && (sec_hdr)->sh_type == SHT_NOBITS && (segment)->p_type != PT_TLS)
+
+#define ELF_SECTION_SIZE(sec_hdr, segment) (ELF_TBSS_SPECIAL(sec_hdr, segment) ? 0 : (sec_hdr)->sh_size)
+
+typedef uint64_t bfd_vma;
+
+#define ELF_SECTION_IN_SEGMENT_1(sec_hdr, segment, check_vma, strict)                                                 \
+    ((/* Only PT_LOAD, PT_GNU_RELRO and PT_TLS segments can contain                                                   \
+         SHF_TLS sections.  */                                                                                        \
+      ((((sec_hdr)->sh_flags & SHF_TLS) != 0) &&                                                                      \
+       ((segment)->p_type == PT_TLS || (segment)->p_type == PT_GNU_RELRO ||                                           \
+        (segment)->p_type == PT_LOAD)) /* PT_TLS segment contains only SHF_TLS sections, PT_PHDR no                   \
+                                          sections at all.  */                                                        \
+      || (((sec_hdr)->sh_flags & SHF_TLS) == 0 && (segment)->p_type != PT_TLS &&                                      \
+          (segment)->p_type != PT_PHDR)) /* PT_LOAD and similar segments only have SHF_ALLOC sections.  */            \
+     && !(((sec_hdr)->sh_flags & SHF_ALLOC) == 0 &&                                                                   \
+          ((segment)->p_type == PT_LOAD || (segment)->p_type == PT_DYNAMIC || (segment)->p_type == PT_GNU_EH_FRAME || \
+           (segment)->p_type == PT_GNU_STACK || (segment)->p_type == PT_GNU_RELRO ||                                  \
+           (segment)->p_type == PT_GNU_SFRAME ||                                                                      \
+           ((segment)->p_type >= PT_GNU_MBIND_LO &&                                                                   \
+            (segment)->p_type <= PT_GNU_MBIND_HI))) /* Any section besides one of type SHT_NOBITS must have file      \
+                                                       offsets within the segment.  */                                \
+     && ((sec_hdr)->sh_type == SHT_NOBITS ||                                                                          \
+         ((bfd_vma)(sec_hdr)->sh_offset >= (segment)->p_offset &&                                                     \
+          (!(strict) || ((sec_hdr)->sh_offset - (segment)->p_offset <= (segment)->p_filesz - 1)) &&                   \
+          (((sec_hdr)->sh_offset - (segment)->p_offset + ELF_SECTION_SIZE(sec_hdr, segment)) <=                       \
+           (segment)->p_filesz))) /* SHF_ALLOC sections must have VMAs within the segment.  */                        \
+     && (!(check_vma) || ((sec_hdr)->sh_flags & SHF_ALLOC) == 0 ||                                                    \
+         ((sec_hdr)->sh_addr >= (segment)->p_vaddr &&                                                                 \
+          (!(strict) || ((sec_hdr)->sh_addr - (segment)->p_vaddr <= (segment)->p_memsz - 1)) &&                       \
+          (((sec_hdr)->sh_addr - (segment)->p_vaddr + ELF_SECTION_SIZE(sec_hdr, segment)) <=                          \
+           (segment)->p_memsz))) /* No zero size sections at start or end of PT_DYNAMIC nor                           \
+                                    PT_NOTE.  */                                                                      \
+     &&                                                                                                               \
+     (((segment)->p_type != PT_DYNAMIC && (segment)->p_type != PT_NOTE) || (sec_hdr)->sh_size != 0 ||                 \
+      (segment)->p_memsz == 0 ||                                                                                      \
+      (((sec_hdr)->sh_type == SHT_NOBITS || ((bfd_vma)(sec_hdr)->sh_offset > (segment)->p_offset &&                   \
+                                             ((sec_hdr)->sh_offset - (segment)->p_offset < (segment)->p_filesz))) &&  \
+       (((sec_hdr)->sh_flags & SHF_ALLOC) == 0 || ((sec_hdr)->sh_addr > (segment)->p_vaddr &&                         \
+                                                   ((sec_hdr)->sh_addr - (segment)->p_vaddr < (segment)->p_memsz))))))
+
+#define ELF_SECTION_IN_SEGMENT_STRICT(sec_hdr, segment) (ELF_SECTION_IN_SEGMENT_1(sec_hdr, segment, 1, 1))
 
 ELF_IMG elf_img;
 
@@ -133,31 +182,31 @@ static int get_section(Elf *elf, int i, GElf_Ehdr *ehdr,char **shname,GElf_Shdr 
     return 0;
 }
 
-static void print_elf_header_info(GElf_Ehdr ehdr) {
+static void print_elf_header_info(ELF_IMG elf_img) {
     printf("ELF Header:\n");
     printf("  Magic:   ");
     for (int i = 0; i < EI_NIDENT; i++) {
-        printf("%2.2x ", ehdr.e_ident[i]);
+        printf("%2.2x ", elf_img.ehdr.e_ident[i]);
     }
     printf("\n");
-    printf(ELF_PRINT_FORMAT, "Class:", get_class(ehdr));
-    printf(ELF_PRINT_FORMAT, "Data:", get_data_endian(ehdr));
-    printf("  %-35s%d (%s)\n", "Version:", ehdr.e_version, get_version(ehdr));
-    printf(ELF_PRINT_FORMAT, "OS/ABI:", get_osabi(ehdr));
-    printf("  %-35s%u\n", "ABI version:", ehdr.e_ident[EI_ABIVERSION]);
-    printf(ELF_PRINT_FORMAT, "Type:", get_type(ehdr));
-    printf(ELF_PRINT_FORMAT, "Machine:", get_arch(ehdr));
-    printf("  Version:                           0x%x\n", ehdr.e_version);
-    printf("  Entry point address:               0x%llx\n", (unsigned long long)ehdr.e_entry);
-    printf("  Start of program headers:          %lld (bytes into file)\n", (unsigned long long)ehdr.e_phoff);
-    printf("  Start of section headers:          %lld (bytes into file)\n", (unsigned long long)ehdr.e_shoff);
-    printf("  Flags:                             0x%x\n", ehdr.e_flags);
-    printf("  Size of this header:               %d (bytes)\n", ehdr.e_ehsize);
-    printf("  Size of program headers:           %d (bytes)\n", ehdr.e_phentsize);
-    printf("  Number of program headers:         %d\n", ehdr.e_phnum);
-    printf("  Size of section headers:           %d (bytes)\n", ehdr.e_shentsize);
-    printf("  Number of section headers:         %d\n", ehdr.e_shnum);
-    printf("  Section header string table index: %d\n", ehdr.e_shstrndx);
+    printf(ELF_PRINT_FORMAT, "Class:", get_class(elf_img.ehdr));
+    printf(ELF_PRINT_FORMAT, "Data:", get_data_endian(elf_img.ehdr));
+    printf("  %-35s%d (%s)\n", "Version:", elf_img.ehdr.e_version, get_version(elf_img.ehdr));
+    printf(ELF_PRINT_FORMAT, "OS/ABI:", get_osabi(elf_img.ehdr));
+    printf("  %-35s%u\n", "ABI version:", elf_img.ehdr.e_ident[EI_ABIVERSION]);
+    printf(ELF_PRINT_FORMAT, "Type:", get_type(elf_img.ehdr));
+    printf(ELF_PRINT_FORMAT, "Machine:", get_arch(elf_img.ehdr));
+    printf("  Version:                           0x%x\n", elf_img.ehdr.e_version);
+    printf("  Entry point address:               0x%llx\n", (unsigned long long)elf_img.ehdr.e_entry);
+    printf("  Start of program headers:          %lld (bytes into file)\n", (unsigned long long)elf_img.ehdr.e_phoff);
+    printf("  Start of section headers:          %lld (bytes into file)\n", (unsigned long long)elf_img.ehdr.e_shoff);
+    printf("  Flags:                             0x%x\n", elf_img.ehdr.e_flags);
+    printf("  Size of this header:               %d (bytes)\n", elf_img.ehdr.e_ehsize);
+    printf("  Size of program headers:           %d (bytes)\n", elf_img.ehdr.e_phentsize);
+    printf("  Number of program headers:         %d\n", elf_img.ehdr.e_phnum);
+    printf("  Size of section headers:           %d (bytes)\n", elf_img.ehdr.e_shentsize);
+    printf("  Number of section headers:         %d\n", elf_img.ehdr.e_shnum);
+    printf("  Section header string table index: %d\n", elf_img.ehdr.e_shstrndx);
 }
 
 
@@ -167,7 +216,7 @@ static void print_elf_header_info(GElf_Ehdr ehdr) {
 // ============================================================================ //
 
 
-char *get_section_type(Elf64_Word section_type) {
+static char *get_section_type(Elf64_Word section_type) {
     switch (section_type) {
         case SHT_NULL:
             return "NULL";
@@ -244,7 +293,7 @@ char *get_section_type(Elf64_Word section_type) {
  * @param section_flag
  * @return char*
  */
-char *get_section_flag(Elf64_Xword section_flag) {
+static char *get_section_flag(Elf64_Xword section_flag) {
     // https://sourceware.org/git?p=binutils-gdb.git;a=blob;f=binutils/readelf.c;h=b872876a8b660be19e1ffc66ee300d0bbfaed345;hb=HEAD#l6812
 
     // SHF_WRITE:段内容可以被写入.
@@ -285,16 +334,16 @@ char *get_section_flag(Elf64_Xword section_flag) {
  * @param elf_img
  * @return int
  */
-int print_elf_section_table(ELF_IMG *elf_img) {
-    int section_number = elf_img->ehdr.e_shnum;
-    printf("There are %d section headers, starting at offset 0x%lx:\n", section_number, elf_img->ehdr.e_shoff);
+static int print_elf_section_table(ELF_IMG elf_img) {
+    int section_number = elf_img.ehdr.e_shnum;
+    printf("There are %d section headers, starting at offset 0x%lx:\n", section_number, elf_img.ehdr.e_shoff);
 
     printf("\nSection %s:\n", section_number == 1 ? "Header" : "Headers");
 
     printf("  [Nr] Name              Type             Address           Offset\n");
     printf("       Size              EntSize          Flags  Link  Info  Align\n");
     for (int i = 0; i < section_number; i++) {
-        Elf64_Shdr *shdr = &elf_img->shdr[i];
+        GElf_Shdr *shdr = &elf_img.shdr[i];
         char number[3] = " x";
         if (i / 10) {
             number[0] = '0' + i / 10;
@@ -304,7 +353,8 @@ int print_elf_section_table(ELF_IMG *elf_img) {
         char *section_type = get_section_type(shdr->sh_type);
         char *section_flag = get_section_flag(shdr->sh_flags);
         // 段名的获取方式是通过 shstrtab + sh_name(偏移地址) 得到的
-        char *section_name = elf_strptr(elf_img->elf, elf_img->ehdr.e_shstrndx, shdr->sh_name); // 从指定的字符串表中通过偏移获取字符串
+        // 从指定的字符串表中通过偏移获取字符串
+        char *section_name = (char *)((char*)elf_img.addr + elf_img.shstrtab_offset + shdr->sh_name); 
         Assert(section_name, "section_name is null");
         // 过长的字符串输出截断
         // readelf -S examples/SimpleSection.o
@@ -339,7 +389,7 @@ int print_elf_section_table(ELF_IMG *elf_img) {
 // loader symbol
 // ============================================================================ //
 
-char *get_symbol_type(int st_info) {
+static char *get_symbol_type(int st_info) {
     switch (st_info) {
         case STT_NOTYPE:
             // 符号类型未指定, 未知的一些符号比如 printf
@@ -369,7 +419,7 @@ char *get_symbol_type(int st_info) {
 }
 
 
-char *get_symbol_bind(int st_info) {
+static char *get_symbol_bind(int st_info) {
     switch (st_info) {
         case STB_LOCAL:
             // 本地符号在包含其定义的对象文件之外是不可见的.
@@ -389,7 +439,7 @@ char *get_symbol_bind(int st_info) {
     }
 }
 
-char *get_symbol_vis(int st_other) {
+static char *get_symbol_vis(int st_other) {
     switch (st_other) {
         case STV_DEFAULT:
             return "DEFAULT";
@@ -404,7 +454,7 @@ char *get_symbol_vis(int st_other) {
     }
 }
 
-char *get_symbol_ndx(int st_shndx) {
+static char *get_symbol_ndx(GElf_Half st_shndx) {
     static char buf[10];
     memset(buf, 0, 10);
     int i = 8;
@@ -428,21 +478,20 @@ char *get_symbol_ndx(int st_shndx) {
 }
 
 
-int print_elf_symbol_table(ELF_IMG *elf_img) {
-    int section_number = elf_img->ehdr.e_shnum;
+static int print_elf_symbol_table(ELF_IMG elf_img) {
+    int section_number = elf_img.ehdr.e_shnum;
     Elf64_Sym *symtab_addr;  // 符号表指针
     int symtab_number;       // 符号表表项的个数
     for (int i = 0; i < section_number; i++) {
-        Elf64_Shdr *shdr = &elf_img->shdr[i];
+        GElf_Shdr *shdr = &elf_img.shdr[i];
         // SHT_SYMTAB 和 SHT_DYNSYM 类型的段是符号表
         if ((shdr->sh_type == SHT_SYMTAB) || (shdr->sh_type == SHT_DYNSYM)) {
             // 符号表的段名
-            char *section_name = elf_strptr(elf_img->elf, elf_img->ehdr.e_shstrndx, shdr->sh_name); // 从指定的字符串表中通过偏移获取字符串
+            char *section_name = (char *)((char*)elf_img.addr + elf_img.shstrtab_offset + shdr->sh_name);
             // sh_link 指向符号表对应的字符串表
-            Elf64_Shdr *strtab = &elf_img->shdr[shdr->sh_link];
-
+            GElf_Shdr *strtab = &elf_img.shdr[shdr->sh_link];
             // 定位到当前段的起始地址
-            symtab_addr = (Elf64_Sym *)((char*)elf_img->addr + shdr->sh_offset);
+            symtab_addr = (Elf64_Sym *)((char*)elf_img.addr + shdr->sh_offset);
             // 通过 sh_size 和 Elf64_Sym 结构体大小计算表项数量
             symtab_number = shdr->sh_size / sizeof(Elf64_Sym);
             printf("\nSymbol table '%s' contains %d %s:\n",
@@ -461,11 +510,11 @@ int print_elf_symbol_table(ELF_IMG *elf_img) {
                 char *symbol_name;
                 // 对于 st_name 的值不为0的符号或者 ABS, 去对应的 .strtab 中找
                 if (symtab_addr[j].st_name || symtab_addr[j].st_shndx == SHN_ABS) {
-                    symbol_name = (char *)((char*)elf_img->addr + strtab->sh_offset + symtab_addr[j].st_name);
+                    symbol_name = (char *)((char*)elf_img.addr + strtab->sh_offset + symtab_addr[j].st_name);
                 } else {
                     // 为 0 说明是一个特殊符号, 用 symbol_ndx 去段表字符串表中找
-                    symbol_name = (char *)((char*)elf_img->addr + elf_img->shstrtab_offset +
-                                           elf_img->shdr[symtab_addr[j].st_shndx].sh_name);
+                    symbol_name = (char *)((char*)elf_img.addr + elf_img.shstrtab_offset +
+                                           elf_img.shdr[symtab_addr[j].st_shndx].sh_name);
                 }
                 if (!truncated && strlen(symbol_name) > 21) {
                     char short_symbol_name[22];
@@ -490,40 +539,224 @@ int print_elf_symbol_table(ELF_IMG *elf_img) {
 }
 
 
+
+// ============================================================================ //
+// loader program header
+// ============================================================================ //
+
+static char *get_program_interpreter(ELF_IMG elf_img) {
+    int section_number = elf_img.ehdr.e_shnum;
+    for (int i = 0; i < section_number; i++) {
+        GElf_Shdr *shdr = &elf_img.shdr[i];
+        if (shdr->sh_type == SHT_PROGBITS) {
+            char *section_name = (char *)((char*)elf_img.addr + elf_img.shstrtab_offset + shdr->sh_name);
+            if (!strcmp(section_name, ".interp")) {
+                return (char *)((char*)elf_img.addr + shdr->sh_addr);
+            }
+        }
+    }
+    return "";
+}
+
+
+
+static char *get_phdr_type(uint32_t p_type) {
+    switch (p_type) {
+        case PT_NULL:
+            return "NULL";
+        case PT_LOAD:
+            return "LOAD";
+        case PT_DYNAMIC:
+            return "DYNAMIC";
+        case PT_INTERP:
+            return "INTERP";
+        case PT_NOTE:
+            return "NOTE";
+        case PT_SHLIB:
+            return "SHLIB";
+        case PT_PHDR:
+            return "PHDR";
+        case PT_GNU_STACK:
+            return "GNU_STACK";
+        case PT_LOPROC:
+            return "LOPROC";
+        case PT_HIPROC:
+            return "HIPROC";
+        case PT_GNU_RELRO:
+            return "GNU_RELRO";
+        case PT_GNU_EH_FRAME:
+            return "GNU_EH_FRAME";
+        case PT_GNU_PROPERTY:
+            return "GNU_PROPERTY";
+        default:
+            return "";
+    }
+}
+
+static char *get_phdr_flag(uint32_t p_flags) {
+    static char flags[3] = "   ";
+    memset(flags, ' ', 3);
+    if (p_flags & PF_R) {
+        flags[0] = 'R';
+    }
+    if (p_flags & PF_W) {
+        flags[1] = 'W';
+    }
+    if (p_flags & PF_X) {
+        flags[2] = 'E';
+    }
+    return flags;
+}
+
+
+
+static void print_elf_program_header(ELF_IMG elf_img) {
+    if (elf_img.ehdr.e_phnum == 0) {
+        printf("\nThere are no program headers in this file.\n");
+        return;
+    }
+    int ph_entry_number = 0;
+    if (elf_img.ehdr.e_phnum == PN_XNUM) {
+        // ...
+    } else {
+        ph_entry_number = elf_img.ehdr.e_phnum;
+    }
+
+    char *elf_type_name = get_type(elf_img.ehdr);
+    printf("\nElf file type is %s\n", elf_type_name);
+    printf("Entry point 0x%llx\n", (unsigned long long)elf_img.ehdr.e_entry);
+    printf("There are %d program headers, starting at offset %lld\n",
+           ph_entry_number,
+           (unsigned long long)elf_img.ehdr.e_phoff);
+    printf("\nProgram Headers:\n");
+    printf("  Type           Offset             VirtAddr           PhysAddr\n");
+    printf("                 FileSiz            MemSiz              Flags  Align\n");
+    // printf("  %-15s");
+
+    GElf_Phdr *phdr = (GElf_Phdr *)((char*)elf_img.addr + elf_img.ehdr.e_phoff);
+    for (int i = 0; i < ph_entry_number; i++) {
+        char *phdr_type = get_phdr_type(phdr[i].p_type);
+        char *phdr_flag = get_phdr_flag(phdr[i].p_flags);
+        printf("  %-15s0x%016lx 0x%016lx 0x%016lx\n", phdr_type, phdr[i].p_offset, phdr[i].p_vaddr, phdr[i].p_paddr);
+        printf("                 0x%016lx 0x%016lx  %-7s0x%lx\n",
+               phdr[i].p_filesz,
+               phdr[i].p_memsz,
+               phdr_flag,
+               phdr[i].p_align);
+        if (phdr[i].p_type == PT_INTERP) {
+            char *program_interpreter_path = get_program_interpreter(elf_img);
+            printf("      [Requesting program interpreter: %s]\n", program_interpreter_path);
+        }
+    }
+
+    printf("\n Section to Segment mapping:\n");
+    printf("  Segment Sections...\n");
+    phdr = (GElf_Phdr *)((char*)elf_img.addr + elf_img.ehdr.e_phoff);
+    for (int i = 0; i < ph_entry_number; i++) {
+        printf("   %02d     ", i);
+        GElf_Phdr *segment = &phdr[i];
+        
+        for (int j = 1; j < elf_img.ehdr.e_shnum; j++) {
+            GElf_Shdr *section = &elf_img.shdr[j];
+            if (!ELF_TBSS_SPECIAL(section, segment) && ELF_SECTION_IN_SEGMENT_STRICT(section, segment)) {
+                char *section_name =
+                    (char *)((char*)elf_img.addr + elf_img.shstrtab_offset + section->sh_name);
+                printf("%s ", section_name);
+            }
+        }
+        printf("\n");
+    }
+}
+
+
+
 // ============================================================================ //
 // loader API 实现 --> 定义 src/controller/loader/loader.h
 // ============================================================================ //
 
 
-long parse_file(char *file_path) {
-    // Elf *elf;
+long load_img_file(char *file_path) {
+    // 1. 读取文件
+    Elf *elf;
     int fd;
-    char *shname, *shname_prog;
+    char *shname;
     Elf_Data *data;
-    GElf_Shdr shdr;
-    size_t file_size = 0;
     if (elf_version(EV_CURRENT) == EV_NONE)
         return 0;
     fd = open(file_path, O_RDONLY, 0); // 打开elf文件
     Assertf(fd >= 0, "Can not open '%s'", file_path);
-    elf_img.elf = elf_begin(fd, ELF_C_READ, NULL); // 获取elf描述符,使用‘读取’的方式
-    Assert(elf_img.elf, "Can not get elf desc");
-    Assert(gelf_getehdr(elf_img.elf, &elf_img.ehdr) == &elf_img.ehdr, "Can not get elf ehdr");
-
- 
-    printf("File Name: %s\n", file_path);
-    print_elf_header_info(elf_img.ehdr);
     
+    // 2. 对 ELF 文件做完整的内存映射, 保存在 elf_img.addr 中, 方便后面寻址
+    elf_img.size = lseek(fd, 0, SEEK_END);
+    void *addr = mmap(NULL, elf_img.size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if(addr == MAP_FAILED){
+        munmap(addr, elf_img.size);
+        close(fd);
+        Warningf("File mmap fail: %s", file_path);
+        return 0;
+    }
+    elf_img.addr = addr;
+    
+    // 3. 读取 ELF 头，保存在 elf_img.ehdr中
+    elf = elf_begin(fd, ELF_C_READ, NULL); // 获取elf描述符,使用‘读取’的方式
+    Assert(elf, "Can not get elf desc");
+    Assert(gelf_getehdr(elf, &elf_img.ehdr) == &elf_img.ehdr, "Can not get elf ehdr");
+
+    // 4. 读取所有端表信息保存在 shdr 中
     elf_img.shdr = (GElf_Shdr *)malloc(sizeof(GElf_Shdr) * elf_img.ehdr.e_shnum);
     for (int i = 1; i < elf_img.ehdr.e_shnum; i++) {
-        if(get_section(elf_img.elf, i, &elf_img.ehdr, &shname, &elf_img.shdr[i], &data)) {
+        if(get_section(elf, i, &elf_img.ehdr, &shname, &elf_img.shdr[i], &data)) {
             continue;
         }
-        file_size += data->d_size;
     }
-    print_elf_section_table(&elf_img);
-    Logg("Success load file: %s, size: %ld", file_path, (long)file_size);
-    return (long)file_size;
+
+    // 5. 获取段表字符串表的偏移量
+    elf_img.shstrtab_offset = elf_img.shdr[elf_img.ehdr.e_shstrndx].sh_offset;  
+
+    // 6. 打印信息
+    printf("File Name: %s\n", file_path);
+    print_elf_header_info(elf_img);
+    Logg("Success load file: %s, size: %ld", img_file, (long)elf_img.size);
+
+    // 7. 释放资源
+    close(fd);
+    free(elf);
+
+    return (long)elf_img.size;
 }
+
+
+
+long free_img_file(char *file_path) {
+    if(elf_img.size > 0) {
+        munmap(elf_img.addr, elf_img.size);
+        free(&elf_img.ehdr);
+        free(elf_img.shdr);
+        elf_img.shstrtab_offset = 0;
+        elf_img.size = 0;
+        Logg("Success free file: %s, now size: %ld", file_path, (long)elf_img.size);
+    } else {
+        Warningf("No file to free: %s", img_file);
+    }
+    return (long)elf_img.size;
+}
+
+void display_img_header_info() {
+    print_elf_header_info(elf_img);
+}
+
+void display_img_section_info() {
+    print_elf_section_table(elf_img);
+}
+
+void display_img_symbol_info() {
+    print_elf_symbol_table(elf_img);
+}
+
+void display_img_program_info() {
+    print_elf_program_header(elf_img);
+}
+
+
 
 // load and parse a ELF file, print ehdr infomation

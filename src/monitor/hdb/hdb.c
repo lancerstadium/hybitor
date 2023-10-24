@@ -47,6 +47,7 @@ static int cmd_expr(char *);
 static int cmd_info(char *);
 static int cmd_state(char *);
 static int cmd_load(char *);
+static int cmd_file(char *);
 static int cmd_c(char *);
 static int cmd_si(char *);
 static int cmd_q(char *);
@@ -61,9 +62,10 @@ static struct {
     {"help",  "Display information about all supported commands", cmd_help},
     {"time",  "Print the current time", cmd_time},
     {"expr",  "Print regex rules", cmd_expr},
-    {"info",  "Sub command [r] for reg info, [w] for watchpoint", cmd_info },
+    {"info",  "Subcommand [r] for reg info, [w] for watchpoint", cmd_info },
     {"state", "Print hybitor statement", cmd_state},
     {"load",  "Reset load img [File]", cmd_load},
+    {"file",  "Subcommand [h], [s], [m], [p]", cmd_file},
     {"c",     "Continue the execution of the program", cmd_c},
     {"si",    "Execute [N] step", cmd_si },
     {"q",     "Exit hbd", cmd_q},
@@ -136,7 +138,24 @@ static int cmd_load(char *args) {
     if(!change_load_img(sencond_word)) {
         return SUCCESS_RETURN;
     }
-    parse_file(img_file);
+    load_img_file(img_file);
+    return SUCCESS_RETURN;
+}
+
+static int cmd_file(char *args) {
+    char *sencond_word = strtok(NULL," ");
+    if (sencond_word == NULL){
+		Warning("Enter valid subcommand [h], [s], [m], [p]");
+		return SUCCESS_RETURN;	
+	}
+    switch (sencond_word[0])
+    {
+    case 'h':display_img_header_info(); break;
+    case 's':display_img_section_info(); break;
+    case 'm':display_img_symbol_info(); break;
+    case 'p':display_img_program_info(); break;
+    default: Warningf("Unknown command '%s', enter `h`: header, `s`: section, `m`: symbol, `p`: program", sencond_word); break;
+    }
     return SUCCESS_RETURN;
 }
 

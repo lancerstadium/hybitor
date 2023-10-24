@@ -22,19 +22,41 @@ extern char *img_file;
 extern char* default_img_file;
 
 typedef struct ELF_IMG {
-    void *addr;
-    Elf *elf;
-    GElf_Ehdr ehdr;     // ELF头
-    GElf_Shdr *shdr;    // 段表
-    GElf_Off shstrtab_offset;
+    void *addr;                 // 映射地址
+    GElf_Ehdr ehdr;             // ELF头
+    GElf_Shdr *shdr;            // 段表
+    GElf_Off shstrtab_offset;   // 
+    off_t size;                 // 文件大小
 } ELF_IMG;
 
-extern ELF_IMG elf_img;     // ELF文件镜像声明 --> 定义 include.h
+extern ELF_IMG elf_img;     // ELF文件镜像声明 --> 定义 loader.h
 
 // ============================================================================ //
 // loader API 定义 --> 实现 src/controller/loader/loader.c
 // ============================================================================ //
 
+/// @brief 加载 ELF 文件
+/// @param file_path 文件路径
+/// @return 数据长度
+long load_img_file(char *file_path);
+
+
+/// @brief 释放 ELF 文件
+/// @param file_path 文件路径
+/// @return 数据长度
+long free_img_file(char *file_path);
+
+/// @brief 显示 ELF 文件头信息
+void display_img_header_info();
+
+/// @brief 显示 ELF 段表信息
+void display_img_section_info();
+
+/// @brief 显示 ELF 符号表信息
+void display_img_symbol_info();
+
+/// @brief 显示 ELF 程序头信息
+void display_img_program_info();
 
 /// @brief 加载镜像文件
 static void set_load_img() {
@@ -55,15 +77,13 @@ static bool change_load_img(char *file_path) {
         return false;
     }
     fclose(fp);
+    free_img_file(file_path);
     img_file = file_path;
     Logg("Change img_file to: `%s`", img_file);
     return true;
 }
 
-/// @brief 解析 ELF 文件
-/// @param file_path 文件路径
-/// @return 数据长度
-long parse_file(char *file_path);
+
 
 
 #endif // _HYBITOR_CONTROLLER_LOADER_INCLUDE_LOADER_H_

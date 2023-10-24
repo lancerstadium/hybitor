@@ -8,7 +8,7 @@
 #ifndef _HYBITOR_COMMON_H_
 #define _HYBITOR_COMMON_H_
 
-
+#include <config.h>
 #include "utils.h"  // 工具头文件
 #include "isa.h"    // 指令集相关 API 头文件
 
