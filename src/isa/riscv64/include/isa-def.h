@@ -1,12 +1,12 @@
 /**
- * @brief riscv32指令定义头文件
- * @file src/isa/riscv32/include/isa-def.h
+ * @brief riscv64指令定义头文件
+ * @file src/isa/riscv64/include/isa-def.h
  * @author lancerstadium
- * @date 2023-10-18
+ * @date 2023-10-24
 */
 
-#ifndef _HYBITOR_ISA_RISCV32_INCLUDE_ISA_DEF_H_
-#define _HYBITOR_ISA_RISCV32_INCLUDE_ISA_DEF_H_
+#ifndef _HYBITOR_ISA_RISCV64_INCLUDE_ISA_DEF_H_
+#define _HYBITOR_ISA_RISCV64_INCLUDE_ISA_DEF_H_
 
 #include "common.h"
 

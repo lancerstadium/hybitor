@@ -172,11 +172,11 @@ static int cmd_si(char *args) {
 		cpu_exec(1);
 		return SUCCESS_RETURN;	
 	}
-    sscanf(sencond_word, "%d", &step);
+    sscanf(sencond_word, "%llu", &step);
     if (step <= (uint64_t)0 || 0 > (int)step) { /// TODO: 所以为啥要用u64呢?，判断真麻烦
         Warningf("Enter a valid step(>0): %s", args);
     } else {
-        printf("Execute step: %d\n", step);
+        printf("Execute step: %llu\n", step);
         cpu_exec(step);
     }
     return SUCCESS_RETURN;

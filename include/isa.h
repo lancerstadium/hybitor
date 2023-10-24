@@ -11,10 +11,15 @@
 // 位置在：src/isa/$(GUEST_ISA)/include/isa-def.h
 #include "isa-def.h"
 
+// ============================================================================ //
+// isa-def 结构体类型转换，如：riscv32 + CPU_state --> riscv32_CPU_state 
+// ============================================================================ //
 
+typedef concat(CONFIG_GUEST_ARCH, _CPU_state) CPU_state;
+typedef concat(CONFIG_GUEST_ARCH, _ISADecodeInfo) ISADecodeInfo;
 
 // ============================================================================ //
-// riscv32 reg API 定义 --> 实现 src/isa.h
+// reg API 定义 --> 实现 src/isa.h
 // ============================================================================ //
 
 /// @brief 打印 riscv32寄存器信息

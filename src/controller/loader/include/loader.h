@@ -59,29 +59,11 @@ void display_img_symbol_info();
 void display_img_program_info();
 
 /// @brief 加载镜像文件
-static void set_load_img() {
-    if (img_file == NULL) {
-        Logy("Img_file: %s, Use default img: `%s`", img_file, default_img_file);
-        img_file = default_img_file;
-    } else {
-        Logg("Set img_file: `%s`", img_file);
-    }
-}
+void set_load_img();
 
 /// @brief 修改加载镜像
 /// @param file_path 新镜像位置
-static bool change_load_img(char *file_path) {
-    FILE *fp = fopen(file_path, "rb");
-    if(!fp) {
-        Logy("Can not open file: %s", file_path);
-        return false;
-    }
-    fclose(fp);
-    free_img_file(file_path);
-    img_file = file_path;
-    Logg("Change img_file to: `%s`", img_file);
-    return true;
-}
+bool change_load_img(char *file_path);
 
 
 

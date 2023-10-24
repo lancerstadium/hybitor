@@ -730,7 +730,7 @@ long load_img_file(char *file_path) {
 long free_img_file(char *file_path) {
     if(elf_img.size > 0) {
         munmap(elf_img.addr, elf_img.size);
-        free(&elf_img.ehdr);
+        // free(&elf_img.ehdr); 这里不能释放
         free(elf_img.shdr);
         elf_img.shstrtab_offset = 0;
         elf_img.size = 0;
@@ -757,6 +757,28 @@ void display_img_program_info() {
     print_elf_program_header(elf_img);
 }
 
+
+void set_load_img() {
+    if (img_file == NULL) {
+        Logy("Img_file: %s, Use default img: `%s`", img_file, default_img_file);
+        img_file = default_img_file;
+    } else {
+        Logg("Set img_file: `%s`", img_file);
+    }
+}
+
+bool change_load_img(char *file_path) {
+    FILE *fp = fopen(file_path, "rb");
+    if(!fp) {
+        Logy("Can not open file: %s", file_path);
+        return false;
+    }
+    fclose(fp);
+    free_img_file(file_path);
+    img_file = file_path;
+    Logg("Change img_file to: `%s`", img_file);
+    return true;
+}
 
 
 // load and parse a ELF file, print ehdr infomation

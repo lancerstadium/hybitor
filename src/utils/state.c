@@ -82,16 +82,17 @@ void check_hybitor_quit_state() {
         case HY_END:
             Logg("hybitor: %s at pc = " FMT_WORD, 
             (hybitor_state.halt_ret == 0 ? ANSI_FMT("GOOD TRAP", ANSI_FG_GREEN) : ANSI_FMT("BAD TARP", ANSI_FG_RED)), 
-            hybitor_state.halt_pc);
+            (unsigned long long)hybitor_state.halt_pc);
             return;
         case HY_ABORT:
             Logy("hybitor: %s at pc = " FMT_WORD, 
             ANSI_FMT("ABORT", ANSI_FG_RED), 
-            hybitor_state.halt_pc);
+            (unsigned long long)hybitor_state.halt_pc);
             return;
         case HY_QUIT: 
             cpu_quit();
             return;
+        case HY_UNKNOWN: change_hybitor_state(HY_STOP); break;
     }
 }
 

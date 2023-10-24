@@ -23,7 +23,7 @@
 // cpu-exec 静态变量
 // ============================================================================ //
 
-// CPU_state cpu = {};
+CPU_state cpu = {};
 uint64_t g_nr_guest_inst = 0;       // 程序执行指令数
 static uint64_t g_timer = 0;        // 程序执行时间
 static bool g_print_step = false;   // 是否打印执行指令
@@ -56,12 +56,12 @@ static void cpu_execute(uint64_t n) {
 
 void cpu_quit() {
     change_hybitor_state(HY_QUIT);
-    Logg("Host time spent = %0.8f us", g_timer);
-    Logg("Guest executed instructions = %d", g_nr_guest_inst);
+    Logg("Host time spent = %0.8f us", (double)g_timer);
+    Logg("Guest executed instructions = %d", (int)g_nr_guest_inst);
     if(g_timer > 0)
-        Logg("Frequency = %0.8f inst/s", g_nr_guest_inst * 1000000 / g_timer);
+        Logg("Frequency = %0.8f inst/s", (double)g_nr_guest_inst * 1000000 / g_timer);
     else
-        Logy("Finish running in less than 1 us : %0.8f us, Can not calculate the simulation frequency.", g_timer);
+        Logy("Finish running in less than 1 us : %0.8f us, Can not calculate the simulation frequency.", (double)g_timer);
 }
 
 void cpu_exec(uint64_t n) {

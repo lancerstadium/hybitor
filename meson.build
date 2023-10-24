@@ -54,6 +54,11 @@ if not LLVM.found()
     )
 endif
 
+# -------- 配置路径文件 -------- #
+
+guest_arch = 'riscv64'
+host_arch = 'x86_64'
+guest_isa_path = join_paths(meson.source_root(), 'src', 'isa', guest_arch)
 
 src_files = [
     'src/hybitor.c',
@@ -69,7 +74,7 @@ src_files = [
     'src/controller/controller.c',
     'src/controller/loader/loader.c',
     'src/cpu/cpu-exec.c',
-    'src/isa/riscv32/reg.c',    # 体系结构相关
+    guest_isa_path + '/reg.c',    # 体系结构相关
 ]
 
 inc_dirs = [
@@ -78,16 +83,18 @@ inc_dirs = [
     'include/libelf',
     'src/monitor/hdb/include',
     'src/controller/loader/include',
-    'src/isa/riscv32/include'   # 体系结构相关
+    'src/isa/riscv32/include',      # 体系结构相关
+    'src/isa/riscv64/include',      # 体系结构相关
 ]
 
 # -------- 配置文件 -------- #
 
 conf_data = configuration_data()
-
-conf_data.set('CONFIGURE_VERSION','1.1.2')
-conf_data.set('CONFIGURE_TARGET_ARCHITECTURE','x86_64')
-conf_data.set('CONFIG_ISA64',1)
+conf_data.set('CONFIG_VERSION', '0.2.1')
+conf_data.set('CONFIG_GUEST_ARCH', guest_arch)
+conf_data.set('CONFIG_TARGET_ARCH', host_arch)
+conf_data.set('CONFIG_RV64', 1)
+conf_data.set('CONFIG_ISA64', 1)
 configure_file(
     install: true,
     install_dir: 'include/config',
