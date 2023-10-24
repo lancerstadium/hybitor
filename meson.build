@@ -58,7 +58,7 @@ endif
 
 guest_arch = 'riscv64'
 host_arch = 'x86_64'
-guest_isa_path = join_paths(meson.source_root(), 'src', 'isa', guest_arch)
+guest_isa_path = 'src/isa/' + guest_arch
 
 src_files = [
     'src/hybitor.c',
@@ -84,7 +84,7 @@ inc_dirs = [
     'src/monitor/hdb/include',
     'src/controller/loader/include',
     'src/isa/riscv32/include',      # 体系结构相关
-    'src/isa/riscv64/include',      # 体系结构相关
+    guest_isa_path + '/include',      # 体系结构相关
 ]
 
 # -------- 配置文件 -------- #
