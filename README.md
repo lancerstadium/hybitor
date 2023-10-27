@@ -24,6 +24,13 @@ Branches:
 
 ## 2 Build
 
+Download lib:
+
+```
+sudo apt install libreadline-dev
+sudo apt install libelf-dev
+sudo apt install llvm-15
+```
 
 
 Dir Tree:

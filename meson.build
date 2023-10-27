@@ -30,15 +30,12 @@ readline = cpp.find_library(
 # 配置 elf 库
 libelf = cpp.find_library(
     'elf',
-    static: true, required: true, 
-    dirs : join_paths(meson.source_root(), 'lib', host_arch + '-' + os_type)
 )
 
 # 配置 LLVM 库
 # 设置 LLVM 版本
 llvm_version = ['>=12', '=<16']
-# llvm_lib_path = '/usr/lib/llvm-14/lib'  # 库地点 x86_64 for linux
-llvm_lib_path = '/opt/homebrew/opt/llvm/lib' # aarch64 for macbook
+llvm_lib_path = '/usr/lib/llvm-15/lib'  # 库地点 x86_64 for linux
 # 首先寻找llvm动态库
 LLVM = cpp.find_library(
     'LLVM', 
