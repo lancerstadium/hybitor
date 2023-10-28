@@ -72,12 +72,12 @@ src_files = [
     'src/controller/loader/loader.c',
     'src/cpu/cpu-exec.c',
     guest_isa_path + '/reg.c',    # 体系结构相关
+    guest_isa_path + '/init.c',    # 体系结构相关
 ]
 
 inc_dirs = [
     '.',
     'include',
-    'include/libelf',
     'src/monitor/hdb/include',
     'src/controller/loader/include',
     'src/isa/riscv32/include',      # 体系结构相关

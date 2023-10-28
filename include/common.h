@@ -16,7 +16,7 @@
 // 配置文件 宏定义：.config
 // ============================================================================ //
 
-#define CONFIG_RVE 1                // 开启 RVE
+// #define CONFIG_RVE 1                // 开启 RVE
 #define CONFIG_RT_CHECK 1           // 开启 RT 检查
 #define CONFIG_MBASE 0x80000000     // 内存基址
 #define CONFIG_MSIZE 0x8000000      // 内存大小

@@ -23,6 +23,7 @@ static inline int check_reg_idx(int idx) {
   return idx;
 }
 
+/// 获取通用寄存器`idx`处的值
 #define gpr(idx) (cpu.gpr[check_reg_idx(idx)])
 
 /**

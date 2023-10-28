@@ -83,6 +83,30 @@ static inline bool in_pmem(paddr_t addr) {
   return addr - CONFIG_MBASE < CONFIG_MSIZE;
 }
 
+/// @brief 在pmem中读取数据
+/// @param addr 读取地址
+/// @param len 长度
+/// @return 数据
+static word_t pmem_read(paddr_t addr, int len) {
+  word_t ret = host_read(guest_to_host(addr), len);
+  return ret;
+}
+
+/// @brief 在pmem中写入数据
+/// @param addr 写入地址
+/// @param len 长度
+/// @param data 数据
+static void pmem_write(paddr_t addr, int len, word_t data) {
+  host_write(guest_to_host(addr), len, data);
+}
+
+/// @brief 访问地址出界
+/// @param addr 访问地址
+static void out_of_bound(paddr_t addr) {
+  Fatalf("address = " FMT_PADDR " is out of bound of pmem [" FMT_PADDR ", " FMT_PADDR "] at pc = " FMT_WORD,
+      addr, PMEM_LEFT, PMEM_RIGHT, cpu.pc);
+}
+
 /// @brief 从物理地址读取数据
 /// @param addr 物理地址
 /// @param len 数据长度

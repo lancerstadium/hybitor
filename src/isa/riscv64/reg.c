@@ -28,13 +28,12 @@ void print_isa_reg_info() {
     printf("Reg Info: ");
     for (int i = 0; i < 32; i++) {
         if (i % 4 == 0) {
-            printf("\n  %-3s: , ", regs[i]);
+            printf("\n  %-3s: " FMT_PADDR " , ", reg_name(i), gpr(i));
         } else {
-            printf("%-3s: , ", regs[i]);
+            printf("%-3s: " FMT_PADDR " , ", reg_name(i), gpr(i));
         }
     }
     printf("\n");
-    TODO("print_isa_reg_values");
 }
 
 word_t isa_reg_str2val(const char *name, bool *success) {

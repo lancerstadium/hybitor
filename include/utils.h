@@ -103,6 +103,12 @@ typedef uint16_t ioaddr_t;
 // ------------ BOOL转字符串 ------------
 #define BOOL_TO_STR(bool_expr) (bool_expr) ? "true" : "false"
 
+// ------------ 判断宏 ------------
+#if !defined(likely)
+#define likely(cond)   __builtin_expect(cond, 1)    // 判断宏：是
+#define unlikely(cond) __builtin_expect(cond, 0)    // 判断宏：不是
+#endif
+
 // ============================================================================ //
 // ANSI Color 宏定义
 // ============================================================================ //

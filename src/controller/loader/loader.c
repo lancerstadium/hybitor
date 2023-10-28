@@ -31,9 +31,8 @@
 #define PT_GNU_SFRAME (PT_LOOS + 0x474e554) /* SFrame stack trace information */
 
 #define PT_GNU_STACK 8
-#define PT_GNU_RELRO 0x80000000
-#define PT_GNU_EH_FRAME 0x8fffffff
-#define PT_GNU_PROPERTY 0x90000000
+
+
 
 #define ELF_TBSS_SPECIAL(sec_hdr, segment) \
     (((sec_hdr)->sh_flags & SHF_TLS) != 0 && (sec_hdr)->sh_type == SHT_NOBITS && (segment)->p_type != PT_TLS)
