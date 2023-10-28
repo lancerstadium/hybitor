@@ -16,7 +16,7 @@ static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 
 
 // ============================================================================ //
-// paddr API 实现：物理地址操作--> 定义：include/memory/mmu.h
+// paddr API 实现：物理地址操作--> 声明：include/memory/mmu.h
 // ============================================================================ //
 
 uint8_t* guest_to_host(paddr_t paddr) { 
@@ -39,7 +39,7 @@ void paddr_write(paddr_t addr, int len, word_t data) {
 }
 
 // ============================================================================ //
-// vaddr API 实现：物理地址操作--> 定义：include/memory/mmu.h
+// vaddr API 实现：物理地址操作--> 声明：include/memory/mmu.h
 // ============================================================================ //
 
 word_t vaddr_ifetch(vaddr_t addr, int len) {
@@ -56,7 +56,7 @@ void vaddr_write(vaddr_t addr, int len, word_t data) {
 
 
 // ============================================================================ //
-// mem API 实现：外部控制内存接口 --> 定义：include/memory/mmu.h
+// mem API 实现：外部控制内存接口 --> 声明：include/memory/mmu.h
 // ============================================================================ //
 
 void init_mem() {

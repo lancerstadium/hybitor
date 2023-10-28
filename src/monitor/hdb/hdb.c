@@ -65,7 +65,7 @@ static struct {
     {"info",  "Subcommand [r] for reg info, [w] for watchpoint", cmd_info },
     {"state", "Print hybitor statement", cmd_state},
     {"load",  "Reset load img [File]", cmd_load},
-    {"file",  "Subcommand [h], [s], [m], [p]", cmd_file},
+    {"file",  "Subcommand [i], [h], [s], [m], [p]", cmd_file},
     {"c",     "Continue the execution of the program", cmd_c},
     {"si",    "Execute [N] step", cmd_si },
     {"q",     "Exit hbd", cmd_q},
@@ -138,23 +138,24 @@ static int cmd_load(char *args) {
     if(!change_load_img(sencond_word)) {
         return SUCCESS_RETURN;
     }
-    load_img_file(img_file);
+    load_img_file(elf_img.img_file);
     return SUCCESS_RETURN;
 }
 
 static int cmd_file(char *args) {
     char *sencond_word = strtok(NULL," ");
     if (sencond_word == NULL){
-		Warning("Enter valid subcommand [h], [s], [m], [p]");
+		Warning("Enter valid subcommand [i], [h], [s], [m], [p]");
 		return SUCCESS_RETURN;	
 	}
     switch (sencond_word[0])
     {
+    case 'i':display_img_file_info() ; break;
     case 'h':display_img_header_info(); break;
     case 's':display_img_section_info(); break;
     case 'm':display_img_symbol_info(); break;
     case 'p':display_img_program_info(); break;
-    default: Warningf("Unknown command '%s', enter `h`: header, `s`: section, `m`: symbol, `p`: program", sencond_word); break;
+    default: Warningf("Unknown command '%s', enter `i`: info, `h`: header, `s`: section, `m`: symbol, `p`: program", sencond_word); break;
     }
     return SUCCESS_RETURN;
 }
@@ -172,11 +173,11 @@ static int cmd_si(char *args) {
 		cpu_exec(1);
 		return SUCCESS_RETURN;	
 	}
-    sscanf(sencond_word, "%llu", &step);
+    sscanf(sencond_word, "%lu", &step);
     if (step <= (uint64_t)0 || 0 > (int)step) { /// TODO: 所以为啥要用u64呢?，判断真麻烦
         Warningf("Enter a valid step(>0): %s", args);
     } else {
-        printf("Execute step: %llu\n", step);
+        printf("Execute step: %lu\n", step);
         cpu_exec(step);
     }
     return SUCCESS_RETURN;
@@ -194,7 +195,7 @@ static int cmd_q(char *args) {
 
 
 // ============================================================================ //
-// hdb API 实现 --> 定义 src/monitor/hdb/hdb.h
+// hdb API 实现 --> 声明 src/monitor/hdb/hdb.h
 // ============================================================================ //
 
 void hdb_set_debug_mode() {

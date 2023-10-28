@@ -14,8 +14,11 @@
 // ============================================================================ //
 
 char *log_file = NULL;   // 日志文件名
-char *img_file = NULL;   // 镜像文件名
-char* default_img_file = "./test/hello.x86_64";     // 默认镜像文件
+char* default_img_file = "./test/hello.rv64";     // 默认镜像文件
+
+ELF_IMG elf_img = {
+    .img_file = NULL,   // 镜像文件名
+};
 
 
 // ============================================================================ //
@@ -75,7 +78,7 @@ static int parse_args(int argc, char *argv[]) {
             case 't':
                 printf("hello world!\n"); break;
             case 1: // 加载文件
-                img_file = optarg; break;
+                elf_img.img_file = optarg; break;
             case -1 :
                 Error("input no option"); 
                 return FAILURE_RETURN;
@@ -89,7 +92,7 @@ static int parse_args(int argc, char *argv[]) {
 
 
 // ============================================================================ //
-// monitor API 实现 --> 定义 include/common.h
+// monitor API 实现 --> 声明 include/common.h
 // ============================================================================ //
 
 /// @brief 初始化监视器

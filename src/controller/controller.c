@@ -22,7 +22,7 @@ static void print_welcome() {
 
 
 // ============================================================================ //
-// controller API 实现 --> 定义 include/common.h
+// controller API 实现 --> 声明 include/common.h
 // ============================================================================ //
 
 /// @brief 初始化控制器：加载监视器、内存、镜像文件、初始化线程池、开启服务器
@@ -32,12 +32,10 @@ void init_controller_main(int argc, char *argv[]) {
     // 2. 初始化内存
     init_mem();
     // 3. 加载镜像文件：将镜像加载到内存中。这将覆盖内置镜像。
-    set_load_img();
-    // 4. 初始化线程池
-    TODO("start_controller: muti threads");
-    // 5. 初始化服务器资源
+    init_load_img();
+    // 4. 初始化服务器资源
     init_server();
-    // 6. 打印欢迎信息
+    // 5. 打印欢迎信息
     print_welcome();
 }
 

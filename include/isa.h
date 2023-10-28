@@ -11,8 +11,6 @@
 // 位置在：src/isa/$(GUEST_ISA)/include/isa-def.h
 #include "isa-def.h"
 
-
-
 // ============================================================================ //
 // isa-def 结构体类型转换，如：riscv32 + CPU_state --> riscv32_CPU_state 
 // ============================================================================ //
@@ -20,7 +18,8 @@
 typedef concat(CONFIG_GUEST_ARCH, _CPU_state) CPU_state;
 typedef concat(CONFIG_GUEST_ARCH, _ISADecodeInfo) ISADecodeInfo;
 
-extern CPU_state cpu;   // 声明 cpu 类型 ==> ARCH_CPU_state， 定义：src/cpu/cpu-exec
+extern CPU_state cpu;           // 声明 cpu 类型 ==> ARCH_CPU_state， 定义：src/cpu/cpu-exec
+extern unsigned char isa_logo[];  // 声明 isa_logo 类型
 
 // ============================================================================ //
 // init API 定义 --> 实现 src/isa/ARCH/init.c

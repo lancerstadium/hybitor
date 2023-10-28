@@ -21,16 +21,16 @@ const char *regs[] = {
 };
 
 // ============================================================================ //
-// riscv64 reg API 实现 --> 定义 src/isa.h
+// riscv64 reg API 实现 --> 声明 src/isa.h
 // ============================================================================ //
 
 void print_isa_reg_info() {
     printf("Reg Info: ");
     for (int i = 0; i < 32; i++) {
         if (i % 4 == 0) {
-            printf("\n  %-3s: " FMT_PADDR " , ", reg_name(i), gpr(i));
+            printf("\n  %-3s: " FMT_PADDR " , ", reg_name(i), (unsigned int)gpr(i));
         } else {
-            printf("%-3s: " FMT_PADDR " , ", reg_name(i), gpr(i));
+            printf("%-3s: " FMT_PADDR " , ", reg_name(i), (unsigned int)gpr(i));
         }
     }
     printf("\n");

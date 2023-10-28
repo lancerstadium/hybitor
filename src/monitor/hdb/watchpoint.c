@@ -32,7 +32,7 @@ static WP wp_pool[NR_WP] = {};
 static WP *head = NULL, *free_ = NULL;
 
 // ============================================================================ //
-// watchpoint API 实现 --> 定义 src/monitor/hdb/hdb.h
+// watchpoint API 实现 --> 声明 src/monitor/hdb/hdb.h
 // ============================================================================ //
 
 void init_wp_pool() {

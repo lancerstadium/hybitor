@@ -6,6 +6,7 @@
 */
 
 #include "cpu/cpu.h"
+#include "cpu/decode.h"
 
 // ============================================================================ //
 // cpu-exec 宏定义
@@ -33,25 +34,29 @@ static bool g_print_step = false;   // 是否打印执行指令
 // cpu-exec 静态函数
 // ============================================================================ //
 
+static void exec_once(Decode *s, vaddr_t pc) {
+    s->pc = pc;
+    s->snpc = pc;
+    isa_exec_once(s);
+    cpu.pc = s->dnpc;
+}
+
+
 /// @brief cpu执行指令
 /// @param n 指令数
 static void cpu_execute(uint64_t n) {
-    if(n == -1){
-        TODO("cpu_execute_-1_loop");
-        change_hybitor_state(HY_ABORT);
-        return;
-    }
-    for (;n > (uint64_t)0; n --) {
+    Decode s;
+    for (;n > 0; n --) {
+        exec_once(&s, cpu.pc);
         g_nr_guest_inst++;
         if (hybitor_state.state != HY_RUNNING)
             break;
     }
-    TODO("cpu_execute");
 }
 
 
 // ============================================================================ //
-// cpu-exec API 实现：CPU执行接口 --> 定义：include/cpu/cpu.h
+// cpu-exec API 实现：CPU执行接口 --> 声明：include/cpu/cpu.h
 // ============================================================================ //
 
 void cpu_quit() {

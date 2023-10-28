@@ -11,7 +11,18 @@
 #include "common.h"
 
 
+// ============================================================================ //
+// cpu 宏定义
+// ============================================================================ //
 
+/// @brief 非法指令 定义 -->实现：src/server/inrterpreter/hostcall.c
+/// @param thispc 当前程序计数器
+void invalid_inst(vaddr_t thispc);
+
+// -------- 陷入宏 ----------
+#define HYTRAP(thispc, code) set_hybitor_state(HY_END, thispc, code)
+// -------- 非法宏 ----------
+#define HYINVALID(thispc) invalid_inst(thispc)
 
 // ============================================================================ //
 // cpu-exec API 定义：CPU执行接口 --> 实现：src/cpu/cpu-exec.c

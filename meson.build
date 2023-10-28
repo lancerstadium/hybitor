@@ -71,8 +71,11 @@ src_files = [
     'src/controller/controller.c',
     'src/controller/loader/loader.c',
     'src/cpu/cpu-exec.c',
-    guest_isa_path + '/reg.c',    # 体系结构相关
+    guest_isa_path + '/reg.c',     # 体系结构相关
     guest_isa_path + '/init.c',    # 体系结构相关
+    guest_isa_path + '/inst.c',    # 体系结构相关
+    guest_isa_path + '/logo.c',    # 体系结构相关
+    'src/server/interpreter/hostcall.c',
 ]
 
 inc_dirs = [

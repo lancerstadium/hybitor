@@ -44,7 +44,7 @@
 
 
 // ============================================================================ //
-// state API 实现：hybitor状态控制 --> 定义 include/utils.c
+// state API 实现：hybitor状态控制 --> 声明 include/utils.c
 // ============================================================================ //
 
 /// @brief Hybitor状态（初始：停止）
@@ -74,6 +74,12 @@ void change_hybitor_state(enum Hy_Statement state_type) {
     }
 }
 
+void set_hybitor_state(int state, vaddr_t pc, int halt_ret) {
+    change_hybitor_state(state);
+    hybitor_state.halt_pc = pc;
+    hybitor_state.halt_ret = halt_ret;
+}
+
 void check_hybitor_quit_state() {
     // 检查 hybitor 状态
     switch (hybitor_state.state) {
@@ -82,12 +88,12 @@ void check_hybitor_quit_state() {
         case HY_END:
             Logg("hybitor: %s at pc = " FMT_WORD, 
             (hybitor_state.halt_ret == 0 ? ANSI_FMT("GOOD TRAP", ANSI_FG_GREEN) : ANSI_FMT("BAD TARP", ANSI_FG_RED)), 
-            (unsigned long long)hybitor_state.halt_pc);
+            (unsigned long int)hybitor_state.halt_pc);
             return;
         case HY_ABORT:
             Logy("hybitor: %s at pc = " FMT_WORD, 
             ANSI_FMT("ABORT", ANSI_FG_RED), 
-            (unsigned long long)hybitor_state.halt_pc);
+            (unsigned long int)hybitor_state.halt_pc);
             return;
         case HY_QUIT: 
             cpu_quit();
@@ -101,3 +107,7 @@ int is_exit_status_bad() {
                (hybitor_state.state == HY_QUIT);
     return !good;
 }
+
+
+
+

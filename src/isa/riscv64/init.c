@@ -29,11 +29,11 @@ static void restart_cpu() {
 
 
 // ============================================================================ //
-// init API 实现 --> 定义 include/isa.h
+// init API 实现 --> 声明 include/isa.h
 // ============================================================================ //
 
 void init_isa() {
     memcpy(guest_to_host(RESET_VECTOR), isa_img, sizeof(isa_img));  // 加载 build-in 镜像
     restart_cpu();  // 初始化虚拟机系统
-    Logg("Init isa, cpu pc: %llu", (long long int)cpu.pc);
+    Logg("Init isa, cpu pc: " FMT_PADDR , (unsigned int)cpu.pc);
 }

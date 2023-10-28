@@ -69,6 +69,15 @@
 #define IFZERO(macro, ...) MUXZERO(macro, __KEEP, __IGNORE)(__VA_ARGS__)
 
 
+#define BITMASK(bits) ((1ull << (bits)) - 1)
+#define BITS(x, hi, lo) (((x) >> (lo)) & BITMASK((hi) - (lo) + 1)) // similar to x[hi:lo] in verilog
+#define SEXT(x, len) ({ struct { int64_t n : len; } __x = { .n = x }; (uint64_t)__x.n; })
+
+#define ROUNDUP(a, sz)   ((((uintptr_t)a) + (sz) - 1) & ~((sz) - 1))
+#define ROUNDDOWN(a, sz) ((((uintptr_t)a)) & ~((sz) - 1))
+
+#define PG_ALIGN __attribute((aligned(4096)))
+
 // ============================================================================ //
 // 相关类型 宏定义
 // ============================================================================ //
@@ -102,6 +111,9 @@ typedef uint16_t ioaddr_t;
 
 // ------------ BOOL转字符串 ------------
 #define BOOL_TO_STR(bool_expr) (bool_expr) ? "true" : "false"
+
+// ------------ BOOL转字符串 ------------
+#define MAP(c, f) c(f)
 
 // ------------ 判断宏 ------------
 #if !defined(likely)
@@ -284,12 +296,14 @@ typedef struct {
 extern HybitorState hybitor_state;
 
 
-
-
-
-
 /// @brief 打印 hybitor 状态
 void print_hybitor_state();
+
+/// @brief 设置hybitor状态以及参数
+/// @param state 状态类型
+/// @param pc 程序计数器
+/// @param halt_ret 返回类型
+void set_hybitor_state(int state, vaddr_t pc, int halt_ret);
 
 /// @brief 改变 hybitor 状态为 state_type
 /// @param state_type 状态

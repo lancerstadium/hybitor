@@ -17,7 +17,7 @@ static uint64_t current_timeval;    // 当前时间戳
 static uint64_t boot_timeval = 0;   // 启动时间戳
 
 // ============================================================================ //
-// timer API 实现 --> 定义 include/utils.h
+// timer API 实现 --> 声明 include/utils.h
 // ============================================================================ //
 
 uint64_t get_internal_timeval() {

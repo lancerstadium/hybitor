@@ -30,7 +30,7 @@
 #define PT_GNU_MBIND_HI (PT_GNU_MBIND_LO + PT_GNU_MBIND_NUM - 1)
 #define PT_GNU_SFRAME (PT_LOOS + 0x474e554) /* SFrame stack trace information */
 
-#define PT_GNU_STACK 8
+
 
 
 
@@ -78,7 +78,7 @@ typedef uint64_t bfd_vma;
 
 #define ELF_SECTION_IN_SEGMENT_STRICT(sec_hdr, segment) (ELF_SECTION_IN_SEGMENT_1(sec_hdr, segment, 1, 1))
 
-ELF_IMG elf_img;
+
 
 static int truncated = 0;   // 截断
 
@@ -670,7 +670,7 @@ static void print_elf_program_header(ELF_IMG elf_img) {
 
 
 // ============================================================================ //
-// loader API 实现 --> 定义 src/controller/loader/loader.h
+// loader API 实现 --> 声明 src/controller/loader/loader.h
 // ============================================================================ //
 
 
@@ -687,7 +687,7 @@ long load_img_file(char *file_path) {
     
     // 2. 对 ELF 文件做完整的内存映射, 保存在 elf_img.addr 中, 方便后面寻址
     elf_img.size = lseek(fd, 0, SEEK_END);
-    void *addr = mmap(NULL, elf_img.size, PROT_READ, MAP_PRIVATE, fd, 0);
+    void *addr = mmap(guest_to_host(RESET_VECTOR), elf_img.size, PROT_READ, MAP_PRIVATE, fd, 0);
     if(addr == MAP_FAILED){
         munmap(addr, elf_img.size);
         close(fd);
@@ -713,9 +713,8 @@ long load_img_file(char *file_path) {
     elf_img.shstrtab_offset = elf_img.shdr[elf_img.ehdr.e_shstrndx].sh_offset;  
 
     // 6. 打印信息
-    printf("File Name: %s\n", file_path);
-    print_elf_header_info(elf_img);
-    Logg("Success load file: %s, size: %ld", img_file, (long)elf_img.size);
+    Logg("Success load file: %s, size: %ld", elf_img.img_file, (long)elf_img.size);
+    display_img_file_info();
 
     // 7. 释放资源
     close(fd);
@@ -735,9 +734,17 @@ long free_img_file(char *file_path) {
         elf_img.size = 0;
         Logg("Success free file: %s, now size: %ld", file_path, (long)elf_img.size);
     } else {
-        Warningf("No file to free: %s", img_file);
+        Warningf("No file to free: %s", elf_img.img_file);
     }
     return (long)elf_img.size;
+}
+
+void display_img_file_info() {
+    printf("ELF file info: \n");
+    printf("  filename: %s\n", elf_img.img_file);
+    printf("  arch: %s\n", get_arch(elf_img.ehdr));
+    printf("  addr: " FMT_PADDR "\n", elf_img.addr);
+    printf("  size: %ld\n", elf_img.size);
 }
 
 void display_img_header_info() {
@@ -758,12 +765,17 @@ void display_img_program_info() {
 
 
 void set_load_img() {
-    if (img_file == NULL) {
-        Logy("Img_file: %s, Use default img: `%s`", img_file, default_img_file);
-        img_file = default_img_file;
+    if (elf_img.img_file == NULL) {
+        Logy("Img_file: %s, Use default img: `%s`", elf_img.img_file, default_img_file);
+        elf_img.img_file = default_img_file;
     } else {
-        Logg("Set img_file: `%s`", img_file);
+        Logg("Set img_file: `%s`", elf_img.img_file);
     }
+}
+
+void init_load_img() {
+    set_load_img();
+    load_img_file(elf_img.img_file);
 }
 
 bool change_load_img(char *file_path) {
@@ -774,8 +786,8 @@ bool change_load_img(char *file_path) {
     }
     fclose(fp);
     free_img_file(file_path);
-    img_file = file_path;
-    Logg("Change img_file to: `%s`", img_file);
+    elf_img.img_file = file_path;
+    Logg("Change img_file to: `%s`", elf_img.img_file);
     return true;
 }
 
