@@ -196,7 +196,7 @@ static void print_elf_header_info(ELF_IMG elf_img) {
     printf(ELF_PRINT_FORMAT, "Type:", get_type(elf_img.ehdr));
     printf(ELF_PRINT_FORMAT, "Machine:", get_arch(elf_img.ehdr));
     printf("  Version:                           0x%x\n", elf_img.ehdr.e_version);
-    printf("  Entry point address:               0x%llx\n", (unsigned long long)elf_img.ehdr.e_entry);
+    printf("  Entry point address:               " FMT_PADDR "\n", (unsigned int)elf_img.ehdr.e_entry);
     printf("  Start of program headers:          %lld (bytes into file)\n", (unsigned long long)elf_img.ehdr.e_phoff);
     printf("  Start of section headers:          %lld (bytes into file)\n", (unsigned long long)elf_img.ehdr.e_shoff);
     printf("  Flags:                             0x%x\n", elf_img.ehdr.e_flags);
@@ -335,7 +335,7 @@ static char *get_section_flag(Elf64_Xword section_flag) {
  */
 static int print_elf_section_table(ELF_IMG elf_img) {
     int section_number = elf_img.ehdr.e_shnum;
-    printf("There are %d section headers, starting at offset 0x%lx:\n", section_number, elf_img.ehdr.e_shoff);
+    printf("There are %d section headers, starting at offset " FMT_PADDR "\n", section_number, (unsigned int) elf_img.ehdr.e_shoff);
 
     printf("\nSection %s:\n", section_number == 1 ? "Header" : "Headers");
 
@@ -623,7 +623,7 @@ static void print_elf_program_header(ELF_IMG elf_img) {
 
     char *elf_type_name = get_type(elf_img.ehdr);
     printf("\nElf file type is %s\n", elf_type_name);
-    printf("Entry point 0x%llx\n", (unsigned long long)elf_img.ehdr.e_entry);
+    printf("Entry point " FMT_PADDR "\n", (unsigned int)elf_img.ehdr.e_entry);
     printf("There are %d program headers, starting at offset %lld\n",
            ph_entry_number,
            (unsigned long long)elf_img.ehdr.e_phoff);
@@ -732,7 +732,7 @@ long free_img_file(char *file_path) {
         free(elf_img.shdr);
         elf_img.shstrtab_offset = 0;
         elf_img.size = 0;
-        Logg("Success free file: %s, now size: %ld", file_path, (long)elf_img.size);
+        Logg("Success free file: %s, now size: %ld", elf_img.img_file, (long)elf_img.size);
     } else {
         Warningf("No file to free: %s", elf_img.img_file);
     }
@@ -743,7 +743,7 @@ void display_img_file_info() {
     printf("ELF file info: \n");
     printf("  filename: %s\n", elf_img.img_file);
     printf("  arch: %s\n", get_arch(elf_img.ehdr));
-    printf("  addr: " FMT_PADDR "\n", elf_img.addr);
+    printf("  addr: " FMT_PADDR "\n", (unsigned int)elf_img.addr);
     printf("  size: %ld\n", elf_img.size);
 }
 

@@ -75,44 +75,11 @@ uint8_t* guest_to_host(paddr_t paddr);
 /// @return 物理地址
 paddr_t host_to_guest(uint8_t *haddr);
 
-
-/// @brief 判断物理地址是否在内存范围内
-/// @param addr 物理地址
-/// @return 是否在内存范围内
-static inline bool in_pmem(paddr_t addr) {
-  return addr - CONFIG_MBASE < CONFIG_MSIZE;
-}
-
-/// @brief 在pmem中读取数据
-/// @param addr 读取地址
-/// @param len 长度
-/// @return 数据
-static word_t pmem_read(paddr_t addr, int len) {
-  word_t ret = host_read(guest_to_host(addr), len);
-  return ret;
-}
-
-/// @brief 在pmem中写入数据
-/// @param addr 写入地址
-/// @param len 长度
-/// @param data 数据
-static void pmem_write(paddr_t addr, int len, word_t data) {
-  host_write(guest_to_host(addr), len, data);
-}
-
-/// @brief 访问地址出界
-/// @param addr 访问地址
-static void out_of_bound(paddr_t addr) {
-  Fatalf("address = " FMT_PADDR " is out of bound of pmem [" FMT_PADDR ", " FMT_PADDR "] at pc = " FMT_WORD,
-      addr, PMEM_LEFT, PMEM_RIGHT, cpu.pc);
-}
-
 /// @brief 从物理地址读取数据
 /// @param addr 物理地址
 /// @param len 数据长度
 /// @return 读取到的数据
 word_t paddr_read(paddr_t addr, int len);
-
 
 /// @brief 向物理地址写入数据
 /// @param addr 物理地址
@@ -129,10 +96,23 @@ void paddr_write(paddr_t addr, int len, word_t data);
 #define PAGE_SIZE         (1ul << PAGE_SHIFT)
 #define PAGE_MASK         (PAGE_SIZE - 1)
 
+/// @brief 虚拟地址取指令
+/// @param addr 虚拟地址
+/// @param len 长度
+/// @return 指令
 word_t vaddr_ifetch(vaddr_t addr, int len);
-word_t vaddr_read(vaddr_t addr, int len);
-void vaddr_write(vaddr_t addr, int len, word_t data);
 
+/// @brief 虚拟地址读取数据
+/// @param addr 虚拟地址
+/// @param len 长度
+/// @return 数据
+word_t vaddr_read(vaddr_t addr, int len);
+
+/// @brief 虚拟地址写入数据
+/// @param addr 虚拟地址
+/// @param len 长度
+/// @param data 数据
+void vaddr_write(vaddr_t addr, int len, word_t data);
 
 
 // ============================================================================ //
