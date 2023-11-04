@@ -14,7 +14,7 @@
 // ============================================================================ //
 
 char *log_file = NULL;   // 日志文件名
-char* default_img_file = "./test/hello.aarch64";     // 默认镜像文件
+char* default_img_file = "./test/hello.riscv64";     // 默认镜像文件
 
 ELF_IMG elf_img = {
     .img_file = NULL,   // 镜像文件名
