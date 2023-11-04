@@ -54,6 +54,9 @@ dkms.conf
 # VSCode
 .vscode*
 
+# cache
+.cache
+
 # build
 build/
 
