@@ -9,6 +9,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
+
 
 // ============================================================================ //
 // loader 宏定义 & 结构体

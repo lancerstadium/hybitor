@@ -36,6 +36,10 @@ libelf = cpp.find_library(
 # 设置 LLVM 版本
 llvm_version = ['>=12', '=<16']
 llvm_lib_path = '/usr/lib/llvm-15/lib'  # 库地点 x86_64 for linux
+llvm_include_path = [                   # 头地点 x86_64 for linux
+    '/usr/include/llvm-15',
+    '/usr/include/llvm-c-15',
+]
 # 首先寻找llvm动态库
 LLVM = cpp.find_library(
     'LLVM', 
@@ -76,9 +80,11 @@ src_files = [
     guest_isa_path + '/inst.c',    # 体系结构相关
     guest_isa_path + '/logo.c',    # 体系结构相关
     'src/server/interpreter/hostcall.c',
+    'src/server/decoder/decode.cc',
 ]
 
 inc_dirs = [
+    llvm_include_path,
     '.',
     'include',
     'src/monitor/hdb/include',
@@ -95,6 +101,8 @@ conf_data.set('CONFIG_GUEST_ARCH', guest_arch)
 conf_data.set('CONFIG_TARGET_ARCH', host_arch)
 conf_data.set('CONFIG_RV64', 1)
 conf_data.set('CONFIG_ISA64', 1)
+conf_data.set('CONFIG_ISA_riscv', 1)
+conf_data.set('CONFIG_ITRACE', 1)
 configure_file(
     install: true,
     install_dir: 'include/config',

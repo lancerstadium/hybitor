@@ -43,5 +43,7 @@ void start_controller_main();
 
 void init_server();
 void start_server();
+void init_disasm(const char *triple);
+void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
 
 #endif // _HYBITOR_COMMON_H_

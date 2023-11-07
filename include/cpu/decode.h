@@ -31,8 +31,15 @@ typedef struct Decode {
 // decode 宏定义 --> 实现：src/isa/ARCH/inst.c
 // ============================================================================ //
 
-// --- pattern matching mechanism ---
+
+
+
+
 __attribute__((always_inline))
+/**
+ * pattern matching mechanism
+ * 用于将模式变量转换为三个整型字符串
+*/
 static inline void pattern_decode(const char *str, int len,
     uint64_t *key, uint64_t *mask, uint64_t *shift) {
   uint64_t __key = 0, __mask = 0, __shift = 0;
@@ -91,7 +98,15 @@ finish:
 }
 
 
-// --- pattern matching wrappers for decode ---
+
+/**
+ * @brief Instruction Patten 指令模式匹配宏：
+ * `INSTPAT(模式字符串, 指令名称, 指令类型, 指令执行操作)`
+ * @param 模式字符串 四种：`0`, `1`, `?`（0 或 1）, `<space>`（分隔）
+ * @param 指令名称 在宏中作为注释
+ * @param 指令类型 `U`, `I`, `S`, `N`, ...
+ * @param 指令执行操作 寄存器、内存等等操作
+*/
 #define INSTPAT(pattern, ...) do { \
   uint64_t key, mask, shift; \
   pattern_decode(pattern, STRLEN(pattern), &key, &mask, &shift); \
@@ -101,7 +116,12 @@ finish:
   } \
 } while (0)
 
+/**
+ * 
+*/
 #define INSTPAT_START(name) { const void ** __instpat_end = &&concat(__instpat_end_, name);
+
+
 #define INSTPAT_END(name)   concat(__instpat_end_, name): ; }
 
 

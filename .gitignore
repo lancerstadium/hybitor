@@ -63,6 +63,9 @@ build/
 # log
 log.txt
 
+# upload
+upload.sh
+
 # hybitor
 hybitor
 out/

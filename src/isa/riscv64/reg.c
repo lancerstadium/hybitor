@@ -28,9 +28,9 @@ void print_isa_reg_info() {
     printf("Reg Info: ");
     for (int i = 0; i < 32; i++) {
         if (i % 4 == 0) {
-            printf("\n  %-3s: " FMT_PADDR " , ", reg_name(i), (unsigned int)gpr(i));
+            printf("\n  %-3s: " FMT_WORD " , ", reg_name(i), (long unsigned int)gpr(i));
         } else {
-            printf("%-3s: " FMT_PADDR " , ", reg_name(i), (unsigned int)gpr(i));
+            printf("%-3s: " FMT_WORD " , ", reg_name(i), (long unsigned int)gpr(i));
         }
     }
     printf("\n");

@@ -10,6 +10,16 @@
 
 /// @brief 初始化服务器
 void init_server() {
+#ifndef CONFIG_ISA_loongarch32r
+    IFDEF(CONFIG_ITRACE, init_disasm(
+        MUXDEF(CONFIG_ISA_x86,     "i686",
+        MUXDEF(CONFIG_ISA_mips32,  "mipsel",
+        MUXDEF(CONFIG_ISA_riscv,
+        MUXDEF(CONFIG_RV64,      "riscv64",
+                                "riscv32"),
+                                "bad"))) "-pc-linux-gnu"
+    ));
+#endif
     init_isa();
     // 初始化线程池
     TODO("start_controller: muti threads");

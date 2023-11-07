@@ -14,16 +14,18 @@
 
 
 static const uint32_t isa_img [] = {
-  0x3c048000,  // lui a0, 0x8000
-  0xac800000,  // sw  zero, 0(a0)
-  0x8c820000,  // lw  v0,0(a0)
-  0x7000003f,  // sdbbp (used as hybitor_trap)
+  0x00000297,  // auipc t0,0
+  0x00028823,  // sb  zero,16(t0)
+  0x0102c503,  // lbu a0,16(t0)
+  0x00100073,  // ebreak (used as hybitor_trap)
+  0xdeadbeef,  // some data
 };
 
 
 /// @brief 重新启动 cpu
 static void restart_cpu() {
-    cpu.pc = RESET_VECTOR;  // 初始化程序计数器
+    // cpu.pc = RESET_VECTOR;  // 初始化程序计数器
+    cpu.pc = RESET_VECTOR;
     cpu.gpr[0] = 0;         // 令零寄存器为0
 }
 
