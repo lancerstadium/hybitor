@@ -17,7 +17,14 @@
 
 /// @brief 表达式 token 类型
 enum {
-    TK_NOTYPE = 256, TK_EQ,
+    TK_NUM = 1,
+    TK_REG,
+    TK_HEX,
+    TK_EQ,
+    TK_NOTEQ,
+    TK_OR,
+    TK_AND,
+    TK_NOTYPE = 256, 
     /// TODO: Add more token types 
 
 };
@@ -28,9 +35,26 @@ static struct rule {
     int token_type;         // token 类型编号
 } rules[] = {
     /// TODO: Add more rules, Pay attention to the precedence level of different rules.
-    {" +", TK_NOTYPE},    // spaces
+
     {"\\+", '+'},         // plus
-    {"==", TK_EQ},        // equal
+    {"\\-", '-'},         // sub
+	{"\\*", '*'},         // muti
+	{"\\/", '/'},         // div
+
+    {"\\$[a-z]+"         , TK_REG},     // register
+	{"0[xX][0-9a-fA-F]+" , TK_HEX},     // hex
+	{"[0-9]+"            , TK_NUM},     // number
+	
+	{"=="       , TK_EQ},               // equal
+	{"!="       , TK_NOTEQ},            // not equal
+	{"\\|\\|"   , TK_OR},               // or
+	{"&&"       , TK_AND},              // and
+
+	{"\\(", '('},
+	{"\\)", ')'},
+	
+	{"!", '!'},
+    {" +", TK_NOTYPE},    // spaces
 };
 
 /// @brief 表达式规则数量
