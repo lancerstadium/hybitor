@@ -96,16 +96,29 @@ inc_dirs = [
 # -------- 配置文件 -------- #
 
 conf_data = configuration_data()
-conf_data.set('CONFIG_VERSION', '0.2.1')
-conf_data.set('CONFIG_GUEST_ARCH', guest_arch)
-conf_data.set('CONFIG_TARGET_ARCH', host_arch)
-conf_data.set('CONFIG_RV64', 1)
-conf_data.set('CONFIG_ISA64', 1)
-conf_data.set('CONFIG_ISA_riscv', 1)
-conf_data.set('CONFIG_ITRACE', 1)
+
+## 通用配置
+conf_data.set('CONFIG_VERSION', '0.2.1', description: '配置文件版本')
+conf_data.set('CONFIG_GUEST_ARCH', guest_arch, description: '来宾体系结构')
+conf_data.set('CONFIG_TARGET_ARCH', host_arch, description: '主机体系结构')
+conf_data.set('CONFIG_MBASE', '0x80000000', description: '内存基址')
+conf_data.set('CONFIG_MSIZE', '0x8000000', description: '内存大小')
+conf_data.set('CONFIG_MEM_RANDOM', 1, description: '内存随机初始化')
+conf_data.set('CONFIG_PC_RESET_OFFSET', '0x0', description: '取指令偏移')
+# conf_data.set('CONFIG_RVE', 1, description: '开启相对虚拟地址')
+
+## ISA配置
+conf_data.set('CONFIG_ISA64', 1, description: '是 64bit ISA')
+conf_data.set('CONFIG_ISA_riscv', 1, description: '是 RISC-V ISA')
+conf_data.set('CONFIG_RV64', 1, description: '是 RISC-V 64bit ISA')
+
+## 可选配置
+conf_data.set('CONFIG_ITRACE', 1, description: '开启指令追踪')
+conf_data.set('CONFIG_RT_CHECK', 1, description: '开启实时检查')
+
 configure_file(
     install: true,
-    install_dir: 'include/config',
+    install_dir: './include/config',
     output: 'config.h',
     configuration: conf_data,
 )

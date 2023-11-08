@@ -7,21 +7,28 @@
 
 #include "common.h"
 
+/// 获取来宾体系结构字符串
+#define GET_GUEST_ARCH_S \
+    MUXDEF(CONFIG_ISA_x86,     "i686", \
+    MUXDEF(CONFIG_ISA_mips32,  "mipsel", \
+    MUXDEF(CONFIG_ISA_riscv, \
+        MUXDEF(CONFIG_RV64,    "riscv64", "riscv32"), \
+    "bad"))) "-pc-linux-gnu"
+
 
 /// @brief 初始化服务器
 void init_server() {
-#ifndef CONFIG_ISA_loongarch32r
-    IFDEF(CONFIG_ITRACE, init_disasm(
-        MUXDEF(CONFIG_ISA_x86,     "i686",
-        MUXDEF(CONFIG_ISA_mips32,  "mipsel",
-        MUXDEF(CONFIG_ISA_riscv,
-        MUXDEF(CONFIG_RV64,      "riscv64",
-                                "riscv32"),
-                                "bad"))) "-pc-linux-gnu"
-    ));
-#endif
+
+    // 1. 初始化指令集
     init_isa();
-    // 初始化线程池
+
+    // 2. 初始化反汇编引擎
+#ifndef CONFIG_ISA_loongarch32r
+    IFDEF(CONFIG_ITRACE, init_disasm(GET_GUEST_ARCH_S));
+    IFDEF(CONFIG_ITRACE, Logg("Init disasmble ISA: %s", GET_GUEST_ARCH_S));
+#endif
+    
+    // 3. 初始化线程池
     TODO("start_controller: muti threads");
 }
 

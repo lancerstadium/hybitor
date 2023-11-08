@@ -745,7 +745,7 @@ void display_img_file_info() {
     printf("ELF file info: \n");
     printf("  filename: %s\n", elf_img.img_file);
     printf("  arch: %s\n", get_arch(elf_img.ehdr));
-    printf("  addr: " FMT_PADDR "\n", (unsigned int)elf_img.addr);
+    printf("  addr: %p\n", elf_img.addr);
     printf("  size: %ld\n", elf_img.size);
 }
 

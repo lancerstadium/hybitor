@@ -34,6 +34,7 @@ static bool g_print_step = false;   // 是否打印执行指令
 // cpu-exec 静态函数
 // ============================================================================ //
 
+
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
     if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
@@ -42,11 +43,15 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
     IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 }
 
+/// @brief 程序执行一次
+/// @param s 解码器
+/// @param pc 指令计数器
 static void exec_once(Decode *s, vaddr_t pc) {
     s->pc = pc;
     s->snpc = pc;
     isa_exec_once(s);
     cpu.pc = s->dnpc;
+
 #ifdef CONFIG_ITRACE
     char *p = s->logbuf;
     p += snprintf(p, sizeof(s->logbuf), FMT_WORD ":", s->pc);
@@ -65,11 +70,10 @@ static void exec_once(Decode *s, vaddr_t pc) {
     p += space_len;
 
 #ifndef CONFIG_ISA_loongarch32r
-  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
-  disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
-      MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst.val, ilen);
+    disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
+        MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst.val, ilen);
 #else
-  p[0] = '\0'; // the upstream llvm does not support loongarch32r
+    p[0] = '\0'; // llvm还不支持龙芯架构：loongarch32r
 #endif
 
 #endif
