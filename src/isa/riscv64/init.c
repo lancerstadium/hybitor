@@ -24,8 +24,7 @@ static const uint32_t isa_img [] = {
 
 /// @brief 重新启动 cpu
 static void restart_cpu() {
-    // cpu.pc = RESET_VECTOR;  // 初始化程序计数器
-    cpu.pc = RESET_VECTOR;
+    cpu.pc = RESET_VECTOR;  // 初始化程序计数器
     cpu.gpr[0] = 0;         // 令零寄存器为0
 }
 

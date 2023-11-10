@@ -670,6 +670,91 @@ static void print_elf_program_header(ELF_IMG elf_img) {
 }
 
 
+void load_elf_phdr(char *file_path) {
+
+    int fd = open(file_path, O_RDONLY);
+    if (fd == -1) {
+        perror("open");
+        exit(1);
+    }
+
+    Elf64_Ehdr ehdr;
+    if (read(fd, &ehdr, sizeof(ehdr)) != sizeof(ehdr)) {
+        perror("read");
+        close(fd);
+        exit(1);
+    }
+
+    if (memcmp(ehdr.e_ident, ELFMAG, SELFMAG) != 0) {
+        printf("Not an ELF file\n");
+        close(fd);
+        exit(1);
+    }
+
+    if (ehdr.e_type != ET_EXEC) {
+        printf("Not an executable ELF file\n");
+        close(fd);
+        exit(1);
+    }
+
+    for (int i = 0; i < ehdr.e_phnum; i++) {
+        Elf64_Phdr phdr;
+        if (lseek(fd, ehdr.e_phoff + i * ehdr.e_phentsize, SEEK_SET) == -1) {
+            perror("lseek");
+            close(fd);
+            exit(1);
+        }
+        if (read(fd, &phdr, sizeof(phdr)) != sizeof(phdr)) {
+            perror("read");
+            close(fd);
+            exit(1);
+        }
+
+        if (phdr.p_type == PT_LOAD) {
+            void *addr = mmap((void *)guest_to_host(CONFIG_MBASE), phdr.p_memsz, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0);
+            if (addr == MAP_FAILED) {
+                perror("mmap");
+                close(fd);
+                exit(1);
+            }
+
+            if (lseek(fd, phdr.p_offset, SEEK_SET) == -1) {
+                perror("lseek");
+                close(fd);
+                exit(1);
+            }
+            if (read(fd, addr, phdr.p_filesz) != phdr.p_filesz) {
+                perror("read");
+                close(fd);
+                exit(1);
+            }
+        }
+    }
+
+    // Initialize .bss segment
+    for (int i = 0; i < ehdr.e_shnum; i++) {
+        Elf64_Shdr shdr;
+        if (lseek(fd, ehdr.e_shoff + i * ehdr.e_shentsize, SEEK_SET) == -1) {
+            perror("lseek");
+            close(fd);
+            exit(1);
+        }
+        if (read(fd, &shdr, sizeof(shdr)) != sizeof(shdr)) {
+            perror("read");
+            close(fd);
+            exit(1);
+        }
+
+        if (shdr.sh_type == SHT_NOBITS) {
+            void *addr = (void *)guest_to_host(CONFIG_MBASE) + shdr.sh_offset;
+            memset(addr, 0, shdr.sh_size);
+        }
+    }
+
+    close(fd);
+
+}
+
 
 // ============================================================================ //
 // loader API 实现 --> 声明 src/controller/loader/loader.h
@@ -689,7 +774,7 @@ long load_img_file(char *file_path) {
     
     // 2. 对 ELF 文件做完整的内存映射, 保存在 elf_img.addr 中, 方便后面寻址
     elf_img.size = lseek(fd, 0, SEEK_END);
-    void *addr = mmap(guest_to_host(RESET_VECTOR), elf_img.size, PROT_READ, MAP_PRIVATE, fd, 0);
+    void *addr = mmap(NULL, elf_img.size, PROT_READ, MAP_PRIVATE, fd, 0);
     if(addr == MAP_FAILED){
         munmap(addr, elf_img.size);
         close(fd);
@@ -697,6 +782,8 @@ long load_img_file(char *file_path) {
         return 0;
     }
     elf_img.addr = addr;
+
+    load_elf_phdr(file_path);
     
     // 3. 读取 ELF 头，保存在 elf_img.ehdr中
     elf = elf_begin(fd, ELF_C_READ, NULL); // 获取elf描述符,使用‘读取’的方式
@@ -724,6 +811,7 @@ long load_img_file(char *file_path) {
 
     return (long)elf_img.size;
 }
+
 
 
 

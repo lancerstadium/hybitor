@@ -6,8 +6,7 @@
 */
 
 #include "hdb.h"
-#include "memory/mmu.h"
-#include "loader.h"
+
 
 // ============================================================================ //
 // welcome 欢迎信息设置
@@ -15,10 +14,9 @@
 
 /// @brief 打印欢迎信息
 static void print_welcome() {
-    printf("Welcome to %s!\n", ANSI_FMT("Hybitor", ANSI_FG_BLUE));
+    printf("Welcome to %s%s!\n", ANSI_FMT("hybitor-", ANSI_FG_BLUE), ANSI_FMT(str(CONFIG_GUEST_ARCH), ANSI_FG_BLUE));
     printf("For help, type \"help\"\n");
 }
-
 
 
 // ============================================================================ //
@@ -29,13 +27,9 @@ static void print_welcome() {
 void init_controller_main(int argc, char *argv[]) {
     // 1. 初始化监视器
     init_monitor(argc, argv);
-    // 2. 初始化内存
-    init_mem();
-    // 3. 加载镜像文件：将镜像加载到内存中。这将覆盖内置镜像。
-    init_load_img();
-    // 4. 初始化服务器资源
+    // 2. 初始化服务器资源
     init_server();
-    // 5. 打印欢迎信息
+    // 3. 打印欢迎信息
     print_welcome();
 }
 

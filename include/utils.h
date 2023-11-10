@@ -104,6 +104,11 @@ typedef uint16_t ioaddr_t;
 // 类型工具 宏定义
 // ============================================================================ //
 
+#define str_temp(x) #x
+
+// 取字符串
+#define str(x) str_temp(x)
+
 // ------------ 数组长度 ------------ 
 #define ARRLEN(arr) (int)(sizeof(arr) / sizeof(arr[0]))
 
