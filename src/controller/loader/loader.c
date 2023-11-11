@@ -721,7 +721,8 @@ long load_img_file(char *file_path) {
     }
     elf_img.addr = addr;
 
-    load_img();
+    load_img();                            // --------------------------
+    
     
     // 3. 读取 ELF 头，保存在 elf_img.ehdr中
     elf = elf_begin(fd, ELF_C_READ, NULL); // 获取elf描述符,使用‘读取’的方式
@@ -735,6 +736,8 @@ long load_img_file(char *file_path) {
             continue;
         }
     }
+
+    cpu.pc += elf_img.ehdr.e_entry; // 新增pc值
 
     // 5. 获取段表字符串表的偏移量
     elf_img.shstrtab_offset = elf_img.shdr[elf_img.ehdr.e_shstrndx].sh_offset;  
@@ -772,6 +775,7 @@ void display_img_file_info() {
     printf("  filename: %s\n", elf_img.img_file);
     printf("  arch: %s\n", get_arch(elf_img.ehdr));
     printf("  addr: %p\n", elf_img.addr);
+    printf("  entry point: " FMT_WORD "\n", elf_img.ehdr.e_entry);
     printf("  size: %ld\n", elf_img.size);
 }
 

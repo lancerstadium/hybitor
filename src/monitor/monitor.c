@@ -76,7 +76,7 @@ static int parse_args(int argc, char *argv[]) {
                 Assertf((log_file != NULL), "log_file gets NULL : %s", log_file);
                 break;
             case 't':
-                printf("hello world!\n"); break;
+                printf("hello world!\n"); return SUCCESS_RETURN;
             case 1: // 加载文件
                 elf_img.img_file = optarg; break;
             case -1 :
