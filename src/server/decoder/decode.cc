@@ -35,8 +35,8 @@
 using namespace llvm;
 
 static llvm::MCDisassembler *gDisassembler = nullptr;   // 反汇编器
-static llvm::MCSubtargetInfo *gSTI = nullptr;           // 
-static llvm::MCInstPrinter *gIP = nullptr;
+static llvm::MCSubtargetInfo *gSTI = nullptr;           // MC子目标信息
+static llvm::MCInstPrinter *gIP = nullptr;              // MC指令信息打印器
 
 /// @brief 初始化反汇编引擎
 /// @param triple 来宾体系结构字符串

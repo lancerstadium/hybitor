@@ -43,16 +43,10 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
     IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 }
 
-/// @brief 程序执行一次
+/// @brief 打印指令追踪信息
 /// @param s 解码器
 /// @param pc 指令计数器
-static void exec_once(Decode *s, vaddr_t pc) {
-    s->pc = pc;
-    s->snpc = pc;
-    isa_exec_once(s);
-    cpu.pc = s->dnpc;
-
-#ifdef CONFIG_ITRACE
+static void print_inst_trace_info(Decode *s, vaddr_t pc) {
     char *p = s->logbuf;
     p += snprintf(p, sizeof(s->logbuf), FMT_WORD ":", s->pc);
     int ilen = s->snpc - s->pc;
@@ -61,6 +55,7 @@ static void exec_once(Decode *s, vaddr_t pc) {
     for (i = ilen - 1; i >= 0; i--) {
         p += snprintf(p, 4, " %02x", inst[i]);
     }
+    p += snprintf(p, 6, "    ;");
     int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);
     int space_len = ilen_max - ilen;
     if (space_len < 0)
@@ -75,7 +70,20 @@ static void exec_once(Decode *s, vaddr_t pc) {
 #else
     p[0] = '\0'; // llvm还不支持龙芯架构：loongarch32r
 #endif
+}
 
+/// @brief 程序执行一次
+/// @param s 解码器
+/// @param pc 指令计数器
+static void exec_once(Decode *s, vaddr_t pc) {
+    s->pc = pc;
+    s->snpc = pc;
+    // isa_exec_once(s);
+    isa_fetch_once(s);
+    cpu.pc = s->dnpc;
+
+#ifdef CONFIG_ITRACE
+    print_inst_trace_info(s, pc);
 #endif
 }
 

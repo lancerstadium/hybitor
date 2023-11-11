@@ -20,21 +20,19 @@
 
 /// @brief 初始化服务器
 void init_server() {
-
     // 1. 初始化指令集
     init_isa();
     // 2. 初始化内存
     init_mem();
     // 3. 加载镜像文件：将镜像加载到内存中。这将覆盖内置镜像。
     init_load_img();
-
     // 4. 初始化反汇编引擎
 #ifndef CONFIG_ISA_loongarch32r
     IFDEF(CONFIG_ITRACE, init_disasm(GET_GUEST_ARCH_S));
     IFDEF(CONFIG_ITRACE, Logg("Init disasmble ISA: %s", GET_GUEST_ARCH_S));
 #endif
     
-    // 3. 初始化线程池
+    // 5. 初始化线程池
     TODO("start_controller: muti threads");
 }
 

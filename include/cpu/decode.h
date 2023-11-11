@@ -133,4 +133,8 @@ finish:
 /// @param s 解码器
 int isa_exec_once(Decode *s);
 
+/// @brief isa取指令一次
+/// @param s 解码器
+void isa_fetch_once(Decode *s);
+
 #endif  // _HYBITOR_CPU_DECODE_H_

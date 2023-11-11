@@ -75,9 +75,6 @@ static int decode_exec(Decode *s) {
 // 取指令的时候会把指令记录到s->isa.inst.val中
 #define INSTPAT_INST(s) ((s)->isa.inst.val)
 
-/**
- * 
-*/
 #define INSTPAT_MATCH(s, name, type, ... /* execute body */ ) { \
     decode_operand(s, &rd, &src1, &src2, &imm, concat(TYPE_, type)); \
     __VA_ARGS__ ; \
@@ -147,4 +144,9 @@ static int decode_exec(Decode *s) {
 int isa_exec_once(Decode *s) {
   s->isa.inst.val = inst_fetch(&s->snpc, 4);
   return decode_exec(s);
+}
+
+void isa_fetch_once(Decode *s) {
+    s->isa.inst.val = inst_fetch(&s->snpc, 4);
+    s->dnpc = s->snpc;
 }
