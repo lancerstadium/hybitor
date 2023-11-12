@@ -135,6 +135,7 @@ int isa_exec_once(Decode *s);
 
 /// @brief isa取指令一次
 /// @param s 解码器
-void isa_fetch_once(Decode *s);
+/// @param next_inst_len 下条指令长度
+void isa_fetch_once(Decode *s, int next_inst_len);
 
 #endif  // _HYBITOR_CPU_DECODE_H_

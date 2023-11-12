@@ -28,6 +28,7 @@ CPU_state cpu = {};                 // CPU 状态
 uint64_t g_nr_guest_inst = 0;       // 程序执行指令数
 static uint64_t g_timer = 0;        // 程序执行时间
 static bool g_print_step = false;   // 是否打印执行指令
+int next_inst_len = 4;              // 下条指令长度
 
 
 // ============================================================================ //
@@ -79,10 +80,10 @@ static void exec_once(Decode *s, vaddr_t pc) {
     s->pc = pc;
     s->snpc = pc;
     // isa_exec_once(s);
-    isa_fetch_once(s);
+    isa_fetch_once(s, next_inst_len);
     cpu.pc = s->dnpc;
 
-#ifdef CONFIG_ITRACE
+#ifdef CONFIG_ITRACE    
     print_inst_trace_info(s, pc);
 #endif
 }

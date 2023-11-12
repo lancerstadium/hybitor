@@ -146,7 +146,7 @@ int isa_exec_once(Decode *s) {
   return decode_exec(s);
 }
 
-void isa_fetch_once(Decode *s) {
-    s->isa.inst.val = inst_fetch(&s->snpc, 4);
+void isa_fetch_once(Decode *s, int next_inst_len) {
+    s->isa.inst.val = inst_fetch(&s->snpc, next_inst_len);
     s->dnpc = s->snpc;
 }
