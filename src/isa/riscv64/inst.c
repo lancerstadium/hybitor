@@ -72,9 +72,9 @@ static int decode_exec(Decode *s) {
     s->dnpc = s->snpc;
 
 
-// 取指令的时候会把指令记录到s->isa.inst.val中
+// 指令存储宏：取指令的时候会把指令记录到s->isa.inst.val中
 #define INSTPAT_INST(s) ((s)->isa.inst.val)
-
+// 指令匹配宏
 #define INSTPAT_MATCH(s, name, type, ... /* execute body */ ) { \
     decode_operand(s, &rd, &src1, &src2, &imm, concat(TYPE_, type)); \
     __VA_ARGS__ ; \

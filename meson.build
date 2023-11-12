@@ -5,7 +5,7 @@ project('hybitor-effect', ['c', 'cpp'],
         'default_library=static',
         'cpp_std=c++17',
     ],
-    meson_version: '>=0.52'
+    meson_version: '>=0.54'
 )
 # 获取 C++ 编译器
 cpp = meson.get_compiler('cpp')
@@ -58,7 +58,6 @@ endif
 # -------- 配置路径文件 -------- #
 
 guest_arch = 'riscv64'
-host_arch = 'x86_64'
 guest_isa_path = 'src/isa/' + guest_arch
 
 src_files = [
@@ -94,11 +93,10 @@ inc_dirs = [
 ]
 
 # -------- 配置文件 -------- #
-
 conf_data = configuration_data()
 
 ## 通用配置
-conf_data.set('CONFIG_VERSION', '0.2.1', description: '配置文件版本')
+conf_data.set('CONFIG_VERSION', '0.4.1', description: '配置文件版本')
 conf_data.set('CONFIG_GUEST_ARCH', guest_arch, description: '来宾体系结构')
 conf_data.set('CONFIG_TARGET_ARCH', host_arch, description: '主机体系结构')
 conf_data.set('CONFIG_MBASE', '0x80000000', description: '内存基址')
@@ -108,9 +106,18 @@ conf_data.set('CONFIG_PC_RESET_OFFSET', '0x0', description: '取指令偏移')
 # conf_data.set('CONFIG_RVE', 1, description: '开启相对虚拟地址')
 
 ## ISA配置
-conf_data.set('CONFIG_ISA64', 1, description: '是 64bit ISA')
-conf_data.set('CONFIG_ISA_riscv', 1, description: '是 RISC-V ISA')
-conf_data.set('CONFIG_RV64', 1, description: '是 RISC-V 64bit ISA')
+if guest_arch == 'riscv64'
+    conf_data.set('CONFIG_ISA64', 1, description: '是 64bit ISA')
+    conf_data.set('CONFIG_ISA_riscv', 1, description: '是 RISC-V ISA')
+    conf_data.set('CONFIG_RV64', 1, description: '是 RISC-V 64bit ISA')
+    message('Config guest architecture: \033[1;32m@0@\033[0m'.format(guest_arch))
+elif guest_arch == 'aarch64'
+    conf_data.set('CONFIG_ISA64', 1, description: '是 64bit ISA')
+    conf_data.set('CONFIG_ISA_aarch', 1, description: '是 aarch ISA')
+    conf_data.set('CONFIG_ARM64', 1, description: '是 ARM 64bit ISA')
+    message('Config guest architecture: \033[1;32m@0@\033[0m'.format(guest_arch))
+endif
+
 
 ## 可选配置
 conf_data.set('CONFIG_ITRACE', 1, description: '开启指令追踪')

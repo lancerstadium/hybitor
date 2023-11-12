@@ -11,7 +11,7 @@
 #ifndef _HYBITOR_ISA_RISCV64_INCLUDE_REG_H_
 #define _HYBITOR_ISA_RISCV64_INCLUDE_REG_H_
 
-#include "common.h"
+#include "isa-def.h"
 
 /**
  * @brief 检查给定的索引是否在寄存器的有效范围内
@@ -19,7 +19,7 @@
  * @return 索引，如果它是有效的
  */
 static inline int check_reg_idx(int idx) {
-  IFDEF(CONFIG_RT_CHECK, assert(idx >= 0 && idx < MUXDEF(CONFIG_RVE, 16, 32)));
+  IFDEF(CONFIG_RT_CHECK, assert(idx >= 0 && idx < REG_SIZE));
   return idx;
 }
 

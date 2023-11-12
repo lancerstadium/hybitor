@@ -1,18 +1,18 @@
 /**
- * @brief riscv32寄存器操作
- * @file src/isa/riscv32/reg.h
+ * @brief aarch64寄存器操作
+ * @file src/isa/aarch64/reg.h
  * @author lancerstadium
- * @date 2023-10-18
+ * @date 2023-11-12
 */
 
 
 #include "reg.h"
 
 // ============================================================================ //
-// riscv32 reg 静态变量
+// aarch64 reg 静态变量
 // ============================================================================ //
 
-/// @brief riscv32寄存器列表
+/// @brief aarch64寄存器列表
 const char *regs[] = {
     "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
     "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5",
@@ -21,20 +21,19 @@ const char *regs[] = {
 };
 
 // ============================================================================ //
-// riscv32 reg API 实现 --> 声明 src/isa.h
+// aarch64 reg API 实现 --> 声明 src/isa.h
 // ============================================================================ //
 
 void print_isa_reg_info() {
     printf("Reg Info: ");
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < REG_SIZE; i++) {
         if (i % 4 == 0) {
-            printf("\n  %-3s: , ", regs[i]);
+            printf("\n  %-3s: " FMT_WORD " , ", reg_name(i), (long unsigned int)gpr(i));
         } else {
-            printf("%-3s: , ", regs[i]);
+            printf("%-3s: " FMT_WORD " , ", reg_name(i), (long unsigned int)gpr(i));
         }
     }
     printf("\n");
-    TODO("print_isa_reg_values");
 }
 
 word_t isa_reg_str2val(const char *name, bool *success) {

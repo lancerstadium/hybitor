@@ -10,16 +10,18 @@
 
 #include "common.h"
 
+#define REG_SIZE MUXDEF(CONFIG_RVE, 16, 32)
+
 typedef struct {
-  word_t gpr[MUXDEF(CONFIG_RVE, 16, 32)];
-  vaddr_t pc;
+    word_t gpr[REG_SIZE];
+    vaddr_t pc;
 } MUXDEF(CONFIG_RV64, riscv64_CPU_state, riscv32_CPU_state);
 
 
 typedef struct {
-  union {
-    uint32_t val;
-  } inst;
+    union {
+        uint32_t val;
+    } inst;
 } MUXDEF(CONFIG_RV64, riscv64_ISADecodeInfo, riscv32_ISADecodeInfo);
 
 #endif // _HYBITOR_ISA_RISCV32_INCLUDE_ISA_DEF_H_

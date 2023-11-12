@@ -1,17 +1,15 @@
 /**
  * @brief reg 寄存器头文件
- * @file src/isa/riscv32/include/reg.h
+ * @file src/isa/aarch64/include/reg.h
  * @author lancerstadium
  * @date 2023-10-24
 */
 
 
+#ifndef _HYBITOR_ISA_AARCH64_INCLUDE_REG_H_
+#define _HYBITOR_ISA_AARCH64_INCLUDE_REG_H_
 
-
-#ifndef _HYBITOR_ISA_RISCV32_INCLUDE_REG_H_
-#define _HYBITOR_ISA_RISCV32_INCLUDE_REG_H_
-
-#include "common.h"
+#include "isa-def.h"
 
 /**
  * @brief 检查给定的索引是否在寄存器的有效范围内
@@ -19,10 +17,11 @@
  * @return 索引，如果它是有效的
  */
 static inline int check_reg_idx(int idx) {
-  IFDEF(CONFIG_RT_CHECK, assert(idx >= 0 && idx < MUXDEF(CONFIG_RVE, 16, 32)));
+  IFDEF(CONFIG_RT_CHECK, assert(idx >= 0 && idx < REG_SIZE));
   return idx;
 }
 
+/// 获取通用寄存器`idx`处的值
 #define gpr(idx) (cpu.gpr[check_reg_idx(idx)])
 
 /**
@@ -31,9 +30,9 @@ static inline int check_reg_idx(int idx) {
   * @return 寄存器的名称
   */
 static inline const char* reg_name(int idx) {
-  extern const char* regs[];
-  return regs[check_reg_idx(idx)];
+    extern const char* regs[];
+    return regs[check_reg_idx(idx)];
 }
 
 
-#endif // _HYBITOR_ISA_RISCV32_INCLUDE_REG_H_
+#endif // _HYBITOR_ISA_AARCH64_INCLUDE_REG_H_
