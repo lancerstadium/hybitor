@@ -51,12 +51,18 @@ static void print_inst_trace_info(Decode *s, vaddr_t pc) {
     char *p = s->logbuf;
     p += snprintf(p, sizeof(s->logbuf), FMT_WORD ":", s->pc);
     int ilen = s->snpc - s->pc;
+    ilen = get_inst_len(s->pc, (uint8_t *)&s->isa.inst.val, ilen);
+    if (ilen < 4) {
+        s->snpc -= 4;               // snpc向前挪  
+        isa_fetch_once(s, ilen);    // 重新取指令
+        cpu.pc = s->dnpc;           // 重置CPU的指令计数器
+    }
     int i;
     uint8_t *inst = (uint8_t *)&s->isa.inst.val;
     for (i = ilen - 1; i >= 0; i--) {
         p += snprintf(p, 4, " %02x", inst[i]);
     }
-    p += snprintf(p, 6, "    ;");
+    p += snprintf(p, 5, "    ");
     int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);
     int space_len = ilen_max - ilen;
     if (space_len < 0)

@@ -5,6 +5,7 @@
  * @date 2023-11-8
 */
 
+
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
@@ -37,6 +38,11 @@ using namespace llvm;
 static llvm::MCDisassembler *gDisassembler = nullptr;   // 反汇编器
 static llvm::MCSubtargetInfo *gSTI = nullptr;           // MC子目标信息
 static llvm::MCInstPrinter *gIP = nullptr;              // MC指令信息打印器
+
+
+// ============================================================================ //
+// server API 实现 --> 定义 include/common.h
+// ============================================================================ //
 
 /// @brief 初始化反汇编引擎
 /// @param triple 来宾体系结构字符串
@@ -106,4 +112,18 @@ extern "C" void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int
     const char *p = s.c_str() + skip;
     assert((int)s.length() - skip < size);
     strcpy(str, p);
+}
+
+/// @brief 获取指令长度
+/// @param pc 指令计数器
+/// @param code 开始地址
+/// @param nbyte 指令长度
+/// @return 指令长度
+extern "C" int get_inst_len(uint64_t pc, uint8_t *code, int nbyte) {
+    MCInst inst;
+    llvm::ArrayRef<uint8_t> arr(code, nbyte);
+    uint64_t dummy_size = 0;
+    gDisassembler->getInstruction(inst, dummy_size, arr, pc, llvm::nulls());
+
+    return (int)dummy_size;
 }
