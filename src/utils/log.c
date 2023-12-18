@@ -32,6 +32,6 @@ void init_log(const char *log_file) {
         Assertf(fp, "Can not open '%s'", log_file);
         log_fp = fp;
     }
-    Logg("Init log: log is written to `%s`", log_file ? log_file : "stdout");
+    Logb("Init log: log is written to `%s`", log_file ? log_file : "stdout");
 }
 

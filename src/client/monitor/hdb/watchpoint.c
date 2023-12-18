@@ -43,7 +43,7 @@ void init_wp_pool() {
     }
     head = NULL;        // 初始化观测点头指针
     free_ = wp_pool;    // 初始化观测点 free 指针
-    Logg("Init watchpoint: pool number: %d", NR_WP);
+    Logb("Init watchpoint: pool number: %d", NR_WP);
 }
 
 

@@ -688,7 +688,7 @@ static long load_img() {
     fseek(fp, 0, SEEK_END);
     long size = ftell(fp);
 
-    Logg("The image is %s, size = %ld", elf_img.img_file, size);
+    Logb("The image is %s, size = %ld", elf_img.img_file, size);
 
     fseek(fp, 0, SEEK_SET);
     int ret = fread(guest_to_host(RESET_VECTOR), size, 1, fp);
@@ -743,7 +743,7 @@ long load_img_file(char *file_path) {
     elf_img.shstrtab_offset = elf_img.shdr[elf_img.ehdr.e_shstrndx].sh_offset;  
 
     // 6. 打印信息
-    Logg("Success load file: %s, size: %ld", elf_img.img_file, (long)elf_img.size);
+    Logb("Success load file: %s, size: %ld", elf_img.img_file, (long)elf_img.size);
     display_img_file_info();
 
     // 7. 释放资源
@@ -763,7 +763,7 @@ long free_img_file(char *file_path) {
         free(elf_img.shdr);
         elf_img.shstrtab_offset = 0;
         elf_img.size = 0;
-        Logg("Success free file: %s, now size: %ld", elf_img.img_file, (long)elf_img.size);
+        Logb("Success free file: %s, now size: %ld", elf_img.img_file, (long)elf_img.size);
     } else {
         Warningf("No file to free: %s", elf_img.img_file);
     }
@@ -772,11 +772,11 @@ long free_img_file(char *file_path) {
 
 void display_img_file_info() {
     printf("ELF file info: \n");
-    printf("  filename: %s\n", elf_img.img_file);
-    printf("  arch: %s\n", get_arch(elf_img.ehdr));
-    printf("  addr: %p\n", elf_img.addr);
-    printf("  entry point: " FMT_WORD "\n", elf_img.ehdr.e_entry);
-    printf("  size: %ld\n", elf_img.size);
+    printf("   file:    %s\n", elf_img.img_file);
+    printf("   arch:    %s\n", get_arch(elf_img.ehdr));
+    printf("   addr:    %p\n", elf_img.addr);
+    printf("   entry:   " FMT_WORD "\n", elf_img.ehdr.e_entry);
+    printf("   size:    %ld\n", elf_img.size);
 }
 
 void display_img_header_info() {
@@ -801,7 +801,7 @@ void set_load_img() {
         Logy("Img_file: %s, Use default img: `%s`", elf_img.img_file, default_img_file);
         elf_img.img_file = default_img_file;
     } else {
-        Logg("Set img_file: `%s`", elf_img.img_file);
+        Logb("Set img_file: `%s`", elf_img.img_file);
     }
 }
 
@@ -819,7 +819,7 @@ bool change_load_img(char *file_path) {
     fclose(fp);
     free_img_file(file_path);
     elf_img.img_file = file_path;
-    Logg("Change img_file to: `%s`", elf_img.img_file);
+    Logb("Change img_file to: `%s`", elf_img.img_file);
     return true;
 }
 

@@ -5,8 +5,8 @@
  * @date 2023-10-18
 */
 
-#ifndef _HYBITOR_ISA_H_
-#define _HYBITOR_ISA_H_
+#ifndef _HYBITOR_EMULATOR_ISA_H_
+#define _HYBITOR_EMULATOR_ISA_H_
 
 // 位置在：src/isa/$(GUEST_ISA)/include/isa-def.h
 #include "isa-def.h"
@@ -40,4 +40,4 @@ word_t isa_reg_str2val(const char *name, bool *success);
 
 
 
-#endif // _HYBITOR_ISA_H
+#endif // _HYBITOR_EMULATOR_ISA_H

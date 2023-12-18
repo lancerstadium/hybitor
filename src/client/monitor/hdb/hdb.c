@@ -84,12 +84,12 @@ static int cmd_help(char *args) {
     int i;
     if (arg == NULL) { // 没有参数则循环打印命令名和描述
         for (i = 0; i < NR_CMD; i++) {
-            printf("   %-5s - %s\n", cmd_table[i].name, cmd_table[i].description);
+            printf("   %-8s " ANSI_FMT("%s\n", ANSI_FG_BLACK), cmd_table[i].name, cmd_table[i].description);
         }
     } else {    // 有参数则循环打印命令名和描述
         for (i = 0; i < NR_CMD; i++) {
             if (strcmp(arg, cmd_table[i].name) == 0) {
-                printf("   %-5s - %s\n", cmd_table[i].name, cmd_table[i].description);
+                printf("   %-8s " ANSI_FMT("%s\n", ANSI_FG_BLACK), cmd_table[i].name, cmd_table[i].description);
                 return SUCCESS_RETURN;
             }
         }

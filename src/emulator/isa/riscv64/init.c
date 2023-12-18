@@ -36,5 +36,5 @@ static void restart_cpu() {
 void init_isa() {
     memcpy(guest_to_host(RESET_VECTOR), isa_img, sizeof(isa_img));  // 加载 build-in 镜像
     restart_cpu();  // 初始化虚拟机系统
-    Logg("Init isa, cpu pc: " FMT_PADDR , (unsigned int)cpu.pc);
+    Logb("Init isa, cpu pc: " FMT_PADDR , (unsigned int)cpu.pc);
 }

@@ -5,8 +5,8 @@
  * @date 2023-10-28
 */
 
-#ifndef _HYBITOR_CPU_IFETCH_H_
-#define _HYBITOR_CPU_IFETCH_H_
+#ifndef _HYBITOR_EMULATOR_CPU_IFETCH_H_
+#define _HYBITOR_EMULATOR_CPU_IFETCH_H_
 
 #include "emulator/softmmu/softmmu.h"
 
@@ -20,4 +20,4 @@ static inline uint32_t inst_fetch(vaddr_t *pc, int len) {
     return inst;
 }
 
-#endif  // _HYBITOR_CPU_IFETCH_H_
+#endif  // _HYBITOR_EMULATOR_CPU_IFETCH_H_

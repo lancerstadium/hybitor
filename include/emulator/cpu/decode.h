@@ -6,8 +6,8 @@
 */
 
 
-#ifndef _HYBITOR_CPU_DECODE_H_
-#define _HYBITOR_CPU_DECODE_H_
+#ifndef _HYBITOR_EMULATOR_CPU_DECODE_H_
+#define _HYBITOR_EMULATOR_CPU_DECODE_H_
 
 #include "emulator/isa.h"
 
@@ -138,4 +138,4 @@ int isa_exec_once(Decode *s);
 /// @param next_inst_len 下条指令长度
 void isa_fetch_once(Decode *s, int next_inst_len);
 
-#endif  // _HYBITOR_CPU_DECODE_H_
+#endif  // _HYBITOR_EMULATOR_CPU_DECODE_H_

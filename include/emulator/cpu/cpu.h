@@ -1,12 +1,12 @@
 /**
- * @brief CPU头文件
+ * @brief CPU 头文件
  * @file include/emulator/cpu/cpu.h
  * @author lancerstadium
  * @date 2023-10-18
 */
 
-#ifndef _HYBITOR_CPU_CPU_H_
-#define _HYBITOR_CPU_CPU_H_
+#ifndef _HYBITOR_EMULATOR_CPU_CPU_H_
+#define _HYBITOR_EMULATOR_CPU_CPU_H_
 
 #include "common.h"
 
@@ -36,4 +36,4 @@ void cpu_quit();
 void cpu_exec(uint64_t n);
 
 
-#endif  // _HYBITOR_CPU_CPU_H
+#endif  // _HYBITOR_EMULATOR_CPU_CPU_H

@@ -17,6 +17,7 @@
 
 void init_client_main(int, char *[]);
 void start_client_main();
+void connect_to_server();
 
 // ============================================================================ //
 // monitor API 定义 --> 实现 src/monitor/monitor.c

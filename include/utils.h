@@ -132,26 +132,32 @@ typedef uint16_t ioaddr_t;
 // ============================================================================ //
 
 // ----------- ANSI Color ----------- 
-#define ANSI_FG_BLACK   "\33[1;30m" // 前景：黑
-#define ANSI_FG_RED     "\33[1;31m" // 前景：红
-#define ANSI_FG_GREEN   "\33[1;32m" // 前景：绿
-#define ANSI_FG_YELLOW  "\33[1;33m" // 前景：黄
-#define ANSI_FG_BLUE    "\33[1;34m" // 前景：蓝
-#define ANSI_FG_MAGENTA "\33[1;35m" // 前景：品红
-#define ANSI_FG_CYAN    "\33[1;36m" // 前景：青
-#define ANSI_FG_WHITE   "\33[1;37m" // 前景：白
-#define ANSI_BG_BLACK   "\33[1;40m" // 前景：黑
-#define ANSI_BG_RED     "\33[1;41m" // 前景：红
-#define ANSI_BG_GREEN   "\33[1;42m" // 前景：绿
-#define ANSI_BG_YELLOW  "\33[1;43m" // 前景：黄
-#define ANSI_BG_BLUE    "\33[1;44m" // 前景：蓝
-#define ANSI_BG_MAGENTA "\33[1;35m" // 背景：品红
-#define ANSI_BG_CYAN    "\33[1;46m" // 背景：青
-#define ANSI_BG_WHITE   "\33[1;47m" // 背景：白
-#define ANSI_NONE       "\33[0m"    // No Color
+#define ANSI_FG_BLACK   "\33[30m" // 前景：黑
+#define ANSI_FG_RED     "\33[31m" // 前景：红
+#define ANSI_FG_GREEN   "\33[32m" // 前景：绿
+#define ANSI_FG_YELLOW  "\33[33m" // 前景：黄
+#define ANSI_FG_BLUE    "\33[34m" // 前景：蓝
+#define ANSI_FG_MAGENTA "\33[35m" // 前景：品红
+#define ANSI_FG_CYAN    "\33[36m" // 前景：青
+#define ANSI_FG_WHITE   "\33[37m" // 前景：白
+#define ANSI_BG_BLACK   "\33[40m" // 背景：黑
+#define ANSI_BG_RED     "\33[41m" // 背景：红
+#define ANSI_BG_GREEN   "\33[42m" // 背景：绿
+#define ANSI_BG_YELLOW  "\33[43m" // 背景：黄
+#define ANSI_BG_BLUE    "\33[44m" // 背景：蓝
+#define ANSI_BG_MAGENTA "\33[45m" // 背景：品红
+#define ANSI_BG_CYAN    "\33[46m" // 背景：青
+#define ANSI_BG_WHITE   "\33[47m" // 背景：白
+#define ANSI_BOLD       "\33[1m"    // 粗体
+#define ANSI_UNDERLINE  "\33[4m"    // 下划线
+#define ANSI_BLINK      "\33[5m"    // 闪烁
+#define ANSI_REVERSE    "\33[7m"    // 反白
+#define ANSI_CONCEAL    "\33[8m"    // 隐藏
+#define ANSI_STRIKE     "\33[9m"    // 删除
+#define ANSI_RESET      "\33[0m"    // 重置
 
 // ----------- ANSI Fomate ----------- 
-#define ANSI_FMT(str, fmt) fmt str ANSI_NONE
+#define ANSI_FMT(str, fmt) fmt str ANSI_RESET
 
 // ============================================================================ //
 // Log 宏定义
@@ -159,11 +165,11 @@ typedef uint16_t ioaddr_t;
 
 // 标准控制台输出日志
 #define Stdout_fprintf(ANSI_COLOR, fmt, log_fp, ...) \
-    fprintf(stdout, "%s %s:%d [log info] " ANSI_FMT(fmt, ANSI_COLOR) "\n", \
-    ANSI_FMT("Log:", ANSI_COLOR), __FILE__, __LINE__, ## __VA_ARGS__); \
+    fprintf(stdout, "%s: %s:%d  " ANSI_FMT(fmt, ANSI_FG_BLACK) "\n", \
+    ANSI_FMT("Log", ANSI_COLOR), __FILE__, __LINE__, ## __VA_ARGS__); \
 // 文件输出日志
 #define Log_fprintf(fmt, log_fp, ...) \
-    fprintf(log_fp, "Log: %s:%d [log info] " fmt "\n", \
+    fprintf(log_fp, "Log: %s:%d " fmt "\n", \
     __FILE__, __LINE__, ## __VA_ARGS__); \
 // 文件写入日志
 #define Log_write(fmt, log_fp, ...) \
@@ -209,23 +215,23 @@ typedef uint16_t ioaddr_t;
 // ============================================================================ //
 
 // ----------- Fatalf Macro Define：格式化输出错误信息 -----------
-#define Fatalf(fmt, ...) (fprintf(stderr, "%s: %s:%d [fatal message]" ANSI_FMT(fmt, ANSI_BG_RED ANSI_FG_BLACK) "\n", ANSI_FMT("Fatal", ANSI_BG_RED ANSI_FG_WHITE), __FILE__, __LINE__, __VA_ARGS__), exit(1))
+#define Fatalf(fmt, ...) (fprintf(stderr, "%s: %s:%d  " ANSI_FMT(fmt, ANSI_FG_BLACK) "\n", ANSI_FMT("Fatal", ANSI_FG_RED), __FILE__, __LINE__, __VA_ARGS__), exit(1))
 #define Fatal(msg) Fatalf("%s", msg)        // Fatal Macro Define：输出错误信息
 #define Unreachable() Fatal("unreachable")  // Unreachable Macro Define：输出不可达信息
 // ----------- Trap Macro Define：格式化输出陷入信息 -----------
-#define Trapf(fmt, ...) (fprintf(stderr, "%s: %s:%d [trap message] " ANSI_FMT(fmt, ANSI_BG_YELLOW ANSI_FG_BLACK) "\n", ANSI_FMT("Trap", ANSI_BG_YELLOW ANSI_FG_WHITE), __FILE__, __LINE__, __VA_ARGS__))
+#define Trapf(fmt, ...) (fprintf(stderr, "%s: %s:%d  " ANSI_FMT(fmt, ANSI_FG_BLACK) "\n", ANSI_FMT("Trap", ANSI_FG_YELLOW), __FILE__, __LINE__, __VA_ARGS__))
 #define Trap(msg) Trapf("%s", msg)          // Trap Macro Define：输出待办信息
 // ----------- Safe Macro Define：格式化输出安全信息 -----------
-#define Safef(fmt, ...) (fprintf(stdout, "%s: %s:%d [safe message] " ANSI_FMT(fmt, ANSI_BG_GREEN ANSI_FG_BLACK) "\n", ANSI_FMT("Safe", ANSI_BG_GREEN ANSI_FG_WHITE), __FILE__, __LINE__, __VA_ARGS__))
+#define Safef(fmt, ...) (fprintf(stdout, "%s: %s:%d  " ANSI_FMT(fmt, ANSI_FG_BLACK) "\n", ANSI_FMT("Safe", ANSI_FG_GREEN), __FILE__, __LINE__, __VA_ARGS__))
 #define Safe(msg) Safef("%s", msg)          // Safe Macro Define：输出安全信息
 // ----------- TODO Macro Define：格式化输出待办信息 -----------
-#define TODOf(fmt, ...) (fprintf(stderr, "%s: %s:%d [todo message] " ANSI_FMT(fmt, ANSI_BG_BLUE ANSI_FG_BLACK) "\n", ANSI_FMT("TODO", ANSI_BG_BLUE ANSI_FG_WHITE), __FILE__, __LINE__, __VA_ARGS__))
+#define TODOf(fmt, ...) (fprintf(stderr, "%s: %s:%d  " ANSI_FMT(fmt, ANSI_FG_BLACK) "\n", ANSI_FMT("TODO", ANSI_FG_BLUE), __FILE__, __LINE__, __VA_ARGS__))
 #define TODO(msg) TODOf("%s", msg)          // TODO Macro Define：输出待办信息
 // ----------- Assert Macro Define：格式化输出断言信息 -----------
 #define Assertf(cond, fmt, ...) \
     do { \
         if (!(cond)) { \
-            fprintf(stderr, "%s: %s:%d \n[condition] %s \n[assert message] " ANSI_FMT(fmt, ANSI_BG_RED ANSI_FG_BLACK) "\n", \
+            fprintf(stderr, "%s: %s:%d  \n[condition] %s \n[assert message] " ANSI_FMT(fmt, ANSI_BG_RED ANSI_FG_BLACK) "\n", \
             ANSI_FMT("Assert", ANSI_FG_BLACK ANSI_BG_RED), __FILE__, __LINE__, BOOL_TO_STR(cond), __VA_ARGS__); \
             abort(); \
         } \
@@ -240,13 +246,13 @@ typedef uint16_t ioaddr_t;
 // ============================================================================ //
 
 // ----------- Error Macro Define：格式化用户错误信息 -----------
-#define Errorf(fmt, ...) (fprintf(stderr, "%s: %s:%d [error info] " ANSI_FMT(fmt, ANSI_FG_RED) "\n", ANSI_FMT("Error", ANSI_FG_RED), __FILE__, __LINE__, __VA_ARGS__))
+#define Errorf(fmt, ...) (fprintf(stderr, "%s: %s:%d  " ANSI_FMT(fmt, ANSI_FG_RED ANSI_UNDERLINE) "\n", ANSI_FMT("Error", ANSI_FG_RED), __FILE__, __LINE__, __VA_ARGS__))
 #define Error(msg) Errorf("%s", msg)        // Error Macro Define：输出错误信息
 // ----------- Warning Macro Define：格式化用户警告信息 -----------
-#define Warningf(fmt, ...) (fprintf(stderr, "%s: %s:%d [warning info] " ANSI_FMT(fmt, ANSI_FG_YELLOW) "\n", ANSI_FMT("Warning", ANSI_FG_YELLOW), __FILE__, __LINE__, __VA_ARGS__))
+#define Warningf(fmt, ...) (fprintf(stderr, "%s: %s:%d  " ANSI_FMT(fmt, ANSI_FG_YELLOW ANSI_UNDERLINE) "\n", ANSI_FMT("Warning", ANSI_FG_YELLOW), __FILE__, __LINE__, __VA_ARGS__))
 #define Warning(msg) Warningf("%s", msg)    // Warning Macro Define：输出警告信息
 // ----------- Success Macro Define：格式化用户成功信息 -----------
-#define Successf(fmt, ...) (fprintf(stdout, "%s: %s:%d [success info] " ANSI_FMT(fmt, ANSI_FG_GREEN) "\n", ANSI_FMT("Success", ANSI_FG_GREEN), __FILE__, __LINE__, __VA_ARGS__))
+#define Successf(fmt, ...) (fprintf(stdout, "%s: %s:%d  " ANSI_FMT(fmt, ANSI_FG_GREEN ANSI_UNDERLINE) "\n", ANSI_FMT("Success", ANSI_FG_GREEN), __FILE__, __LINE__, __VA_ARGS__))
 #define Success(msg) Successf("%s", msg)    // Success Macro Define：输出成功信息
 
 

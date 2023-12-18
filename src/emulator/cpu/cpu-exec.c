@@ -115,10 +115,10 @@ static void cpu_execute(uint64_t n) {
 
 void cpu_quit() {
     change_hybitor_state(HY_QUIT);
-    Logg("Host time spent = %0.8f us", (double)g_timer);
-    Logg("Guest executed instructions = %d", (int)g_nr_guest_inst);
+    Logb("Host time spent = %0.8f us", (double)g_timer);
+    Logb("Guest executed instructions = %d", (int)g_nr_guest_inst);
     if(g_timer > 0)
-        Logg("Frequency = %0.8f inst/s", (double)g_nr_guest_inst * 1000000 / g_timer);
+        Logb("Frequency = %0.8f inst/s", (double)g_nr_guest_inst * 1000000 / g_timer);
     else
         Logy("Finish running in less than 1 us : %0.8f us, Can not calculate the simulation frequency.", (double)g_timer);
 }

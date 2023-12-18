@@ -141,7 +141,7 @@ void init_regex() {
             Errorf("regex compilation failed: %s\n%s", error_msg, rules[i].regex);
         }
     }
-    Logg("Init regex: rules' number: %d", NR_REGEX);
+    Logb("Init regex: rules' number: %d", NR_REGEX);
 }
 
 

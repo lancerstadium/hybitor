@@ -44,5 +44,5 @@ void init_rand() {
     time(&current_time);
     char *time_buffer = ctime(&current_time);
     time_buffer[strlen(time_buffer) - 1] = '\0';
-    Logg("Init rand: current time: %s", time_buffer);
+    Logb("Init rand: current time: %s", time_buffer);
 }

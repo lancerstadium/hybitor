@@ -5,8 +5,8 @@
  * @date 2023-10-15
 */
 
-#ifndef _HYBITOR_MEMORY_MMU_H_
-#define _HYBITOR_MEMORY_MMU_H_
+#ifndef _HYBITOR_EMULATOR_SOFTMMU_SOFTMMU_H_
+#define _HYBITOR_EMULATOR_SOFTMMU_SOFTMMU_H_
 
 #include "common.h"
 
@@ -122,4 +122,4 @@ void vaddr_write(vaddr_t addr, int len, word_t data);
 /// @brief 初始化内存
 void init_mem();
 
-#endif // _HYBITOR_MEMORY_MMU_H_
+#endif // _HYBITOR_EMULATOR_SOFTMMU_SOFTMMU_H_
