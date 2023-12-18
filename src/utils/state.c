@@ -7,7 +7,7 @@
 
 
 #include "utils.h"
-#include "cpu/cpu.h"
+#include "emulator/cpu/cpu.h"
 
 // ============================================================================ //
 // state 宏定义

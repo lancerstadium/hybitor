@@ -9,8 +9,8 @@
 
 int main(int argc, char *argv[]) {
     
-    init_controller_main(argc, argv);
-    start_controller_main();
+    init_client_main(argc, argv);
+    start_client_main();
     
     return 0;
 }

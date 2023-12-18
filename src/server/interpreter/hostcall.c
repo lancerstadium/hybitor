@@ -7,8 +7,8 @@
 
 
 #include "utils.h"
-#include "cpu/cpu.h"
-#include "cpu/ifetch.h"
+#include "emulator/cpu/cpu.h"
+#include "emulator/cpu/ifetch.h"
 
 
 __attribute__((noinline))

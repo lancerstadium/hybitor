@@ -58,22 +58,22 @@ endif
 # -------- 配置路径文件 -------- #
 
 guest_arch = 'riscv64'
-guest_isa_path = 'src/isa/' + guest_arch
+guest_isa_path = 'src/emulator/isa/' + guest_arch
 
 src_files = [
     'src/hybitor.c',
-    'src/monitor/monitor.c',
-    'src/monitor/hdb/hdb.c',
+    'src/client/monitor/monitor.c',
+    'src/client/monitor/hdb/hdb.c',
     'src/server/server.c',
     'src/utils/timer.c',
     'src/utils/log.c',
     'src/utils/state.c',
-    'src/memory/mmu.c',
-    'src/monitor/hdb/expr.c',
-    'src/monitor/hdb/watchpoint.c',
-    'src/controller/controller.c',
-    'src/controller/loader/loader.c',
-    'src/cpu/cpu-exec.c',
+    'src/emulator/softmmu/softmmu.c',
+    'src/client/monitor/hdb/expr.c',
+    'src/client/monitor/hdb/watchpoint.c',
+    'src/client/client.c',
+    'src/client/loader/loader.c',
+    'src/emulator/cpu/cpu-exec.c',
     guest_isa_path + '/reg.c',     # 体系结构相关
     guest_isa_path + '/init.c',    # 体系结构相关
     guest_isa_path + '/inst.c',    # 体系结构相关
@@ -86,10 +86,10 @@ inc_dirs = [
     llvm_include_path,
     '.',
     'include',
-    'src/monitor/hdb/include',
-    'src/controller/loader/include',
-    'src/isa/riscv32/include',      # 体系结构相关
-    guest_isa_path + '/include',      # 体系结构相关
+    'src/client/monitor/hdb/include',
+    'src/client/loader/include',
+    'src/emulator/isa/riscv32/include',     # 体系结构相关
+    guest_isa_path + '/include',            # 体系结构相关
 ]
 
 # -------- 配置文件 -------- #

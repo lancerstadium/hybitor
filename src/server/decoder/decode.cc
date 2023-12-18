@@ -1,6 +1,6 @@
 /**
- * @brief LLVM-mc反汇编
- * @file src/server/decider/decode.c
+ * @brief LLVM-MC 反汇编
+ * @file src/server/decoder/decode.c
  * @author lancerstadium
  * @date 2023-11-8
 */
@@ -34,6 +34,10 @@
 #endif
 
 using namespace llvm;
+
+// ============================================================================ //
+// decode 全局变量
+// ============================================================================ //
 
 static llvm::MCDisassembler *gDisassembler = nullptr;   // 反汇编器
 static llvm::MCSubtargetInfo *gSTI = nullptr;           // MC子目标信息
